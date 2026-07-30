@@ -1,26 +1,280 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens (High-End Dark Theme) ─────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0d0d0f;
+  --bg-surface: rgba(255, 255, 255, 0.03);
+  --bg-elevated: rgba(30, 30, 35, 0.95);
+  --bg-card: rgba(255, 255, 255, 0.02);
+
+  --primary: #FF2E11;
+  --primary-hover: #ff4a33;
+  --primary-light: rgba(255, 46, 17, 0.15);
+  --secondary: #A79277;
+
+  --accent: #fbbf24;
+  --accent-light: rgba(251, 191, 36, 0.15);
+
+  --danger: #ef4444;
+  --danger-light: rgba(239, 68, 68, 0.15);
+
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.15);
+
+  --info: #3b82f6;
+
+  --text: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.65);
+  --text-on-light: #ffffff;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.05);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.82);
+  --shadow-glow: 0 0 20px rgba(255, 46, 17, 0.4), 0 0 40px rgba(255, 46, 17, 0.15);
+
+  --font-sans: var(--font-inter);
 }
 
+/* ─── Tailwind Theme Integration ──────────────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-card: var(--bg-card);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-danger: var(--danger);
+  --color-danger-light: var(--danger-light);
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-info: var(--info);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-text-on-light: var(--text-on-light);
+  --color-border: var(--border);
+  --color-border-light: var(--border-light);
+  --font-sans: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── Base Styles ─────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar Styling ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ─── Focus & Interactive Styles ────────────────────────────────────── */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+  border-color: var(--primary);
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+/* ─── Selection ───────────────────────────────────────────────────── */
+::selection {
+  background: var(--primary-light);
+  color: var(--text);
+}
+
+/* ─── Utility Classes ─────────────────────────────────────────────── */
+.glass {
+  background: rgba(45, 40, 35, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-md);
+}
+
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  box-shadow: var(--shadow-glow);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--secondary), var(--primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-heavy {
+  background: rgba(45, 40, 35, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-lg);
+}
+
+.glowing-border {
+  position: relative;
+  border-radius: inherit;
+}
+.glowing-border::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+}
+.glowing-border:hover::before {
+  opacity: 0.6;
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(255, 46, 17, 0.5);
+}
+
+.active-pill {
+  position: relative;
+}
+.active-pill::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Staggered children (for lists) */
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }
+.stagger-5 { animation-delay: 250ms; }
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse-fast {
+  animation: pulse 2s infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ─── Status Badge Colors ─────────────────────────────────────────── */
+.badge-reported { background: var(--info); color: white; }
+.badge-department-assigned { background: var(--accent); color: var(--text-on-light); }
+.badge-employee-assigned { background: var(--primary); color: white; }
+.badge-in-progress { background: var(--primary); color: white; }
+.badge-submitted { background: var(--accent); color: var(--text-on-light); }
+.badge-approved { background: var(--success); color: white; }
+.badge-rejected { background: var(--danger); color: white; }
+.badge-closed { background: var(--success); color: white; }
+
+/* ─── Mobile-First Responsive ─────────────────────────────────────── */
+.page-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 1rem;
+  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); /* space for bottom nav on mobile */
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 2rem;
+    padding-bottom: 2rem;
+  }
 }

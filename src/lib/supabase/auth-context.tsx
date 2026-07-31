@@ -54,9 +54,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
       const { data, error } = await promise;
       isResolved = true;
-      if (error) console.error("fetchProfile error:", error);
-      console.log("Fetched profile data:", data);
-      setProfile(data);
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn("Profile not found. The user account might have been deleted. Signing out.");
+          await supabase.auth.signOut();
+          setUser(null);
+        } else {
+          console.error("fetchProfile error:", error);
+        }
+      } else {
+        console.log("Fetched profile data:", data);
+      }
+      setProfile(data || null);
     } catch (err) {
       isResolved = true;
       console.error("fetchProfile exception:", err);

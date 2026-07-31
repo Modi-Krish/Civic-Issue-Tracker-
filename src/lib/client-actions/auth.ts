@@ -111,10 +111,6 @@ export async function updateProfile(formData: FormData) {
 }
 
 export async function quickLogin(role: string) {
-  if (process.env.NODE_ENV !== 'development') {
-    return { error: 'Not allowed in production' };
-  }
-
   const supabase = createClient();
   const email = `${role}@test.com`;
   const password = process.env.NEXT_PUBLIC_TEST_PASSWORD || 'Password123!';

@@ -6,13 +6,15 @@
 import { createClient } from '@/lib/supabase/client';
 
 function getRedirectRoute(role: string): string {
-  if (role === 'super_admin') return '/admin';
-  if (role === 'department_admin') return '/department';
-  if (role === 'employee') return '/tasks';
-  if (role === 'government_officer') return '/government';
-  if (role === 'company_admin') return '/company-admin';
-  if (role === 'company_employee') return '/company-employee';
-  return '/dashboard';
+  switch (role) {
+    case 'citizen': return '/dashboard';
+    case 'government_officer': return '/government';
+    case 'department_admin': return '/department';
+    case 'company_admin': return '/company-admin';
+    case 'company_employee': return '/company-employee';
+    case 'super_admin': return '/admin';
+    default: return '/dashboard';
+  }
 }
 
 export async function signUp(formData: FormData) {
@@ -147,11 +149,8 @@ export async function quickLogin(role: string) {
     if (signInError) return { error: signInError.message };
   }
 
-  // HOTFIX: Force update the profiles table to the correct role for this test user.
-  const { data: userData } = await supabase.auth.getUser();
-  if (userData?.user) {
-    await supabase.from('profiles').update({ role, account_status: 'APPROVED' }).eq('id', userData.user.id);
-  }
+  // Removed HOTFIX: The seed script already ensures profiles are correct.
+  // This avoids a potential hang on the .update() call.
 
   return { success: true, redirectTo: getRedirectRoute(role) };
 }

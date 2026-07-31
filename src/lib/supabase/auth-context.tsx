@@ -79,16 +79,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Rely entirely on onAuthStateChange for initial session to prevent Web Lock race conditions
+    // Initial session check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        setLoading(true);
+        fetchProfile(currentUser.id).finally(() => setLoading(false));
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
 
-    // Listen for auth changes
-    console.log("Setting up onAuthStateChange");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("onAuthStateChange event:", event, session?.user?.id);
         const currentUser = session?.user ?? null;
         setUser(currentUser);
         if (currentUser) {
+          if (event === 'SIGNED_IN') setLoading(true);
           fetchProfile(currentUser.id)
             .catch((err) => {
               console.error("fetchProfile in onAuthStateChange failed", err);
@@ -105,11 +115,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Fallback: force loading false after 3s if it hangs
     const fallbackTimeout = setTimeout(() => {
-      console.warn("AuthContext fallback timeout triggered. Forcing loading = false.");
       setLoading(false);
-    }, 3000);
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();

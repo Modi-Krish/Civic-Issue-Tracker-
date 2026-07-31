@@ -112,7 +112,17 @@ export async function updateProfile(formData: FormData) {
 
 export async function quickLogin(role: string) {
   const supabase = createClient();
-  const email = `${role}@test.com`;
+
+  const emailMap: Record<string, string> = {
+    'citizen': 'citizencivictracker@gmail.com',
+    'government_officer': 'govofficercivictracker@gmail.com',
+    'department_admin': 'roadcivictracker@gmail.com', // Defaulting to road admin for the quick login button
+    'company_admin': 'companyadmincivictracker@gmail.com',
+    'company_employee': 'companyemployeecivictracker@gmail.com',
+    'super_admin': 'superadmincivictracker@gmail.com'
+  };
+
+  const email = emailMap[role] || `${role}@test.com`;
   const password = process.env.NEXT_PUBLIC_TEST_PASSWORD || 'Password123!';
 
   let { error } = await supabase.auth.signInWithPassword({ email, password });

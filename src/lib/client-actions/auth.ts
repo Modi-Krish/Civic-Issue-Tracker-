@@ -62,19 +62,7 @@ export async function signIn(formData: FormData) {
     return { error: error.message };
   }
 
-  let role = data.user?.user_metadata?.role;
-
-  if (data.user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
-
-    if (profile?.role) {
-      role = profile.role;
-    }
-  }
+  let role = data.user?.user_metadata?.role || 'citizen';
 
   return { success: true, redirectTo: getRedirectRoute(role) };
 }
@@ -152,5 +140,22 @@ export async function quickLogin(role: string) {
   // Removed HOTFIX: The seed script already ensures profiles are correct.
   // This avoids a potential hang on the .update() call.
 
+  return { success: true, redirectTo: getRedirectRoute(role) };
+}
+
+export async function loginWithEmail(email: string) {
+  const supabase = createClient();
+  const password = 'Password123!';
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const role = data.user?.user_metadata?.role || 'citizen';
   return { success: true, redirectTo: getRedirectRoute(role) };
 }

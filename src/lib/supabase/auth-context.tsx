@@ -2,7 +2,16 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
+interface User {
+  id: string;
+  email?: string;
+  created_at: string;
+  user_metadata?: {
+    role?: string;
+    full_name?: string;
+    department_id?: string | null;
+  };
+}
 
 interface Profile {
   id: string;
@@ -60,7 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await supabase.auth.signOut();
           setUser(null);
         } else {
-          console.error("fetchProfile error:", error);
+          console.error(`fetchProfile error: ${error.message} (Code: ${error.code}, Details: ${error.details})`);
+          // Force signout if it's an unauthorized or permission error just in case
+          if (error.code === '42501' || error.message?.includes('JWT')) {
+            await supabase.auth.signOut();
+            setUser(null);
+          }
         }
       } else {
         console.log("Fetched profile data:", data);
@@ -80,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: any) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
@@ -92,8 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    const { data: { subscription } }: any = supabase.auth.onAuthStateChange(
+      (event: any, session: any) => {
         console.log("onAuthStateChange event:", event, session?.user?.id);
         const currentUser = session?.user ?? null;
         setUser(currentUser);

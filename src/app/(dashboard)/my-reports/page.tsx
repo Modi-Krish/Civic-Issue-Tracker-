@@ -14,9 +14,14 @@ export default function MyReportsPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
 
     async function fetchReports() {
+      if (!user) {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (!session) { router.push('/login'); return; }
+        return; // wait for context to sync
+      }
+
       const supabase = createClient();
       const { data } = await supabase
         .from("issues")

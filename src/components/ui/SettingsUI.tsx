@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { updateProfile, signOut } from '@/lib/client-actions/auth';
 import { User, Shield, LogOut, Mail, Building2, Calendar, ChevronRight, Bell, HelpCircle, Star, Palette, Save, X, Edit2 } from 'lucide-react';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+type SupabaseUser = any;
 
 interface SettingsUIProps {
   user: SupabaseUser;

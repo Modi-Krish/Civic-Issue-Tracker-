@@ -46,7 +46,7 @@ export default function MapPage() {
     async function load() {
       const supabase = createClient();
       const { data } = await supabase.from('issues').select('*').order('created_at', { ascending: false });
-      const mapped = (data || []).map(i => ({
+      const mapped = (data || []).map((i: any) => ({
         ...i,
         area: i.location_label || "Local Area",
         emoji: ISSUE_EMOJI[i.issue_type] || "📋",

@@ -14,12 +14,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) {
-      router.push('/login');
-      return;
-    }
 
     async function fetchDashboard() {
+      if (!user) {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+        return; // wait for context to sync
+      }
       const supabase = createClient();
       const [
         { count: reportedCount },

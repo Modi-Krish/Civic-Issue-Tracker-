@@ -14,10 +14,15 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
-    if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
 
-    async function fetchUsers() {
+    async function loadUsers() {
+      if (!user) {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (!session) { router.push('/login'); return; }
+        return; // wait for context to sync
+      }
+      if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
+
       const supabase = createClient();
       const { data } = await supabase
         .from("profiles")
@@ -28,7 +33,7 @@ export default function AdminUsersPage() {
       setLoading(false);
     }
 
-    fetchUsers();
+    loadUsers();
   }, [user, profile, authLoading, router]);
 
   if (authLoading || loading) {

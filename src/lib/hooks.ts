@@ -17,7 +17,7 @@ export function useRealtimeIssues() {
           schema: 'public',
           table: 'issues',
         },
-        (payload) => {
+        (payload: any) => {
           console.log('Realtime update received:', payload);
           // Refresh the Next.js router cache to show new data
           router.refresh();

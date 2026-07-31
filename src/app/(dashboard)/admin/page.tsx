@@ -14,10 +14,15 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) { router.push('/login'); return; }
-    if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
 
     async function fetchData() {
+      if (!user) {
+        const { data: { session } } = await createClient().auth.getSession();
+        if (!session) { router.push('/login'); return; }
+        return; // wait for context to sync
+      }
+      if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
+
       const supabase = createClient();
       const [
         { data: departments },

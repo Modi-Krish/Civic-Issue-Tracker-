@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginWithEmail } from '@/lib/client-actions/auth';
+import { loginWithEmail, signIn } from '@/lib/client-actions/auth';
 import { 
   MapPin, 
   Shield, 
@@ -79,6 +79,12 @@ const SEED_USERS: SeededUser[] = [
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loadingEmail, setLoadingEmail] = useState<string | null>(null);
+  
+  // Manual login states
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualPassword, setManualPassword] = useState('');
+  const [loadingManual, setLoadingManual] = useState(false);
+
   const router = useRouter();
 
   async function handleQuickLogin(email: string) {
@@ -97,6 +103,33 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred during login.');
       setLoadingEmail(null);
+    }
+  }
+
+  async function handleManualLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manualEmail || !manualPassword) {
+      setError("Please enter both email and password.");
+      return;
+    }
+    
+    setLoadingManual(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('email', manualEmail.trim());
+      formData.append('password', manualPassword);
+      
+      const result = await signIn(formData);
+      if (result?.error) {
+        setError(result.error);
+        setLoadingManual(false);
+      } else if (result?.redirectTo) {
+        router.push(result.redirectTo);
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unexpected error occurred during manual login.');
+      setLoadingManual(false);
     }
   }
 
@@ -286,6 +319,93 @@ export default function LoginPage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Manual Login Divider */}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "48px 0 32px" }}>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Or login manually</span>
+          <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+        </div>
+
+        {/* Manual Login Form */}
+        <div style={{
+          maxWidth: 480,
+          margin: "0 auto",
+          background: "rgba(255,255,255,0.02)",
+          backdropFilter: "blur(20px)",
+          border: "1.5px solid rgba(255,255,255,0.06)",
+          borderRadius: 22,
+          padding: "32px",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.2)"
+        }}>
+          <form onSubmit={handleManualLogin} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>Email Address</label>
+              <input
+                type="email"
+                required
+                value={manualEmail}
+                onChange={e => setManualEmail(e.target.value)}
+                placeholder="Enter your email"
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: 14,
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "white",
+                  fontSize: 15,
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>Password</label>
+              <input
+                type="password"
+                required
+                value={manualPassword}
+                onChange={e => setManualPassword(e.target.value)}
+                placeholder="Enter your password"
+                style={{
+                  width: "100%",
+                  padding: "16px",
+                  borderRadius: 14,
+                  background: "rgba(0,0,0,0.3)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "white",
+                  fontSize: 15,
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loadingManual}
+              style={{
+                width: "100%",
+                padding: "16px",
+                borderRadius: 14,
+                background: "linear-gradient(135deg, #FF2E11, #A79277)",
+                color: "white",
+                fontSize: 16,
+                fontWeight: 800,
+                border: "none",
+                cursor: loadingManual ? "not-allowed" : "pointer",
+                opacity: loadingManual ? 0.7 : 1,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8
+              }}
+            >
+              {loadingManual ? <Loader2 size={20} style={{ animation: "spin 1s linear infinite" }} /> : "Sign In Manually"}
+            </button>
+          </form>
         </div>
 
       </div>

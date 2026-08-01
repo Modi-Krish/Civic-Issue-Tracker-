@@ -193,10 +193,62 @@ function IssueDetailContent() {
   const router = useRouter();
   const id = searchParams.get('id');
   
-  const [issue, setIssue] = useState<any>(null);
+  const [issue, setIssue] = useState<any | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
-  const [reporter, setReporter] = useState<any>(null);
+  const [reporter, setReporter] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Rating state
+  const [citizenRating, setCitizenRating] = useState<number>(5);
+  const [citizenComment, setCitizenComment] = useState<string>('');
+  const [submittingRating, setSubmittingRating] = useState<boolean>(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState<boolean>(false);
+
+  const handleSubmitRating = async () => {
+    if (!id || !issue) return;
+    setSubmittingRating(true);
+
+    try {
+      const { doc, updateDoc, serverTimestamp, addDoc, collection } = await import('firebase/firestore');
+      const { db } = await import('@/lib/firebase');
+
+      const isReworkRequired = citizenRating < 2.5;
+      const nextStatus = isReworkRequired ? 'COMPANY_ASSIGNED' : 'CLOSED';
+      const commentText = isReworkRequired 
+        ? `Citizen gave rating ${citizenRating}/5.0 (< 2.5 threshold). Sent back to Company for repair again!`
+        : `Citizen approved repair quality with rating ${citizenRating}/5.0. Issue resolved and closed.`;
+
+      // 1. Update Firestore issue
+      await updateDoc(doc(db, 'issues', id), {
+        status: nextStatus,
+        rating: citizenRating,
+        citizen_feedback: citizenComment || null,
+        updated_at: serverTimestamp()
+      });
+
+      // 2. Add log entry
+      await addDoc(collection(db, 'issue_status_logs'), {
+        issue_id: id,
+        to_status: nextStatus,
+        changed_by: issue.reporter_id || 'CITIZEN',
+        comment: commentText,
+        created_at: serverTimestamp()
+      });
+
+      setIssue((prev: any) => ({
+        ...prev,
+        status: nextStatus,
+        rating: citizenRating,
+        citizen_feedback: citizenComment
+      }));
+
+      setRatingSubmitted(true);
+    } catch (err: any) {
+      alert("Failed to submit rating: " + err.message);
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchAll() {
@@ -254,9 +306,16 @@ function IssueDetailContent() {
 
   const meta  = TYPE_META[issue.issue_type] || TYPE_META.default;
   const shortId = issue.id.slice(0,8).toUpperCase();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const beforeUrl = issue.image?.url || (issue.before_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.before_image_path}` : null);
-  const afterUrl = issue.after_image?.url || (issue.after_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.after_image_path}` : null);
+  const resolveImg = (imgObj: any, path: string | null | undefined) => {
+    if (imgObj?.url) return imgObj.url;
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) return path;
+    const sUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://oyeogxnvdckmazhwiksm.supabase.co';
+    return `${sUrl}/storage/v1/object/public/issue-images/${path}`;
+  };
+
+  const beforeUrl = resolveImg(issue.image, issue.before_image_path);
+  const afterUrl = resolveImg(issue.after_image, issue.after_image_path);
 
   return (
     <div style={{ minHeight:"100vh", background:"#0d0d0f", fontFamily:"'Inter',-apple-system,sans-serif", color:"#fff" }}>
@@ -314,6 +373,88 @@ function IssueDetailContent() {
           <PhotoCard label="Reported Photo" accent="#60a5fa" icon={<Camera />} url={beforeUrl} />
           <PhotoCard label="Updated Photo"    accent="#34d399" icon={<CheckCircle2 />} url={afterUrl} />
         </div>
+
+        {/* ── CITIZEN RATING SECTION (IF IN COMMUNITY_REVIEW OR RATED) ── */}
+        {(issue.status === 'COMMUNITY_REVIEW' || issue.rating) && (
+          <div style={{ borderRadius:20, border: issue.status === 'COMMUNITY_REVIEW' ? "1.5px solid #f59e0b" : "0.5px solid rgba(255,255,255,0.07)", background: issue.status === 'COMMUNITY_REVIEW' ? "rgba(245, 158, 11, 0.05)" : "rgba(255,255,255,0.025)", padding:18, marginBottom:12 }}>
+            <div style={{ fontSize:12, fontWeight:800, color: "#f59e0b", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10, display:"flex", alignItems:"center", gap:6 }}>
+              <Star style={{ width: 16, height: 16, fill: "#f59e0b" }} />
+              {issue.status === 'COMMUNITY_REVIEW' ? "Rate & Review Repair Quality" : "Citizen Rating & Review"}
+            </div>
+
+            {issue.status === 'COMMUNITY_REVIEW' && !ratingSubmitted ? (
+              <div>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: "0 0 12px" }}>
+                  Please rate the quality of the repair work done by the contractor.
+                  <strong style={{ color: "#ef4444", display: "block", marginTop: 4 }}>Note: Ratings below 2.5/5.0 will automatically send the work back for repair again.</strong>
+                </p>
+
+                {/* Star Selector */}
+                <div style={{ display: "flex", gap: 12, marginBottom: 16, justifyContent: "center" }}>
+                  {[1, 2, 3, 4, 5].map(num => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setCitizenRating(num)}
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 12,
+                        background: citizenRating >= num ? "#f59e0b" : "rgba(255,255,255,0.05)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: citizenRating >= num ? "black" : "rgba(255,255,255,0.4)",
+                        fontSize: 18,
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                      {num}★
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  value={citizenComment}
+                  onChange={(e) => setCitizenComment(e.target.value)}
+                  placeholder="Optional comments (e.g. Work quality feedback)..."
+                  rows={2}
+                  style={{ width: "100%", padding: 12, borderRadius: 12, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 13, outline: "none", boxSizing: "border-box", marginBottom: 12 }}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSubmitRating}
+                  disabled={submittingRating}
+                  style={{
+                    width: "100%",
+                    padding: 14,
+                    borderRadius: 12,
+                    background: citizenRating < 2.5 ? "#ef4444" : "#10b981",
+                    color: "white",
+                    fontSize: 14,
+                    fontWeight: 800,
+                    border: "none",
+                    cursor: submittingRating ? "not-allowed" : "pointer"
+                  }}>
+                  {submittingRating ? "Submitting..." : (citizenRating < 2.5 ? "Submit Rating (Send Back for Rework)" : "Approve & Mark Resolved")}
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: (issue.rating || citizenRating) < 2.5 ? "#ef4444" : "#10b981", marginBottom: 4 }}>
+                  {issue.rating || citizenRating} / 5.0 ⭐
+                </div>
+                {issue.citizen_feedback && (
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontStyle: "italic", margin: 0 }}>
+                    "{issue.citizen_feedback}"
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── DETAILS ── */}
         <div style={{ borderRadius:20, border:"0.5px solid rgba(255,255,255,0.07)", background:"rgba(255,255,255,0.025)", padding:"16px", marginBottom:12 }}>

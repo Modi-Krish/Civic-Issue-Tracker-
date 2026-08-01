@@ -28,7 +28,7 @@ export default function AdminPage() {
         // 1. Departments
         const qDept = query(collection(db, 'departments'), orderBy('name'));
         const deptSnap = await getDocs(qDept);
-        const deptList = deptSnap.docs.map(d => ({ id: d.id, name: d.data().name }));
+        const deptList = deptSnap.docs.map(d => ({ id: d.id, name: d.data().name, slug: d.data().slug, management_mode: d.data().management_mode || 'DEPARTMENT' }));
 
         // 2. All Issues
         const qIssues = query(collection(db, 'issues'));
@@ -48,7 +48,7 @@ export default function AdminPage() {
           const deptIssues = issueList.filter((i: any) => i.department_id === dept.id);
           const deptResolved = deptIssues.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
           const deptOpen = deptIssues.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
-          return { id: dept.id, name: dept.name, total: deptIssues.length, resolved: deptResolved, open: deptOpen };
+          return { id: dept.id, name: dept.name, slug: dept.slug, management_mode: dept.management_mode, total: deptIssues.length, resolved: deptResolved, open: deptOpen };
         });
 
         setData({

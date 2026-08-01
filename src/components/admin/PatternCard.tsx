@@ -1,0 +1,226 @@
+'use client';
+
+import React from 'react';
+import { AlertTriangle, Calendar, Clock, MapPin, CheckCircle2, TrendingUp, TrendingDown, Minus, ArrowRight, Droplet, Wrench, Trash2, Lightbulb, Zap } from 'lucide-react';
+
+interface PatternCardProps {
+  pattern: any;
+  onViewDetail: (pattern: any) => void;
+  onResolve: (patternId: string) => void;
+  loadingId?: string | null;
+}
+
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  'water-leakage': <Droplet size={18} color="#60a5fa" />,
+  'water leakage': <Droplet size={18} color="#60a5fa" />,
+  'water': <Droplet size={18} color="#60a5fa" />,
+  'roads': <Wrench size={18} color="#f59e0b" />,
+  'road': <Wrench size={18} color="#f59e0b" />,
+  'electricity': <Zap size={18} color="#fbbf24" />,
+  'garbage': <Trash2 size={18} color="#34d399" />,
+  'sanitation': <Trash2 size={18} color="#34d399" />,
+  'streetlights': <Lightbulb size={18} color="#FF2E11" />,
+  'default': <AlertTriangle size={18} color="#a78bfa" />
+};
+
+export default function PatternCard({ pattern, onViewDetail, onResolve, loadingId }: PatternCardProps) {
+  const catKey = (pattern.category_id || '').toLowerCase();
+  const Icon = CATEGORY_ICONS[catKey] || CATEGORY_ICONS.default;
+
+  const isCritical = pattern.severity_level === 'CRITICAL' || pattern.severity_level === 'HIGH';
+  const daysUntilNext = pattern.predicted_next_at
+    ? Math.round((new Date(pattern.predicted_next_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const isUrgentNext = daysUntilNext <= 14;
+
+  const severityColor =
+    pattern.severity_level === 'CRITICAL' ? '#ef4444' :
+    pattern.severity_level === 'HIGH' ? '#f97316' :
+    pattern.severity_level === 'MEDIUM' ? '#f59e0b' : '#9ca3af';
+
+  const severityBg =
+    pattern.severity_level === 'CRITICAL' ? 'rgba(239, 68, 68, 0.15)' :
+    pattern.severity_level === 'HIGH' ? 'rgba(249, 115, 22, 0.15)' :
+    pattern.severity_level === 'MEDIUM' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(156, 163, 175, 0.15)';
+
+  // XAI Breakdown factors
+  const breakdown = pattern.score_breakdown || {
+    occurrenceCount: Math.round(pattern.risk_score * 0.35),
+    frequency: Math.round(pattern.risk_score * 0.35),
+    trendBonus: Math.round(pattern.risk_score * 0.2),
+    categoryWeight: Math.round(pattern.risk_score * 0.1),
+    total: pattern.risk_score || 0
+  };
+
+  const totalScore = pattern.risk_score || 1;
+  const pCount = Math.max(0, Math.min(100, (breakdown.occurrenceCount / Math.max(1, totalScore)) * 100));
+  const pFreq = Math.max(0, Math.min(100, (breakdown.frequency / Math.max(1, totalScore)) * 100));
+  const pTrend = Math.max(0, Math.min(100, (breakdown.trendBonus / Math.max(1, totalScore)) * 100));
+  const pCat = Math.max(0, Math.min(100, (breakdown.categoryWeight / Math.max(1, totalScore)) * 100));
+
+  return (
+    <div style={{
+      padding: 24,
+      borderRadius: 20,
+      background: "rgba(255,255,255,0.02)",
+      border: `1.5px solid ${isCritical ? severityColor + '40' : 'rgba(255,255,255,0.07)'}`,
+      boxShadow: isCritical ? `0 8px 32px ${severityColor}10` : 'none',
+      display: "flex",
+      flexDirection: "column",
+      gap: 16
+    }}>
+      {/* Header Row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            background: `${severityColor}15`,
+            border: `1px solid ${severityColor}30`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            {Icon}
+          </div>
+
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0, textTransform: "capitalize" }}>
+                {pattern.category_id} Infrastructure Pattern
+              </h3>
+              <span style={{
+                fontSize: 10,
+                fontWeight: 800,
+                padding: "3px 10px",
+                borderRadius: 99,
+                background: severityBg,
+                color: severityColor,
+                border: `1px solid ${severityColor}35`,
+                letterSpacing: "0.05em"
+              }}>
+                {pattern.severity_level}
+              </span>
+            </div>
+
+            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
+              <MapPin size={13} color="#0ea5e9" /> {pattern.location_description || `Centroid (${pattern.cluster_lat?.toFixed(4)}, ${pattern.cluster_lng?.toFixed(4)})`}
+            </p>
+          </div>
+        </div>
+
+        {/* Risk Score Pill */}
+        <div style={{ textAlign: "right", background: "rgba(0,0,0,0.3)", padding: "10px 16px", borderRadius: 14, border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Risk Score</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: pattern.risk_score >= 70 ? "#ef4444" : pattern.risk_score >= 40 ? "#fbbf24" : "#10b981" }}>
+            {pattern.risk_score} <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>/ 100</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, background: "rgba(0,0,0,0.2)", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.04)" }}>
+        <div>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Occurrences</span>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "white", marginTop: 2 }}>{pattern.occurrence_count} Incidents</div>
+        </div>
+
+        <div>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Median Interval</span>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "white", marginTop: 2 }}>Every ~{pattern.median_interval_days} days</div>
+        </div>
+
+        <div>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Trend</span>
+          <div style={{ fontSize: 14, fontWeight: 800, color: pattern.trend === 'INCREASING' ? "#ef4444" : pattern.trend === 'DECREASING' ? "#10b981" : "#fbbf24", display: "flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+            {pattern.trend === 'INCREASING' ? <TrendingUp size={16} /> : pattern.trend === 'DECREASING' ? <TrendingDown size={16} /> : <Minus size={16} />}
+            {pattern.trend === 'INCREASING' ? '↑ Accelerating' : pattern.trend === 'DECREASING' ? '↓ Slowing' : '→ Stable'}
+          </div>
+        </div>
+
+        <div>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Confidence (Wilson)</span>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#0ea5e9", marginTop: 2 }}>{pattern.prediction_confidence}% confidence</div>
+        </div>
+      </div>
+
+      {/* XAI Risk Score Breakdown Bar */}
+      <div style={{ background: "rgba(0,0,0,0.25)", padding: 14, borderRadius: 14, border: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+          Explainable AI (XAI) Risk Breakdown
+        </div>
+
+        {/* Stacked Bar */}
+        <div style={{ height: 10, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden", display: "flex", marginBottom: 8 }}>
+          <div style={{ width: `${pCount}%`, background: "#3b82f6" }} title={`Occurrences: ${breakdown.occurrenceCount}`} />
+          <div style={{ width: `${pFreq}%`, background: "#f59e0b" }} title={`Frequency: ${breakdown.frequency}`} />
+          <div style={{ width: `${pTrend}%`, background: "#ef4444" }} title={`Trend Bonus: ${breakdown.trendBonus}`} />
+          <div style={{ width: `${pCat}%`, background: "#8b5cf6" }} title={`Category Weight: ${breakdown.categoryWeight}`} />
+        </div>
+
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>
+          Risk Score {pattern.risk_score} = Occurrences ({breakdown.occurrenceCount}) + Frequency ({breakdown.frequency}) + Trend ({breakdown.trendBonus}) + Category ({breakdown.categoryWeight})
+        </div>
+      </div>
+
+      {/* Next Prediction & Actions */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, fontSize: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, color: isUrgentNext ? "#ef4444" : "rgba(255,255,255,0.7)", fontWeight: 700 }}>
+          <Calendar size={14} color={isUrgentNext ? "#ef4444" : "#0ea5e9"} />
+          Predicted Next: <span style={{ textDecoration: isUrgentNext ? "underline" : "none" }}>
+            {daysUntilNext > 0 ? `In ${daysUntilNext} days` : 'Overdue'} ({new Date(pattern.predicted_next_at).toLocaleDateString()})
+          </span>
+        </div>
+
+        {pattern.seasonal_decomposition_applied && (
+          <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6, background: "rgba(139, 92, 246, 0.2)", color: "#a78bfa" }}>
+            Seasonal Index: {pattern.seasonal_index}
+          </span>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div style={{ display: "flex", gap: 12, paddingTop: 10, borderTop: "1px dashed rgba(255,255,255,0.08)" }}>
+        <button
+          onClick={() => onViewDetail(pattern)}
+          style={{
+            flex: 1,
+            padding: "10px 16px",
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "white",
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6
+          }}>
+          View History <ArrowRight size={14} />
+        </button>
+
+        <button
+          onClick={() => onResolve(pattern.id)}
+          disabled={loadingId === pattern.id}
+          style={{
+            padding: "10px 16px",
+            borderRadius: 12,
+            background: "rgba(16, 185, 129, 0.15)",
+            border: "1px solid rgba(16, 185, 129, 0.3)",
+            color: "#10b981",
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6
+          }}>
+          <CheckCircle2 size={14} /> Mark Resolved
+        </button>
+      </div>
+    </div>
+  );
+}

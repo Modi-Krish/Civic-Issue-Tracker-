@@ -3,8 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-import { Home, Users, Settings, Map as MapIcon, FileText } from 'lucide-react';
+import { Home, Users, Settings, Map as MapIcon, FileText, Briefcase, Award, ShieldCheck, Building } from 'lucide-react';
 
 type NavItem = {
   id: string;
@@ -22,9 +21,28 @@ const CITIZEN_NAV: NavItem[] = [
   { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
 ];
 
+const GOVERNMENT_OFFICER_NAV: NavItem[] = [
+  { id: "home", path: "/government", label: "Command", Icon: Home },
+  { id: "tenders", path: "/department/tenders", label: "Tenders", Icon: FileText },
+  { id: "evaluate", path: "/admin/tenders/evaluate", label: "Evaluate", Icon: Award },
+  { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
+];
+
 const DEPARTMENT_NAV: NavItem[] = [
   { id: "home", path: "/department", label: "Queue", Icon: Home },
+  { id: "tenders", path: "/department/tenders", label: "Tenders", Icon: FileText },
   { id: "employees", path: "/department/employees", label: "Employees", Icon: Users },
+  { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
+];
+
+const COMPANY_ADMIN_NAV: NavItem[] = [
+  { id: "home", path: "/company-admin", label: "Operations", Icon: Home },
+  { id: "tenders", path: "/company-admin", label: "Bid Tenders", Icon: Briefcase },
+  { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
+];
+
+const COMPANY_EMPLOYEE_NAV: NavItem[] = [
+  { id: "home", path: "/company-employee", label: "Field Tasks", Icon: Home },
   { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
 ];
 
@@ -35,20 +53,21 @@ const EMPLOYEE_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { id: "home", path: "/admin", label: "Overview", Icon: Home },
-  { id: "reports", path: "/admin/reports", label: "Dept. Reports", Icon: FileText },
+  { id: "reports", path: "/admin/reports", label: "Reports", Icon: FileText },
+  { id: "tenders", path: "/department/tenders", label: "Tenders", Icon: Briefcase },
   { id: "settings", path: "/settings", label: "Settings", Icon: Settings },
 ];
 
 export default function BottomNav({ role = 'citizen' }: { role?: string }) {
   const pathname = usePathname();
 
-  const NAV = role === 'super_admin'
-    ? ADMIN_NAV
-    : role === 'department_admin' 
-      ? DEPARTMENT_NAV 
-      : role === 'employee' 
-        ? EMPLOYEE_NAV 
-        : CITIZEN_NAV;
+  let NAV = CITIZEN_NAV;
+  if (role === 'super_admin') NAV = ADMIN_NAV;
+  else if (role === 'government_officer') NAV = GOVERNMENT_OFFICER_NAV;
+  else if (role === 'department_admin') NAV = DEPARTMENT_NAV;
+  else if (role === 'company_admin') NAV = COMPANY_ADMIN_NAV;
+  else if (role === 'company_employee') NAV = COMPANY_EMPLOYEE_NAV;
+  else if (role === 'employee') NAV = EMPLOYEE_NAV;
 
   const activeId = NAV.find(n => pathname === n.path || pathname?.startsWith(n.path + '/'))?.id || 'home';
 

@@ -1,5 +1,7 @@
 import { auth, db } from '@/lib/firebase';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase/client';
+import { sendSystemNotification } from '@/lib/client-actions/notifications';
 
 export async function submitIssue(formData: FormData) {
   const user = auth.currentUser;
@@ -19,20 +21,48 @@ export async function submitIssue(formData: FormData) {
     const deptQuery = query(collection(db, 'departments'), where('slug', '==', deptSlug));
     const deptSnap = await getDocs(deptQuery);
     
-    // In our empty NoSQL setup, we'll default to a placeholder department if it doesn't exist yet
-    const deptId = deptSnap.empty ? 'default_dept' : deptSnap.docs[0].id;
+    let deptId = 'default_dept';
+    let managementMode = 'DEPARTMENT';
 
-    // 2. Area Detection
-    // For Firestore without PostGIS, we'll just set it to null or a default area
-    const areaId = null;
-    let assignedCompanyId = null;
+    if (!deptSnap.empty) {
+      const deptDoc = deptSnap.docs[0];
+      deptId = deptDoc.id;
+      managementMode = deptDoc.data().management_mode || 'DEPARTMENT';
+    }
+
+    // 2. Routing Engine (Contract Aware)
+    let assignedCompanyId: string | null = null;
     let status = 'REPORTED';
+    let routingComment = 'Auto-routed to Department Officer';
 
-    // 4. Create Issue
+    if (managementMode === 'TENDER') {
+      try {
+        const res = await fetch(`/api/contracts/active?dept_slug=${deptSlug}&dept_id=${deptId}`);
+        const data = await res.json();
+
+        if (data?.contract) {
+          const activeContract = data.contract;
+          assignedCompanyId = activeContract.company_id;
+          status = 'COMPANY_ASSIGNED';
+          routingComment = `Auto-routed to Active Contractor (Contract #${activeContract.id.slice(0, 8)})`;
+        } else {
+          // No active contract yet for this tender department
+          status = 'DEPARTMENT_ASSIGNED';
+          routingComment = 'Tender Mode: Awaiting Active Contractor Award.';
+        }
+      } catch (err: unknown) {
+        console.error("Contract routing lookup error:", err);
+        status = 'DEPARTMENT_ASSIGNED';
+        routingComment = 'Tender Mode: Routing error fallback to Department.';
+      }
+    } else {
+      status = 'DEPARTMENT_ASSIGNED';
+    }
+
+    // 3. Create Issue in Firestore
     const issueRef = await addDoc(collection(db, 'issues'), {
       reporter_id: user.uid,
       department_id: deptId,
-      area_id: areaId,
       company_id: assignedCompanyId,
       issue_type: issueType,
       title,
@@ -50,13 +80,26 @@ export async function submitIssue(formData: FormData) {
       issue_id: issueRef.id,
       to_status: status,
       changed_by: user.uid,
-      comment: 'Auto-routed via NoSQL basic routing',
+      comment: routingComment,
       created_at: serverTimestamp()
     });
 
+    // Send Notification to Company Admin if routed to company
+    if (assignedCompanyId) {
+      await sendSystemNotification({
+        userId: assignedCompanyId,
+        title: 'New Issue Auto-Routed to Your Company',
+        body: `New civic issue "${title}" was automatically routed under your active contract.`,
+        type: 'issue_assigned',
+        issueId: issueRef.id
+      });
+    }
+
     return { success: true, issueId: issueRef.id };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error("Error submitting issue:", error);
-    return { error: error.message };
+    return { error: errMessage };
   }
 }
+

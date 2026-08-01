@@ -161,7 +161,16 @@ export default function DepartmentActions({ issue, employees }: Props) {
     }
   }
 
-  // Show assign UI if issue needs assignment
+  // If issue is assigned/routed to an outsourced company
+  if (issue.company_id || issue.status === 'COMPANY_ASSIGNED' || issue.status === 'COMPANY_EMPLOYEE_ASSIGNED') {
+    return (
+      <div className="flex items-center gap-2 mt-2 px-3 py-2 rounded-xl text-xs font-semibold" style={{ background: 'rgba(14, 165, 233, 0.1)', border: '1px solid rgba(14, 165, 233, 0.25)', color: '#0ea5e9' }}>
+        🏛️ Handled by Outsourced Contractor (Tender Managed)
+      </div>
+    );
+  }
+
+  // Show assign UI if issue needs assignment internally
   if (issue.status === 'REPORTED' || issue.status === 'DEPARTMENT_ASSIGNED') {
     return (
       <div className="flex items-center gap-2 mt-3">

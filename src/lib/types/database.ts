@@ -4,9 +4,14 @@ export type UserRole = 'citizen' | 'government_officer' | 'company_admin' | 'com
 export type IssueStatus =
   | 'REPORTED'
   | 'DEPARTMENT_ASSIGNED'
+  | 'COMPANY_ASSIGNED'
+  | 'COMPANY_EMPLOYEE_ASSIGNED'
   | 'EMPLOYEE_ASSIGNED'
   | 'IN_PROGRESS'
   | 'SUBMITTED_FOR_APPROVAL'
+  | 'COMMUNITY_REVIEW'
+  | 'COMMUNITY_REJECTED'
+  | 'VERIFIED'
   | 'APPROVED'
   | 'REJECTED'
   | 'CLOSED';
@@ -33,13 +38,17 @@ export interface Department {
   id: string;
   name: string;
   slug: string;
+  management_mode?: 'DEPARTMENT' | 'TENDER';
+  community_radius_meters?: number;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface Issue {
   id: string;
   reporter_id: string;
   department_id: string;
+  company_id?: string | null;
   assigned_employee_id: string | null;
   issue_type: string;
   title: string;
@@ -96,22 +105,32 @@ export interface Reward {
 
 // ─── Valid Status Transitions ────────────────────────────────────────
 export const VALID_TRANSITIONS: Record<IssueStatus, IssueStatus[]> = {
-  REPORTED: ['DEPARTMENT_ASSIGNED'],
-  DEPARTMENT_ASSIGNED: ['EMPLOYEE_ASSIGNED'],
+  REPORTED: ['DEPARTMENT_ASSIGNED', 'COMPANY_ASSIGNED'],
+  DEPARTMENT_ASSIGNED: ['EMPLOYEE_ASSIGNED', 'COMPANY_ASSIGNED'],
+  COMPANY_ASSIGNED: ['COMPANY_EMPLOYEE_ASSIGNED'],
+  COMPANY_EMPLOYEE_ASSIGNED: ['IN_PROGRESS', 'SUBMITTED_FOR_APPROVAL'],
   EMPLOYEE_ASSIGNED: ['IN_PROGRESS'],
   IN_PROGRESS: ['SUBMITTED_FOR_APPROVAL'],
-  SUBMITTED_FOR_APPROVAL: ['APPROVED', 'REJECTED'],
+  SUBMITTED_FOR_APPROVAL: ['APPROVED', 'REJECTED', 'COMMUNITY_REVIEW'],
+  COMMUNITY_REVIEW: ['VERIFIED', 'COMMUNITY_REJECTED', 'CLOSED', 'COMPANY_ASSIGNED'],
+  COMMUNITY_REJECTED: ['EMPLOYEE_ASSIGNED', 'COMPANY_ASSIGNED'],
+  VERIFIED: ['CLOSED'],
   APPROVED: ['CLOSED'],
-  REJECTED: ['EMPLOYEE_ASSIGNED'],
+  REJECTED: ['EMPLOYEE_ASSIGNED', 'COMPANY_ASSIGNED', 'COMPANY_EMPLOYEE_ASSIGNED'],
   CLOSED: [],
 };
 
 export const STATUS_LABELS: Record<IssueStatus, string> = {
   REPORTED: 'Reported',
   DEPARTMENT_ASSIGNED: 'Dept. Assigned',
+  COMPANY_ASSIGNED: 'Company Assigned',
+  COMPANY_EMPLOYEE_ASSIGNED: 'Corporate Employee Assigned',
   EMPLOYEE_ASSIGNED: 'Employee Assigned',
   IN_PROGRESS: 'In Progress',
   SUBMITTED_FOR_APPROVAL: 'Submitted for Approval',
+  COMMUNITY_REVIEW: 'Community Review',
+  COMMUNITY_REJECTED: 'Community Rejected',
+  VERIFIED: 'Verified',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   CLOSED: 'Closed',
@@ -140,3 +159,113 @@ export const ISSUE_TYPE_TO_DEPARTMENT: Record<IssueType, string> = {
   Drainage: 'drainage',
   Other: 'sanitation',
 };
+
+// ─── Enterprise Tender System Interfaces ─────────────────────────────
+
+export interface Tender {
+  id: string;
+  tender_number: string;
+  department_id: string;
+  title: string;
+  description: string;
+  scope_of_work: string;
+  tender_type: 'Open Tender' | 'Limited Tender' | 'Single Source' | 'Emergency Tender' | 'Annual Maintenance Contract' | 'Framework Agreement';
+  estimated_budget: number;
+  emd_amount: number;
+  contract_start_date: string;
+  contract_end_date: string;
+  bid_submission_deadline: string;
+  status: 'Draft' | 'Published' | 'Closed' | 'Evaluation' | 'Awarded' | 'Active' | 'Expired' | 'Cancelled';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TenderBid {
+  id: string;
+  tender_id: string;
+  company_id: string;
+  bid_amount: number;
+  estimated_completion_days: number;
+  technical_proposal_url: string;
+  financial_proposal_url: string;
+  status: 'Submitted' | 'Selected' | 'Rejected';
+  digital_signature: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Contract {
+  id: string;
+  tender_id: string;
+  company_id: string;
+  department_id: string;
+  priority: number;
+  sla_tier: 'Critical' | 'High' | 'Medium' | 'Low' | 'Standard';
+  target_response_hours: number;
+  target_resolution_hours: number;
+  start_date: string;
+  end_date: string;
+  status: 'Active' | 'Expired' | 'Terminated';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContractArea {
+  id: string;
+  contract_id: string;
+  area_type: 'Polygon' | 'Point' | 'Circle' | 'City' | 'District' | 'State' | 'Ward';
+  boundary: unknown; // GeoJSON or PostGIS format
+  created_at: string;
+}
+
+export interface CompanyRating {
+  id: string;
+  company_id: string;
+  technical_score: number;
+  financial_score: number;
+  citizen_score: number;
+  department_score: number;
+  penalty_points: number;
+  completed_issues: number;
+  rejected_issues: number;
+  average_delay_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommunityReview {
+  id: string;
+  issue_id: string;
+  citizen_id: string;
+  rating: number;
+  comment: string;
+  still_exists: boolean;
+  distance_meters: number;
+  created_at: string;
+}
+
+export interface CompanyEmployee {
+  id: string;
+  company_id: string;
+  profile_id: string;
+  assigned_area?: string | null;
+  designation?: string | null;
+  availability?: 'ACTIVE' | 'ON_LEAVE' | 'INACTIVE';
+  email?: string;
+  phone?: string;
+  full_name?: string;
+  created_at?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  action: string;
+  actor_id: string;
+  previous_state: unknown;
+  new_state: unknown;
+  created_at: string;
+}
+
+

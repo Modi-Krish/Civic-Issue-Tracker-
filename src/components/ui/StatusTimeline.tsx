@@ -18,13 +18,19 @@ const TIMELINE_STEPS: IssueStatus[] = [
 const SHORT_LABELS: Record<IssueStatus, string> = {
   REPORTED: 'Reported',
   DEPARTMENT_ASSIGNED: 'Dept.',
+  COMPANY_ASSIGNED: 'Company',
+  COMPANY_EMPLOYEE_ASSIGNED: 'Emp. Assigned',
   EMPLOYEE_ASSIGNED: 'Assigned',
   IN_PROGRESS: 'In Progress',
   SUBMITTED_FOR_APPROVAL: 'Submitted',
+  COMMUNITY_REVIEW: 'Comm. Review',
+  VERIFIED: 'Verified',
+  COMMUNITY_REJECTED: 'Comm. Rejected',
   APPROVED: 'Approved',
   REJECTED: 'Rejected',
   CLOSED: 'Closed',
 };
+
 
 export default function StatusTimeline({ currentStatus, logs = [] }: StatusTimelineProps) {
   let currentIdx = TIMELINE_STEPS.indexOf(currentStatus);

@@ -1,8 +1,6 @@
-'use client';
-
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, Shield, Save, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Save, CheckCircle, XCircle, Clock, ChevronDown } from 'lucide-react';
 import { changeUserRole, reviewUser } from "@/lib/client-actions/admin";
 
 const ROLES = [
@@ -15,16 +13,79 @@ const ROLES = [
   { id: 'super_admin', label: 'Super Admin' }
 ];
 
-export default function AdminUsersUI({ initialUsers }: { initialUsers: any[] }) {
+function CustomSelect({ value, options, onChange, disabled, placeholder }: any) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find((o: any) => o.value === value);
+
+  return (
+    <div ref={ref} style={{ position: 'relative', width: 140 }}>
+      <div 
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        style={{
+          background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+          color: value ? "white" : "rgba(255,255,255,0.5)", padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+          cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.5 : 1,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          transition: 'border-color 0.2s, background 0.2s'
+        }}
+        onMouseEnter={e => { if(!disabled) (e.currentTarget.style.background = "rgba(255,255,255,0.08)") }}
+        onMouseLeave={e => { if(!disabled) (e.currentTarget.style.background = "rgba(255,255,255,0.05)") }}
+      >
+        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown size={14} style={{ opacity: 0.5, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+          background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+          boxShadow: "0 10px 25px rgba(0,0,0,0.5)", zIndex: 10, overflow: 'hidden',
+          maxHeight: 200, overflowY: 'auto'
+        }}>
+          {options.map((o: any) => (
+            <div 
+              key={o.value}
+              onClick={() => { onChange(o.value); setIsOpen(false); }}
+              style={{
+                padding: "8px 12px", fontSize: 13, fontWeight: 600,
+                color: value === o.value ? "white" : "rgba(255,255,255,0.7)",
+                background: value === o.value ? "rgba(255,255,255,0.05)" : "transparent",
+                cursor: 'pointer', transition: 'background 0.2s'
+              }}
+              onMouseEnter={e => { if(value !== o.value) (e.currentTarget.style.background = "rgba(255,255,255,0.03)") }}
+              onMouseLeave={e => { if(value !== o.value) (e.currentTarget.style.background = "transparent") }}
+            >
+              {o.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AdminUsersUI({ initialUsers, departments = [] }: { initialUsers: any[], departments?: any[] }) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  async function handleRoleChange(userId: string, newRole: string) {
+  async function handleRoleChange(userId: string, newRole: string, newDeptId?: string) {
     setLoadingId(userId);
-    const res = await changeUserRole(userId, newRole);
+    const res = await changeUserRole(userId, newRole, newDeptId);
     if (res?.success) {
-      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole, account_status: 'APPROVED' } : u));
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole, department_id: newDeptId !== undefined ? newDeptId : u.department_id, account_status: 'APPROVED' } : u));
     } else {
       alert(res?.error || "Failed to update role");
     }
@@ -42,9 +103,14 @@ export default function AdminUsersUI({ initialUsers }: { initialUsers: any[] }) 
     setLoadingId(null);
   }
 
+  const needsDepartment = (role: string) => role === 'department_admin' || role === 'employee';
+
+  const roleOptions = ROLES.map(r => ({ value: r.id, label: r.label }));
+  const deptOptions = departments.map(d => ({ value: d.id, label: d.name }));
+
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter',-apple-system,sans-serif", color: "#ffffff" }}>
-      <div style={{ maxWidth: 800, margin: "0 auto", padding: "32px 16px 100px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 16px 100px" }}>
         
         <header style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
           <button onClick={() => router.push("/admin")} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: "white", cursor: "pointer" }}>
@@ -88,20 +154,24 @@ export default function AdminUsersUI({ initialUsers }: { initialUsers: any[] }) 
                   </>
                 ) : (
                   <>
-                    <select 
+                    <CustomSelect 
                       value={u.role}
-                      onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                      options={roleOptions}
+                      onChange={(val: string) => handleRoleChange(u.id, val, u.department_id)}
                       disabled={loadingId === u.id}
-                      style={{
-                        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                        color: "white", padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 600,
-                        cursor: "pointer", outline: "none", opacity: loadingId === u.id ? 0.5 : 1
-                      }}
-                    >
-                      {ROLES.map(r => (
-                        <option key={r.id} value={r.id} style={{ background: "#1a1a1a" }}>{r.label}</option>
-                      ))}
-                    </select>
+                      placeholder="Select Role"
+                    />
+
+                    {needsDepartment(u.role) && (
+                      <CustomSelect 
+                        value={u.department_id || ''}
+                        options={deptOptions}
+                        onChange={(val: string) => handleRoleChange(u.id, u.role, val)}
+                        disabled={loadingId === u.id}
+                        placeholder="Select Dept"
+                      />
+                    )}
+
                     {loadingId === u.id && <Save size={16} color="#10b981" />}
                   </>
                 )}

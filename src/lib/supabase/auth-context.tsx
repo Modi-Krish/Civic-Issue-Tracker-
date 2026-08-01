@@ -1,16 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+
 interface User {
   id: string;
+  uid?: string;
   email?: string;
-  created_at: string;
-  user_metadata?: {
-    role?: string;
-    full_name?: string;
-    department_id?: string | null;
-  };
+  created_at?: string;
 }
 
 interface Profile {
@@ -44,45 +43,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const supabase = React.useMemo(() => createClient(), []);
-
   async function fetchProfile(userId: string) {
-    console.log("Fetching profile for user:", userId);
-    let isResolved = false;
-    setTimeout(() => {
-      if (!isResolved) console.warn("fetchProfile is STILL hanging after 5 seconds!");
-      else console.log("Main thread is alive and fetchProfile resolved.");
-    }, 5000);
-    
     try {
-      const promise = supabase
-        .from('profiles')
-        .select('id, full_name, role, department_id, account_status')
-        .eq('id', userId)
-        .single();
-        
-      const { data, error } = await promise;
-      isResolved = true;
-      if (error) {
-        if (error.code === 'PGRST116') {
-          console.warn("Profile not found. The user account might have been deleted. Signing out.");
-          await supabase.auth.signOut();
-          setUser(null);
-        } else {
-          console.error(`fetchProfile error: ${error.message} (Code: ${error.code}, Details: ${error.details})`);
-          // Force signout if it's an unauthorized or permission error just in case
-          if (error.code === '42501' || error.message?.includes('JWT')) {
-            await supabase.auth.signOut();
-            setUser(null);
-          }
-        }
+      const profileRef = doc(db, 'profiles', userId);
+      const profileSnap = await getDoc(profileRef);
+      
+      if (!profileSnap.exists()) {
+        console.warn("Profile not found. The user account might have been deleted. Signing out.");
+        await auth.signOut();
+        setUser(null);
+        setProfile(null);
       } else {
-        console.log("Fetched profile data:", data);
+        const data = profileSnap.data();
+        setProfile({
+          id: profileSnap.id,
+          full_name: data.full_name,
+          role: data.role,
+          department_id: data.department_id,
+          account_status: data.account_status,
+        } as Profile);
       }
-      setProfile(data || null);
     } catch (err) {
-      isResolved = true;
       console.error("fetchProfile exception:", err);
+      setProfile(null);
     }
   }
 
@@ -93,51 +76,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }: any) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        const mappedUser: User = {
+          id: firebaseUser.uid,
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          created_at: firebaseUser.metadata.creationTime,
+        };
+        setUser(mappedUser);
         setLoading(true);
-        fetchProfile(currentUser.id).finally(() => setLoading(false));
+        await fetchProfile(firebaseUser.uid);
+        setLoading(false);
       } else {
+        setUser(null);
         setProfile(null);
         setLoading(false);
       }
     });
-
-    const { data: { subscription } }: any = supabase.auth.onAuthStateChange(
-      (event: any, session: any) => {
-        console.log("onAuthStateChange event:", event, session?.user?.id);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
-        if (currentUser) {
-          if (event === 'SIGNED_IN') setLoading(true);
-          fetchProfile(currentUser.id)
-            .catch((err) => {
-              console.error("fetchProfile in onAuthStateChange failed", err);
-            })
-            .finally(() => {
-              console.log("onAuthStateChange setting loading false");
-              setLoading(false);
-            });
-        } else {
-          setProfile(null);
-          console.log("onAuthStateChange setting loading false");
-          setLoading(false);
-        }
-      }
-    );
 
     const fallbackTimeout = setTimeout(() => {
       setLoading(false);
     }, 5000);
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
       clearTimeout(fallbackTimeout);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

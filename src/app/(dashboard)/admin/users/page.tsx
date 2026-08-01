@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import AdminUsersUI from '@/components/ui/AdminUsersUI';
 
@@ -10,40 +9,63 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
 
-    async function loadUsers() {
+    async function loadData() {
       if (!user) {
-        const { data: { session } } = await createClient().auth.getSession();
-        if (!session) { router.push('/login'); return; }
-        return; // wait for context to sync
+        router.push('/login');
+        return;
       }
       if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
 
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, role, account_status, created_at")
-        .order("created_at", { ascending: false });
+      try {
+        const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      setProfiles(data || []);
-      setLoading(false);
+        const qProfiles = query(collection(db, 'profiles'), orderBy('created_at', 'desc'));
+        const snapProfiles = await getDocs(qProfiles);
+        
+        const data = snapProfiles.docs.map(doc => ({
+          id: doc.id,
+          full_name: doc.data().full_name,
+          role: doc.data().role,
+          department_id: doc.data().department_id,
+          account_status: doc.data().account_status,
+          created_at: doc.data().created_at
+        }));
+
+        setProfiles(data);
+
+        // Fetch departments
+        const snapDepts = await getDocs(collection(db, 'departments'));
+        const deptsData = snapDepts.docs.map(doc => ({
+          id: doc.id,
+          name: doc.data().name,
+          slug: doc.data().slug
+        }));
+        setDepartments(deptsData);
+
+      } catch (error) {
+        console.error("Error loading admin data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    loadUsers();
+    loadData();
   }, [user, profile, authLoading, router]);
 
   if (authLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', background: '#0d0d0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#FF2E11', animation: 'spin 0.8s linear infinite' }} />
-        
       </div>
     );
   }
 
-  return <AdminUsersUI initialUsers={profiles} />;
+  return <AdminUsersUI initialUsers={profiles} departments={departments} />;
 }

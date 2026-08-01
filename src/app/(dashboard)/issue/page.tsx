@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MapPin, Clock, User, ArrowLeft, Info, CheckCircle2, Star, Camera, Check } from 'lucide-react';
@@ -116,6 +115,8 @@ import Image from 'next/image';
 
 // ── Photo UI ──────────────────────────────────────
 function PhotoCard({ label, accent, icon, url }: { label: string, accent: string, icon: React.ReactNode, url: string | null }) {
+  const [error, setError] = useState(false);
+
   return (
     <div style={{ borderRadius:16, overflow:"hidden", border:`0.5px solid ${accent}25`, background:`${accent}08` }}>
       <div style={{ padding:"10px 14px 8px", borderBottom:`0.5px solid ${accent}15`, display:"flex", alignItems:"center", gap:8 }}>
@@ -123,8 +124,16 @@ function PhotoCard({ label, accent, icon, url }: { label: string, accent: string
         <div style={{ flex:1, height:1, background:`${accent}20` }} />
       </div>
       <div style={{ minHeight:180, position: "relative" }}>
-        {url ? (
-          <Image src={url} alt={label} fill style={{ objectFit: "cover", display: "block" }} sizes="(max-width: 768px) 100vw, 33vw" />
+        {url && !error ? (
+          <Image 
+            src={url} 
+            alt={label} 
+            fill 
+            unoptimized 
+            style={{ objectFit: "cover", display: "block" }} 
+            sizes="(max-width: 768px) 100vw, 33vw" 
+            onError={() => setError(true)}
+          />
         ) : (
           <div style={{ height:180, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:10, background:`${accent}05` }}>
             <div style={{ fontSize:32, opacity:0.4 }}>{icon}</div>
@@ -191,18 +200,43 @@ function IssueDetailContent() {
 
   useEffect(() => {
     async function fetchAll() {
-      const supabase = createClient();
-      
-      const { data: issueData } = await supabase.from('issues').select('*').eq('id', id).single();
-      if (!issueData) { setLoading(false); return; }
-      
-      const { data: logsData } = await supabase.from('issue_status_logs').select('*').eq('issue_id', id).order('created_at', { ascending: true });
-      const { data: reporterData } = await supabase.from('profiles').select('full_name').eq('id', issueData.reporter_id).single();
-      
-      setIssue(issueData);
-      setLogs(logsData || []);
-      setReporter(reporterData);
-      setLoading(false);
+      try {
+        const { collection, getDocs, doc, getDoc, query, where, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+
+        // 1. Issue
+        const issueRef = doc(db, 'issues', id!);
+        const issueSnap = await getDoc(issueRef);
+        
+        if (!issueSnap.exists()) {
+          setLoading(false);
+          return;
+        }
+        const issueData = { id: issueSnap.id, ...issueSnap.data() } as any;
+        
+        // 2. Logs
+        const qLogs = query(collection(db, 'issue_status_logs'), where('issue_id', '==', id!), orderBy('created_at', 'asc'));
+        const logsSnap = await getDocs(qLogs);
+        const logsData = logsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // 3. Reporter
+        let reporterData = null;
+        if (issueData.reporter_id) {
+          const reporterRef = doc(db, 'profiles', issueData.reporter_id);
+          const reporterSnap = await getDoc(reporterRef);
+          if (reporterSnap.exists()) {
+            reporterData = reporterSnap.data();
+          }
+        }
+        
+        setIssue(issueData);
+        setLogs(logsData);
+        setReporter(reporterData);
+      } catch (error) {
+        console.error("Error fetching issue:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     if (id) fetchAll();
   }, [id]);
@@ -221,8 +255,8 @@ function IssueDetailContent() {
   const meta  = TYPE_META[issue.issue_type] || TYPE_META.default;
   const shortId = issue.id.slice(0,8).toUpperCase();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const beforeUrl = issue.before_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.before_image_path}` : null;
-  const afterUrl = issue.after_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.after_image_path}` : null;
+  const beforeUrl = issue.image?.url || (issue.before_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.before_image_path}` : null);
+  const afterUrl = issue.after_image?.url || (issue.after_image_path ? `${supabaseUrl}/storage/v1/object/public/issue-images/${issue.after_image_path}` : null);
 
   return (
     <div style={{ minHeight:"100vh", background:"#0d0d0f", fontFamily:"'Inter',-apple-system,sans-serif", color:"#fff" }}>
@@ -258,7 +292,7 @@ function IssueDetailContent() {
           <span style={{ fontSize:26 }}>{meta.emoji}</span>
           <div>
             <div style={{ fontSize:12, fontWeight:700, color:meta.accent, textTransform:"uppercase", letterSpacing:"0.07em" }}>{issue.issue_type}</div>
-            <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontWeight:500 }}>Reported {new Date(issue.created_at).toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})}</div>
+            <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontWeight:500 }}>Reported {new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US",{day:"numeric",month:"long",year:"numeric"})}</div>
           </div>
           <div style={{ flex:1 }} />
           <div style={{ fontSize:11, color:"rgba(255,255,255,0.3)", fontWeight:600, background:"rgba(255,255,255,0.04)", padding:"4px 10px", borderRadius:8, border:"0.5px solid rgba(255,255,255,0.08)" }}>
@@ -290,7 +324,7 @@ function IssueDetailContent() {
           </p>
 
           <DetailRow icon={<MapPin style={{width: 16, height: 16, color: "#FF2E11"}}/>} label="Location"     value={issue.location_label || `${issue.location_lat}, ${issue.location_lng}`} />
-          <DetailRow icon={<Clock style={{width: 16, height: 16, color: "rgba(255,255,255,0.5)"}}/>} label="Reported on"  value={new Date(issue.created_at).toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})} />
+          <DetailRow icon={<Clock style={{width: 16, height: 16, color: "rgba(255,255,255,0.5)"}}/>} label="Reported on"  value={new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US",{weekday:"long",year:"numeric",month:"long",day:"numeric"})} />
           <DetailRow icon={<User style={{width: 16, height: 16, color: "rgba(255,255,255,0.5)"}}/>} label="Reported by"  value={reporter?.full_name || 'Citizen'} />
           <div style={{ paddingTop:10, display:"flex", alignItems:"center", gap:10 }}>
             <div style={{ width:32, height:32, borderRadius:9, background:`${meta.accent}15`, border:`0.5px solid ${meta.accent}25`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0 }}>{meta.emoji}</div>

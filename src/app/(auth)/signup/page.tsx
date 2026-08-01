@@ -25,11 +25,12 @@ export default function SignUpPage() {
   useEffect(() => {
     async function fetchDepts() {
       try {
-        const { createClient } = await import('@/lib/supabase/client');
-        const supabase = createClient();
-        const { data, error } = await supabase.from('departments').select('id, name').order('name');
-        // Only replace if we actually got rows (anon RLS may block this before login)
-        if (data && data.length > 0 && !error) {
+        const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+        const q = query(collection(db, 'departments'), orderBy('name'));
+        const snap = await getDocs(q);
+        const data = snap.docs.map(d => ({ id: d.id, name: d.data().name }));
+        if (data && data.length > 0) {
           setDepartments(data);
         }
       } catch {}

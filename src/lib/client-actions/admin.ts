@@ -1,99 +1,80 @@
-/**
- * Client-side admin actions for Capacitor build.
- * NOTE: The admin client (service role key) CANNOT be used on the client side
- * as it would expose the service role key. These actions rely on RLS policies
- * being properly configured to allow super_admin/department_admin roles
- * to perform these operations via the anon key.
- * 
- * For operations that truly need the service role key (like updating auth metadata),
- * you should create a Supabase Edge Function and call it from here.
- */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
-export async function changeUserRole(targetUserId: string, newRole: string) {
-  const supabase = createClient();
-  
-  // 1. Verify Caller is Super Admin
-  const { data: { user } } = await supabase.auth.getUser();
+export async function changeUserRole(targetUserId: string, newRole: string, departmentId?: string) {
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
-  const { data: callerProfile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  try {
+    // 1. Verify Caller is Super Admin
+    const callerRef = doc(db, 'profiles', user.uid);
+    const callerSnap = await getDoc(callerRef);
     
-  if (callerProfile?.role !== 'super_admin') {
-    return { error: 'Unauthorized. Only Super Admins can assign roles.' };
+    if (!callerSnap.exists() || callerSnap.data().role !== 'super_admin') {
+      return { error: 'Unauthorized. Only Super Admins can assign roles.' };
+    }
+
+    // 2. Update the target user's role and optionally department in profiles table
+    const targetRef = doc(db, 'profiles', targetUserId);
+    const updateData: any = { role: newRole };
+    if (departmentId !== undefined) {
+      updateData.department_id = departmentId || null;
+    }
+    
+    await updateDoc(targetRef, updateData);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error updating user role:", error);
+    return { error: error.message };
   }
-
-  // 2. Update the target user's role in profiles table
-  // Note: This relies on RLS allowing super_admin to update other profiles
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ role: newRole })
-    .eq('id', targetUserId);
-
-  if (updateError) {
-    console.error("Error updating user role:", updateError);
-    return { error: updateError.message };
-  }
-
-  return { success: true };
 }
 
 export async function reviewUser(targetUserId: string, action: 'APPROVE' | 'REJECT') {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
-  const { data: callerProfile } = await supabase
-    .from('profiles')
-    .select('role, department_id')
-    .eq('id', user.id)
-    .single();
+  try {
+    const callerRef = doc(db, 'profiles', user.uid);
+    const callerSnap = await getDoc(callerRef);
+    const callerProfile = callerSnap.exists() ? callerSnap.data() : null;
 
-  // Fetch target user
-  const { data: targetProfile } = await supabase
-    .from('profiles')
-    .select('role, department_id, account_status')
-    .eq('id', targetUserId)
-    .single();
-
-  if (!targetProfile || targetProfile.account_status !== 'PENDING') {
-    return { error: 'User not found or not pending approval' };
-  }
-
-  // Permission Check
-  if (targetProfile.role === 'department_admin') {
-    if (callerProfile?.role !== 'super_admin') {
-      return { error: 'Only Super Admins can approve Department Admins' };
+    // Fetch target user
+    const targetRef = doc(db, 'profiles', targetUserId);
+    const targetSnap = await getDoc(targetRef);
+    
+    if (!targetSnap.exists() || targetSnap.data().account_status !== 'PENDING') {
+      return { error: 'User not found or not pending approval' };
     }
-  } else if (targetProfile.role === 'employee') {
-    if (callerProfile?.role !== 'department_admin' && callerProfile?.role !== 'super_admin') {
-      return { error: 'Only Department Admins or Super Admins can approve employees' };
-    }
-    if (callerProfile?.role === 'department_admin' && callerProfile.department_id !== targetProfile.department_id) {
-      return { error: 'You can only approve employees in your own department' };
-    }
-  } else {
-    return { error: 'Role does not require approval' };
-  }
 
-  // Process Action
-  if (action === 'APPROVE') {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ account_status: 'APPROVED' })
-      .eq('id', targetUserId);
-    if (error) return { error: error.message };
-  } else if (action === 'REJECT') {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ role: 'citizen', account_status: 'APPROVED' })
-      .eq('id', targetUserId);
-    if (error) return { error: error.message };
-  }
+    const targetProfile = targetSnap.data();
 
-  return { success: true };
+    // Permission Check
+    if (targetProfile.role === 'department_admin') {
+      if (callerProfile?.role !== 'super_admin') {
+        return { error: 'Only Super Admins can approve Department Admins' };
+      }
+    } else if (targetProfile.role === 'employee') {
+      if (callerProfile?.role !== 'department_admin' && callerProfile?.role !== 'super_admin') {
+        return { error: 'Only Department Admins or Super Admins can approve employees' };
+      }
+      if (callerProfile?.role === 'department_admin' && callerProfile.department_id !== targetProfile.department_id) {
+        return { error: 'You can only approve employees in your own department' };
+      }
+    } else {
+      return { error: 'Role does not require approval' };
+    }
+
+    // Process Action
+    if (action === 'APPROVE') {
+      await updateDoc(targetRef, { account_status: 'APPROVED' });
+    } else if (action === 'REJECT') {
+      await updateDoc(targetRef, { role: 'citizen', account_status: 'APPROVED' });
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error reviewing user:", error);
+    return { error: error.message };
+  }
 }

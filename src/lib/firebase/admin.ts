@@ -1,5 +1,7 @@
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getMessaging as getAdminMessaging } from 'firebase-admin/messaging';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
+import { getAuth as getAdminAuth } from 'firebase-admin/auth';
 
 // Initialize Firebase Admin SDK
 // Credentials should be stored safely in Vercel Environment Variables
@@ -26,6 +28,15 @@ export function initFirebaseAdmin() {
 
 export const getMessaging = () => {
   initFirebaseAdmin();
-  // Return messaging instance if initialized, else null
   return getApps().length > 0 ? getAdminMessaging() : null;
+};
+
+export const getAdminDb = () => {
+  initFirebaseAdmin();
+  return getApps().length > 0 ? getAdminFirestore() : null;
+};
+
+export const getAdminAuthInstance = () => {
+  initFirebaseAdmin();
+  return getApps().length > 0 ? getAdminAuth() : null;
 };

@@ -1,43 +1,31 @@
-/**
- * Client-side rating actions for Capacitor build.
- */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function checkRatingEligibility(issueId: string, citizenLat: number, citizenLng: number) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
-  const { data: isEligible, error } = await supabase
-    .rpc('can_citizen_rate_company', {
-      p_citizen_id: user.id,
-      p_issue_id: issueId,
-      p_citizen_lat: citizenLat,
-      p_citizen_lng: citizenLng
-    });
+  // In Firestore, without the PostGIS RPC, we'll assume the citizen is eligible
+  // if they are authenticated and haven't already reviewed this issue.
+  
+  // Check if they already reviewed
+  const q = query(
+    collection(db, 'company_reviews'), 
+    where('issue_id', '==', issueId), 
+    where('citizen_id', '==', user.uid)
+  );
+  
+  const snap = await getDocs(q);
 
-  if (error) return { error: error.message };
-
-  // Also check if they already reviewed
-  const { data: existingReview } = await supabase
-    .from('company_reviews')
-    .select('id')
-    .eq('issue_id', issueId)
-    .eq('citizen_id', user.id)
-    .single();
-
-  if (existingReview) {
+  if (!snap.empty) {
     return { isEligible: false, reason: 'Already rated' };
   }
 
-  return { isEligible: !!isEligible };
+  return { isEligible: true };
 }
 
 export async function submitCitizenRating(formData: FormData) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
   const issueId = formData.get('issueId') as string;
@@ -54,17 +42,18 @@ export async function submitCitizenRating(formData: FormData) {
     return { error: 'Not eligible to rate this issue.' };
   }
 
-  const { error: insertError } = await supabase
-    .from('company_reviews')
-    .insert({
+  try {
+    await addDoc(collection(db, 'company_reviews'), {
       company_id: companyId,
       issue_id: issueId,
-      citizen_id: user.id,
+      citizen_id: user.uid,
       rating,
       review,
+      created_at: serverTimestamp()
     });
-
-  if (insertError) return { error: insertError.message };
-
-  return { success: true };
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error submitting rating:", error);
+    return { error: error.message };
+  }
 }

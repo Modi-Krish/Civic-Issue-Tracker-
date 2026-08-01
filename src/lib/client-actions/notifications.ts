@@ -4,64 +4,66 @@
  * It should be triggered via a Supabase Edge Function or database trigger.
  * Only saveDeviceToken is converted here for client-side use.
  */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, setDoc, orderBy, limit, serverTimestamp } from 'firebase/firestore';
 
 /**
  * Save a device token for push notifications.
- * Called from client-side Capacitor Push Notification plugin.
  */
 export async function saveDeviceToken(token: string, platform: string = 'android') {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
-  // Use upsert to update if exists, or insert new
-  const { error } = await supabase
-    .from('device_tokens')
-    .upsert({
-      user_id: user.id,
+  try {
+    const tokenRef = doc(db, 'device_tokens', token);
+    await setDoc(tokenRef, {
+      user_id: user.uid,
       token,
       platform,
       is_active: true,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'token' });
+      updated_at: serverTimestamp()
+    }, { merge: true });
 
-  if (error) return { error: error.message };
-  return { success: true };
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error saving device token:", error);
+    return { error: error.message };
+  }
 }
 
 /**
  * Fetch notifications for the current user.
  */
 export async function fetchNotifications() {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated', notifications: [] };
 
-  const { data, error } = await supabase
-    .from('notifications')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  if (error) return { error: error.message, notifications: [] };
-  return { notifications: data || [] };
+  try {
+    const q = query(
+      collection(db, 'notifications'), 
+      where('userId', '==', user.uid),
+      orderBy('created_at', 'desc'),
+      limit(50)
+    );
+    const snapshot = await getDocs(q);
+    const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return { notifications };
+  } catch (error: any) {
+    console.error("Error fetching notifications:", error);
+    return { error: error.message, notifications: [] };
+  }
 }
 
 /**
  * Mark a notification as read.
  */
 export async function markNotificationRead(notificationId: string) {
-  const supabase = createClient();
-
-  const { error } = await supabase
-    .from('notifications')
-    .update({ is_read: true })
-    .eq('id', notificationId);
-
-  if (error) return { error: error.message };
-  return { success: true };
+  try {
+    const notifRef = doc(db, 'notifications', notificationId);
+    await updateDoc(notifRef, { is_read: true });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error marking notification read:", error);
+    return { error: error.message };
+  }
 }

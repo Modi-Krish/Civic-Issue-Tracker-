@@ -1,6 +1,5 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { CheckCheck } from 'lucide-react';
 
@@ -8,11 +7,8 @@ export default function MarkReadButton({ notificationId }: { notificationId: str
   const router = useRouter();
 
   async function markRead() {
-    const supabase = createClient();
-    await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', notificationId);
+    const { markNotificationRead } = await import('@/lib/client-actions/notifications');
+    await markNotificationRead(notificationId);
     router.refresh();
   }
 

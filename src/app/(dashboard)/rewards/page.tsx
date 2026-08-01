@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import { Trophy, Star, TrendingUp, Gift, Zap, ChevronRight, Award } from 'lucide-react';
 import type { Reward } from '@/lib/types/database';
@@ -16,12 +15,26 @@ export default function RewardsPage() {
     if (!user) { setLoading(false); return; }
 
     async function fetchRewards() {
-      const supabase = createClient();
-      const { data: rewards } = await supabase
-        .from('rewards').select('*').eq('user_id', user!.id)
-        .order('created_at', { ascending: false });
-      setAllRewards((rewards || []) as Reward[]);
-      setLoading(false);
+      try {
+        const { collection, query, where, getDocs, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+
+        const q = query(
+          collection(db, 'rewards'), 
+          where('user_id', '==', user!.uid)
+        );
+
+        const snapshot = await getDocs(q);
+        const rewards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        rewards.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        setAllRewards(rewards as any[]);
+      } catch (error) {
+        console.error("Error fetching rewards:", error);
+        setAllRewards([]);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchRewards();
   }, [user, authLoading]);

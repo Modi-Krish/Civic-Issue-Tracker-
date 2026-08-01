@@ -4,6 +4,8 @@
 ![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?style=for-the-badge&logo=supabase)
 ![Capacitor](https://img.shields.io/badge/Capacitor-Android-119EFF?style=for-the-badge&logo=capacitor)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-38B2AC?style=for-the-badge&logo=tailwind-css)
+![CodeQL](https://img.shields.io/badge/Security-CodeQL-blue?style=for-the-badge&logo=github)
+![Gitleaks](https://img.shields.io/badge/Secret_Scanning-Gitleaks-orange?style=for-the-badge&logo=github)
 
 A cross-platform web and mobile application for citizens and municipal governments to report, track, and resolve civic issues (potholes, streetlights, garbage, etc.) in real time. 
 
@@ -39,14 +41,13 @@ npm install
 
 ### 3. Environment Setup
 
-Create a `.env.local` file in the root of the project with your Supabase credentials:
+Copy the example environment file to create your local `.env.local` file:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-# Required only for administrative scripts:
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+```bash
+cp .env.example .env.local
 ```
+
+Then, populate `.env.local` with your actual credentials. **Never commit your `.env.local` file or expose your keys.**
 
 ### 4. Run the Development Server (Web)
 
@@ -72,6 +73,10 @@ This project uses Capacitor to compile the Next.js web app into a native Android
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to get started, our code of conduct, and our pull request process.
+
+## 🛡️ Security
+
+We take security seriously. Please review our [Security Policy](SECURITY.md) for details on how to responsibly report vulnerabilities.
 
 ## 📄 License
 

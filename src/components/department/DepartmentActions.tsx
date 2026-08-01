@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import type { Issue, Profile } from '@/lib/types/database';
 import { UserPlus, CheckCircle, XCircle } from 'lucide-react';
 
@@ -19,111 +18,147 @@ export default function DepartmentActions({ issue, employees }: Props) {
   async function handleAssign() {
     if (!selectedEmployee) return;
     setLoading(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    
+    try {
+      const { auth, db } = await import('@/lib/firebase');
+      const { doc, updateDoc, collection, addDoc } = await import('firebase/firestore');
+      
+      const user = auth.currentUser;
+      if (!user) return;
 
-    // Update issue
-    await supabase
-      .from('issues')
-      .update({
+      const issueRef = doc(db, 'issues', issue.id);
+      
+      // Update issue
+      await updateDoc(issueRef, {
         assigned_employee_id: selectedEmployee,
         status: 'EMPLOYEE_ASSIGNED',
-      })
-      .eq('id', issue.id);
+      });
 
-    // Log status change
-    await supabase.from('issue_status_logs').insert({
-      issue_id: issue.id,
-      from_status: issue.status,
-      to_status: 'EMPLOYEE_ASSIGNED',
-      changed_by: user.id,
-      comment: 'Employee assigned by department admin',
-    });
+      // Log status change
+      await addDoc(collection(db, 'issue_status_logs'), {
+        issue_id: issue.id,
+        from_status: issue.status,
+        to_status: 'EMPLOYEE_ASSIGNED',
+        changed_by: user.uid,
+        comment: 'Employee assigned by department admin',
+        created_at: new Date().toISOString()
+      });
 
-    // Create assignment record
-    await supabase.from('issue_assignments').insert({
-      issue_id: issue.id,
-      assigned_employee_id: selectedEmployee,
-      assigned_by: user.id,
-    });
+      // Create assignment record
+      await addDoc(collection(db, 'issue_assignments'), {
+        issue_id: issue.id,
+        assigned_employee_id: selectedEmployee,
+        assigned_by: user.uid,
+        created_at: new Date().toISOString()
+      });
 
-    // Notify employee
-    await supabase.from('notifications').insert({
-      user_id: selectedEmployee,
-      issue_id: issue.id,
-      type: 'issue_assigned',
-      title: 'New Task Assigned',
-      body: `You have been assigned to: ${issue.title}`,
-    });
+      // Notify employee
+      await addDoc(collection(db, 'notifications'), {
+        user_id: selectedEmployee,
+        issue_id: issue.id,
+        type: 'issue_assigned',
+        title: 'New Task Assigned',
+        body: `You have been assigned to: ${issue.title}`,
+        is_read: false,
+        created_at: new Date().toISOString()
+      });
 
-    setLoading(false);
-    router.refresh();
+      router.refresh();
+    } catch (error) {
+      console.error("Error assigning employee:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleReview(decision: 'APPROVED' | 'REJECTED') {
     setLoading(true);
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    
+    try {
+      const { auth, db } = await import('@/lib/firebase');
+      const { doc, updateDoc, collection, addDoc, writeBatch } = await import('firebase/firestore');
+      
+      const user = auth.currentUser;
+      if (!user) return;
 
-    if (decision === 'APPROVED') {
-      // Approve → Close
-      await supabase
-        .from('issues')
-        .update({ status: 'CLOSED', closed_at: new Date().toISOString(), is_genuine: true })
-        .eq('id', issue.id);
+      const issueRef = doc(db, 'issues', issue.id);
+      
+      if (decision === 'APPROVED') {
+        const batch = writeBatch(db);
+        
+        batch.update(issueRef, { status: 'CLOSED', closed_at: new Date().toISOString(), is_genuine: true });
 
-      await supabase.from('issue_status_logs').insert([
-        { issue_id: issue.id, from_status: 'SUBMITTED_FOR_APPROVAL', to_status: 'APPROVED', changed_by: user.id, comment: 'Repair approved' },
-        { issue_id: issue.id, from_status: 'APPROVED', to_status: 'CLOSED', changed_by: user.id, comment: 'Issue closed' },
-      ]);
-
-      // Credit reward to citizen
-      await supabase.from('rewards').insert({
-        user_id: issue.reporter_id,
-        issue_id: issue.id,
-        points: 10,
-        reason: 'Issue resolved successfully',
-      });
-
-      // Notify citizen
-      await supabase.from('notifications').insert({
-        user_id: issue.reporter_id,
-        issue_id: issue.id,
-        type: 'repair_approved',
-        title: 'Issue Resolved! 🎉',
-        body: `Your issue "${issue.title}" has been resolved. You earned 10 reward points!`,
-      });
-    } else {
-      // Reject
-      await supabase
-        .from('issues')
-        .update({ status: 'REJECTED' })
-        .eq('id', issue.id);
-
-      await supabase.from('issue_status_logs').insert({
-        issue_id: issue.id,
-        from_status: 'SUBMITTED_FOR_APPROVAL',
-        to_status: 'REJECTED',
-        changed_by: user.id,
-        comment: 'Repair rejected — rework required',
-      });
-
-      // Notify employee
-      if (issue.assigned_employee_id) {
-        await supabase.from('notifications').insert({
-          user_id: issue.assigned_employee_id,
-          issue_id: issue.id,
-          type: 'repair_rejected',
-          title: 'Repair Rejected',
-          body: `Your repair for "${issue.title}" was rejected. Please rework and resubmit.`,
+        const logRef1 = doc(collection(db, 'issue_status_logs'));
+        batch.set(logRef1, {
+          issue_id: issue.id, from_status: 'SUBMITTED_FOR_APPROVAL', to_status: 'APPROVED', changed_by: user.uid, comment: 'Repair approved', created_at: new Date().toISOString()
         });
-      }
-    }
 
-    setLoading(false);
-    router.refresh();
+        const logRef2 = doc(collection(db, 'issue_status_logs'));
+        batch.set(logRef2, {
+          issue_id: issue.id, from_status: 'APPROVED', to_status: 'CLOSED', changed_by: user.uid, comment: 'Issue closed', created_at: new Date(Date.now() + 1000).toISOString()
+        });
+        
+        if (issue.reporter_id) {
+          const rewardRef = doc(collection(db, 'rewards'));
+          batch.set(rewardRef, {
+            user_id: issue.reporter_id,
+            issue_id: issue.id,
+            points: 10,
+            reason: 'Issue resolved successfully',
+            created_at: new Date().toISOString()
+          });
+          
+          const notifRef = doc(collection(db, 'notifications'));
+          batch.set(notifRef, {
+            user_id: issue.reporter_id,
+            issue_id: issue.id,
+            type: 'repair_approved',
+            title: 'Issue Resolved! 🎉',
+            body: `Your issue "${issue.title}" has been resolved. You earned 10 reward points!`,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+        }
+
+        await batch.commit();
+
+      } else {
+        const batch = writeBatch(db);
+        
+        batch.update(issueRef, { status: 'REJECTED' });
+
+        const logRef = doc(collection(db, 'issue_status_logs'));
+        batch.set(logRef, {
+          issue_id: issue.id,
+          from_status: 'SUBMITTED_FOR_APPROVAL',
+          to_status: 'REJECTED',
+          changed_by: user.uid,
+          comment: 'Repair rejected — rework required',
+          created_at: new Date().toISOString()
+        });
+        
+        if (issue.assigned_employee_id) {
+          const notifRef = doc(collection(db, 'notifications'));
+          batch.set(notifRef, {
+            user_id: issue.assigned_employee_id,
+            issue_id: issue.id,
+            type: 'repair_rejected',
+            title: 'Repair Rejected',
+            body: `Your repair for "${issue.title}" was rejected. Please rework and resubmit.`,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+        }
+        
+        await batch.commit();
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error("Error reviewing repair:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Show assign UI if issue needs assignment

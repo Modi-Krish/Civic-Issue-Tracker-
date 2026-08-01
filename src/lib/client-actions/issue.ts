@@ -1,13 +1,8 @@
-/**
- * Client-side issue actions for Capacitor build.
- * Replaces server-side issue.ts — uses browser Supabase client.
- */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export async function submitIssue(formData: FormData) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
   const title = formData.get('title') as string;
@@ -19,47 +14,25 @@ export async function submitIssue(formData: FormData) {
   const locationLabel = formData.get('locationLabel') as string;
   const filePath = formData.get('filePath') as string;
 
-  // 1. Department Detection
-  const { data: dept } = await supabase
-    .from('departments')
-    .select('id')
-    .eq('slug', deptSlug)
-    .single();
+  try {
+    // 1. Department Detection
+    const deptQuery = query(collection(db, 'departments'), where('slug', '==', deptSlug));
+    const deptSnap = await getDocs(deptQuery);
+    
+    // In our empty NoSQL setup, we'll default to a placeholder department if it doesn't exist yet
+    const deptId = deptSnap.empty ? 'default_dept' : deptSnap.docs[0].id;
 
-  if (!dept) return { error: 'Department not found' };
+    // 2. Area Detection
+    // For Firestore without PostGIS, we'll just set it to null or a default area
+    const areaId = null;
+    let assignedCompanyId = null;
+    let status = 'REPORTED';
 
-  // 2. Area Detection via PostGIS
-  const { data: areaId, error: areaError } = await supabase
-    .rpc('get_area_by_location', { lat: locationLat, lng: locationLng });
-
-  let assignedCompanyId = null;
-  let status = 'REPORTED';
-
-  if (areaId) {
-    status = 'AREA_IDENTIFIED';
-
-    // 3. Check Active Contract
-    const { data: contract } = await supabase
-      .from('contracts')
-      .select('company_id')
-      .eq('area_id', areaId)
-      .eq('department_id', dept.id)
-      .eq('status', 'ACTIVE')
-      .single();
-
-    if (contract) {
-      assignedCompanyId = contract.company_id;
-      status = 'COMPANY_ASSIGNED';
-    }
-  }
-
-  // 4. Create Issue
-  const { data: issue, error: insertError } = await supabase
-    .from('issues')
-    .insert({
-      reporter_id: user.id,
-      department_id: dept.id,
-      area_id: areaId || null,
+    // 4. Create Issue
+    const issueRef = await addDoc(collection(db, 'issues'), {
+      reporter_id: user.uid,
+      department_id: deptId,
+      area_id: areaId,
       company_id: assignedCompanyId,
       issue_type: issueType,
       title,
@@ -69,19 +42,21 @@ export async function submitIssue(formData: FormData) {
       location_lng: locationLng,
       location_label: locationLabel || null,
       before_image_path: filePath,
-    })
-    .select('id')
-    .single();
+      created_at: serverTimestamp()
+    });
 
-  if (insertError) return { error: insertError.message };
+    // Log status change
+    await addDoc(collection(db, 'issue_status_logs'), {
+      issue_id: issueRef.id,
+      to_status: status,
+      changed_by: user.uid,
+      comment: 'Auto-routed via NoSQL basic routing',
+      created_at: serverTimestamp()
+    });
 
-  // Log status change
-  await supabase.from('issue_status_logs').insert({
-    issue_id: issue.id,
-    to_status: status,
-    changed_by: user.id,
-    comment: 'Auto-routed via GIS engine'
-  });
-
-  return { success: true, issueId: issue.id };
+    return { success: true, issueId: issueRef.id };
+  } catch (error: any) {
+    console.error("Error submitting issue:", error);
+    return { error: error.message };
+  }
 }

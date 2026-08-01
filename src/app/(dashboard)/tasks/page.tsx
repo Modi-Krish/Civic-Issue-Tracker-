@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import Link from 'next/link';
 import { Briefcase, MapPin, CheckCircle, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
@@ -28,17 +27,37 @@ export default function TasksPage() {
     if (authLoading) return;
     if (!user) { setLoading(false); return; }
 
-    async function fetchTasks() {
-      const supabase = createClient();
-      const { data: issues } = await supabase
-        .from('issues').select('*')
-        .eq('assigned_employee_id', user!.id)
-        .order('created_at', { ascending: false });
+    let unsubscribe: (() => void) | null = null;
 
-      setAllTasks((issues || []) as Issue[]);
-      setLoading(false);
+    async function setupRealtime() {
+      try {
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+        
+        const q = query(
+          collection(db, 'issues'),
+          where('assigned_employee_id', '==', user!.id),
+          orderBy('created_at', 'desc')
+        );
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setAllTasks(issues as unknown as Issue[]);
+          setLoading(false);
+        }, (err) => {
+          console.error("Error listening to tasks:", err);
+          setLoading(false);
+        });
+      } catch (error) {
+        console.error("Error setting up tasks listener:", error);
+        setLoading(false);
+      }
     }
-    fetchTasks();
+    
+    setupRealtime();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [user, authLoading]);
 
   if (authLoading || loading) {

@@ -1,13 +1,9 @@
-/**
- * Client-side tender actions for Capacitor build.
- */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 
 // Publish a new tender (Government Officer)
 export async function publishTender(formData: FormData) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
   const departmentId = formData.get('departmentId') as string;
@@ -18,27 +14,29 @@ export async function publishTender(formData: FormData) {
   const startDate = formData.get('startDate') as string;
   const endDate = formData.get('endDate') as string;
 
-  const { data, error } = await supabase.from('tenders').insert({
-    department_id: departmentId,
-    area_id: areaId,
-    title,
-    description,
-    estimated_budget: estimatedBudget,
-    start_date: startDate,
-    end_date: endDate,
-    status: 'OPEN',
-  }).select('id').single();
+  try {
+    const tenderRef = await addDoc(collection(db, 'tenders'), {
+      department_id: departmentId,
+      area_id: areaId,
+      title,
+      description,
+      estimated_budget: estimatedBudget,
+      start_date: startDate,
+      end_date: endDate,
+      status: 'OPEN',
+      created_at: serverTimestamp()
+    });
 
-  if (error) return { error: error.message };
-
-  return { success: true, tenderId: data.id };
+    return { success: true, tenderId: tenderRef.id };
+  } catch (error: any) {
+    console.error("Error publishing tender:", error);
+    return { error: error.message };
+  }
 }
 
 // Submit a bid (Company Admin)
 export async function submitBid(formData: FormData) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
   const tenderId = formData.get('tenderId') as string;
@@ -46,121 +44,135 @@ export async function submitBid(formData: FormData) {
   const completionDays = parseInt(formData.get('completionDays') as string);
   const proposalDocument = formData.get('proposalDocument') as string;
 
-  // Get the company id for this user
-  const { data: companyEmployee } = await supabase
-    .from('company_employees')
-    .select('company_id')
-    .eq('profile_id', user.id)
-    .single();
+  try {
+    // Get the company id for this user
+    const q = query(collection(db, 'company_employees'), where('profile_id', '==', user.uid));
+    const empSnap = await getDocs(q);
 
-  if (!companyEmployee) return { error: 'You do not belong to a company.' };
+    if (empSnap.empty) return { error: 'You do not belong to a company.' };
+    const companyEmployee = empSnap.docs[0].data();
 
-  const { error } = await supabase.from('tender_bids').insert({
-    tender_id: tenderId,
-    company_id: companyEmployee.company_id,
-    quoted_price: quotedPrice,
-    completion_days: completionDays,
-    proposal_document: proposalDocument,
-    status: 'PENDING',
-  });
+    await addDoc(collection(db, 'tender_bids'), {
+      tender_id: tenderId,
+      company_id: companyEmployee.company_id,
+      quoted_price: quotedPrice,
+      completion_days: completionDays,
+      proposal_document: proposalDocument,
+      status: 'PENDING',
+      created_at: serverTimestamp()
+    });
 
-  if (error) return { error: error.message };
-
-  return { success: true };
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error submitting bid:", error);
+    return { error: error.message };
+  }
 }
 
 // Evaluate bids for a tender using weighted formula
 export async function evaluateTenderBids(tenderId: string) {
-  const supabase = createClient();
+  try {
+    const bidsQuery = query(collection(db, 'tender_bids'), where('tender_id', '==', tenderId), where('status', '==', 'PENDING'));
+    const bidsSnap = await getDocs(bidsQuery);
 
-  const { data: bids, error } = await supabase
-    .from('tender_bids')
-    .select(`
-      id, company_id, quoted_price, completion_days,
-      companies (
-        id, company_name, rating, completed_projects
-      )
-    `)
-    .eq('tender_id', tenderId)
-    .eq('status', 'PENDING');
+    if (bidsSnap.empty) return { success: true, evaluated: false };
 
-  if (error || !bids) return { error: error?.message || 'Bids not found' };
+    const bids = bidsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  if (bids.length === 0) return { success: true, evaluated: false };
+    const tenderRef = doc(db, 'tenders', tenderId);
+    const tenderSnap = await getDoc(tenderRef);
+    const estimatedBudget = tenderSnap.exists() ? tenderSnap.data().estimated_budget : 0;
 
-  const { data: tender } = await supabase
-    .from('tenders')
-    .select('estimated_budget')
-    .eq('id', tenderId)
-    .single();
+    for (const bid of bids) {
+      const compRef = doc(db, 'companies', (bid as any).company_id as string);
+      const compSnap = await getDoc(compRef);
+      const comp = compSnap.exists() ? compSnap.data() : { rating: 0, completed_projects: 0 };
+      (bid as any).companies = { ...comp, id: (bid as any).company_id };
 
-  const estimatedBudget = tender?.estimated_budget || 0;
+      const ratingScore = ((comp.rating || 0) / 5) * 100;
+      const govRatingScore = ratingScore * 0.9;
+      const slaScore = 90;
+      const pastContractsScore = Math.min(((comp.completed_projects || 0) * 10), 100);
 
-  for (const bid of bids) {
-    const comp: any = bid.companies;
+      let priceScore = 50;
+      if (estimatedBudget > 0) {
+        const ratio = ((bid as any).quoted_price as number) / estimatedBudget;
+        if (ratio <= 1.0 && ratio > 0.5) priceScore = 100 - ((1 - ratio) * 50);
+        else if (ratio > 1.0) priceScore = Math.max(0, 100 - ((ratio - 1) * 100));
+        else priceScore = 40;
+      }
 
-    const ratingScore = (comp.rating / 5) * 100;
-    const govRatingScore = ratingScore * 0.9;
-    const slaScore = 90;
-    const pastContractsScore = Math.min((comp.completed_projects * 10), 100);
+      const finalScore =
+        (ratingScore * 0.35) +
+        (govRatingScore * 0.25) +
+        (slaScore * 0.20) +
+        (pastContractsScore * 0.10) +
+        (priceScore * 0.10);
 
-    let priceScore = 50;
-    if (estimatedBudget > 0) {
-      const ratio = bid.quoted_price / estimatedBudget;
-      if (ratio <= 1.0 && ratio > 0.5) priceScore = 100 - ((1 - ratio) * 50);
-      else if (ratio > 1.0) priceScore = Math.max(0, 100 - ((ratio - 1) * 100));
-      else priceScore = 40;
+      (bid as any).ai_score = finalScore.toFixed(2);
     }
 
-    const finalScore =
-      (ratingScore * 0.35) +
-      (govRatingScore * 0.25) +
-      (slaScore * 0.20) +
-      (pastContractsScore * 0.10) +
-      (priceScore * 0.10);
+    const rankedBids = bids.sort((a: any, b: any) => parseFloat(b.ai_score) - parseFloat(a.ai_score));
 
-    (bid as any).ai_score = finalScore.toFixed(2);
+    return { success: true, rankedBids };
+  } catch (error: any) {
+    console.error("Error evaluating bids:", error);
+    return { error: error.message };
   }
-
-  const rankedBids = bids.sort((a: any, b: any) => parseFloat(b.ai_score) - parseFloat(a.ai_score));
-
-  return { success: true, rankedBids };
 }
 
 // Award Contract (Government Officer)
 export async function awardContract(tenderId: string, bidId: string, companyId: string, contractAmount: number) {
-  const supabase = createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };
 
-  const { data: tender } = await supabase.from('tenders').select('department_id, area_id').eq('id', tenderId).single();
-  if (!tender) return { error: 'Tender not found' };
+  try {
+    const tenderRef = doc(db, 'tenders', tenderId);
+    const tenderSnap = await getDoc(tenderRef);
+    if (!tenderSnap.exists()) return { error: 'Tender not found' };
+    const tender = tenderSnap.data();
 
-  // Update Tender status
-  await supabase.from('tenders').update({ status: 'AWARDED' }).eq('id', tenderId);
+    const batch = writeBatch(db);
 
-  // Update Bid statuses
-  await supabase.from('tender_bids').update({ status: 'SELECTED' }).eq('id', bidId);
-  await supabase.from('tender_bids').update({ status: 'REJECTED' }).eq('tender_id', tenderId).neq('id', bidId);
+    // Update Tender status
+    batch.update(tenderRef, { status: 'AWARDED' });
 
-  // Create Contract
-  const startDate = new Date().toISOString();
-  const endDate = new Date();
-  endDate.setFullYear(endDate.getFullYear() + 1);
+    // Update Bid statuses
+    const bidsQuery = query(collection(db, 'tender_bids'), where('tender_id', '==', tenderId));
+    const bidsSnap = await getDocs(bidsQuery);
+    
+    bidsSnap.forEach(b => {
+      const bRef = doc(db, 'tender_bids', b.id);
+      if (b.id === bidId) {
+        batch.update(bRef, { status: 'SELECTED' });
+      } else {
+        batch.update(bRef, { status: 'REJECTED' });
+      }
+    });
 
-  const { error: contractError } = await supabase.from('contracts').insert({
-    company_id: companyId,
-    department_id: tender.department_id,
-    area_id: tender.area_id,
-    tender_id: tenderId,
-    contract_amount: contractAmount,
-    contract_start: startDate,
-    contract_end: endDate.toISOString(),
-    status: 'ACTIVE'
-  });
+    // Create Contract
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setFullYear(endDate.getFullYear() + 1);
 
-  if (contractError) return { error: contractError.message };
+    const contractRef = doc(collection(db, 'contracts'));
+    batch.set(contractRef, {
+      company_id: companyId,
+      department_id: tender.department_id,
+      area_id: tender.area_id,
+      tender_id: tenderId,
+      contract_amount: contractAmount,
+      contract_start: startDate.toISOString(),
+      contract_end: endDate.toISOString(),
+      status: 'ACTIVE',
+      created_at: serverTimestamp()
+    });
 
-  return { success: true };
+    await batch.commit();
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error awarding contract:", error);
+    return { error: error.message };
+  }
 }

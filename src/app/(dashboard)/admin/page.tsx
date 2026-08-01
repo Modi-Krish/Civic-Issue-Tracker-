@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import AdminDashboardUI from '@/components/ui/AdminDashboardUI';
 
@@ -17,42 +16,51 @@ export default function AdminPage() {
 
     async function fetchData() {
       if (!user) {
-        const { data: { session } } = await createClient().auth.getSession();
-        if (!session) { router.push('/login'); return; }
-        return; // wait for context to sync
+        router.push('/login');
+        return;
       }
       if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
 
-      const supabase = createClient();
-      const [
-        { data: departments },
-        { data: allIssues },
-        { data: recentIssues }
-      ] = await Promise.all([
-        supabase.from("departments").select("id, name").order("name"),
-        supabase.from("issues").select("id, status, department_id"),
-        supabase.from("issues").select("*").order("created_at", { ascending: false }).limit(5),
-      ]);
+      try {
+        const { collection, getDocs, query, orderBy, limit } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      const deptList = departments || [];
-      const issueList = allIssues || [];
-      const total = issueList.length;
-      const resolved = issueList.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
-      const open = issueList.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
+        // 1. Departments
+        const qDept = query(collection(db, 'departments'), orderBy('name'));
+        const deptSnap = await getDocs(qDept);
+        const deptList = deptSnap.docs.map(d => ({ id: d.id, name: d.data().name }));
 
-      const deptStats = deptList.map((dept: any) => {
-        const deptIssues = issueList.filter((i: any) => i.department_id === dept.id);
-        const deptResolved = deptIssues.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
-        const deptOpen = deptIssues.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
-        return { id: dept.id, name: dept.name, total: deptIssues.length, resolved: deptResolved, open: deptOpen };
-      });
+        // 2. All Issues
+        const qIssues = query(collection(db, 'issues'));
+        const issuesSnap = await getDocs(qIssues);
+        const issueList = issuesSnap.docs.map(d => ({ id: d.id, status: d.data().status, department_id: d.data().department_id }));
 
-      setData({
-        stats: { total, resolved, open, departments: deptList.length },
-        deptStats,
-        recent: recentIssues || [],
-      });
-      setLoading(false);
+        // 3. Recent Issues
+        const qRecent = query(collection(db, 'issues'), orderBy('created_at', 'desc'), limit(5));
+        const recentSnap = await getDocs(qRecent);
+        const recentIssues = recentSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        const total = issueList.length;
+        const resolved = issueList.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
+        const open = issueList.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
+
+        const deptStats = deptList.map((dept: any) => {
+          const deptIssues = issueList.filter((i: any) => i.department_id === dept.id);
+          const deptResolved = deptIssues.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
+          const deptOpen = deptIssues.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
+          return { id: dept.id, name: dept.name, total: deptIssues.length, resolved: deptResolved, open: deptOpen };
+        });
+
+        setData({
+          stats: { total, resolved, open, departments: deptList.length },
+          deptStats,
+          recent: recentIssues,
+        });
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();

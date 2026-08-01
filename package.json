@@ -22,13 +22,19 @@
     "@capacitor/push-notifications": "^8.1.2",
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
+    "@supabase/supabase-js": "^2.111.0",
+    "@types/uuid": "^10.0.0",
+    "browser-image-compression": "^2.0.2",
+    "firebase": "^12.17.0",
     "firebase-admin": "^14.2.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
     "next": "16.2.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "sharp": "^0.35.3",
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.4.2",

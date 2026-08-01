@@ -4,13 +4,15 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/client';
 import { submitIssue } from '@/lib/client-actions/issue';
 import { ISSUE_TYPES, ISSUE_TYPE_TO_DEPARTMENT, type IssueType } from '@/lib/types/database';
 import { Camera, MapPin, ArrowLeft, X, Send, Navigation, Info, Star, CheckCircle2 } from 'lucide-react';
 import { takePhoto as nativeTakePhoto } from '@/lib/capacitor/camera';
 import { getCurrentPosition } from '@/lib/capacitor/geolocation';
 import { isNativePlatform } from '@/lib/capacitor/platform';
+import { useImageUpload } from '@/hooks/useImageUpload';
+import { db, auth } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 type Step = 'photo' | 'details';
 
@@ -74,6 +76,8 @@ export default function ReportPage() {
     }
   }
 
+  const { uploadImage, rollbackUpload } = useImageUpload({ cityId: 'vadodara', type: 'before' });
+
   async function handleSubmit() {
     if (!imageFile || !issueType || !title || !description) {
       setError('Please fill all required fields');
@@ -82,34 +86,46 @@ export default function ReportPage() {
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const fileExt = imageFile.name.split('.').pop();
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage.from('issue-images').upload(filePath, imageFile);
-      if (uploadError) throw uploadError;
-
-      const deptSlug = ISSUE_TYPE_TO_DEPARTMENT[issueType];
+      // 1. Upload the image using our new secure hook
+      const imageMetadata = await uploadImage(imageFile);
       
-      const formData = new FormData();
-      formData.append('title', title);
-      formData.append('description', description);
-      formData.append('issueType', issueType);
-      formData.append('deptSlug', deptSlug);
-      formData.append('locationLat', locationLat.toString());
-      formData.append('locationLng', locationLng.toString());
-      formData.append('locationLabel', locationLabel);
-      formData.append('filePath', filePath);
+      if (!imageMetadata) {
+        throw new Error('Image upload failed.');
+      }
 
-      const result = await submitIssue(formData);
-      
-      if (result.error) throw new Error(result.error);
-      if (result.issueId) router.push(`/issue?id=${result.issueId}`);
+      try {
+        // Map issue_type to department_id
+        let department_id = null;
+        if (issueType === 'Road Damage') department_id = 'roads';
+        else if (issueType === 'Water Leakage') department_id = 'water';
+        else if (issueType === 'Electricity Fault' || issueType === 'Streetlight') department_id = 'electricity';
+        else if (issueType === 'Sanitation' || issueType === 'Drainage') department_id = 'sanitation';
+
+        // 2. Save the issue to Firestore with the new image structure
+        const docRef = await addDoc(collection(db, 'issues'), {
+          title,
+          description,
+          issue_type: issueType,
+          department_id,
+          location_lat: locationLat,
+          location_lng: locationLng,
+          location_label: locationLabel,
+          image: imageMetadata,
+          status: 'REPORTED',
+          reporter_id: auth.currentUser?.uid || 'anonymous',
+          created_at: new Date().toISOString()
+        });
+
+        router.push(`/issue?id=${docRef.id}`);
+      } catch (firestoreError: any) {
+        // We ideally rollback the image here if we had the issueId in Firestore.
+        // For now, log the error. The orphan image can be cleared by a backend cron.
+        console.error('Failed to save to Firestore:', firestoreError);
+        throw new Error('Failed to submit issue details. Please try again.');
+      }
     } catch (err: any) {
       setError(err?.message || 'Something went wrong');
+    } finally {
       setLoading(false);
     }
   }

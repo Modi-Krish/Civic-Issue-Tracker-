@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { auth } from '@/lib/firebase';
+import { getCompanyAdminStats } from '@/services/firestore';
 import { Briefcase, Building, Star, CheckCircle, TrendingUp, ArrowRight, ShieldCheck, FileSignature } from 'lucide-react';
 import Link from 'next/link';
 
@@ -10,17 +11,17 @@ export default function CompanyAdminDashboard() {
   const [stats, setStats] = useState({ rating: 0, completed: 0, activeContracts: 0, openBids: 0 });
 
   useEffect(() => {
-    // In a real scenario, this would fetch from the DB using the company associated with auth.uid()
-    // Mocking for Phase 5 UI presentation
-    setTimeout(() => {
-      setStats({
-        rating: 4.8,
-        completed: 124,
-        activeContracts: 3,
-        openBids: 2
-      });
-      setLoading(false);
-    }, 500);
+    const unsubscribeAuth = auth.onAuthStateChanged(user => {
+      if (user) {
+        getCompanyAdminStats(user.uid).then(data => {
+          setStats(data);
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribeAuth();
   }, []);
 
   const pageStyle: React.CSSProperties = {

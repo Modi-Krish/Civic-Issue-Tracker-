@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import MyReportsUI from '@/components/ui/MyReportsUI';
 
@@ -15,25 +14,45 @@ export default function MyReportsPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    async function fetchReports() {
+    let unsubscribe: (() => void) | null = null;
+
+    async function setupRealtime() {
       if (!user) {
-        const { data: { session } } = await createClient().auth.getSession();
-        if (!session) { router.push('/login'); return; }
-        return; // wait for context to sync
+        router.push('/login');
+        return;
       }
 
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("issues")
-        .select("*")
-        .eq("reporter_id", user!.id)
-        .order("created_at", { ascending: false });
+      try {
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      setIssues(data || []);
-      setLoading(false);
+        const q = query(
+          collection(db, 'issues'), 
+          where('reporter_id', '==', user.uid),
+          orderBy('created_at', 'desc')
+        );
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setIssues(data);
+          setLoading(false);
+        }, (error) => {
+          console.error("Error listening to reports:", error);
+          setLoading(false);
+        });
+
+      } catch (error) {
+        console.error("Error setting up reports listener:", error);
+        setIssues([]);
+        setLoading(false);
+      }
     }
 
-    fetchReports();
+    setupRealtime();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [user, authLoading, router]);
 
   if (authLoading || loading) {

@@ -1,9 +1,15 @@
 /**
  * Client-side auth actions for Capacitor build.
- * Replaces server-side auth.ts — uses browser Supabase client
- * and returns route strings instead of calling redirect().
+ * Uses Firebase Auth and Firestore.
  */
-import { createClient } from '@/lib/supabase/client';
+import { auth, db } from '@/lib/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  updateProfile as firebaseUpdateProfile
+} from 'firebase/auth';
+import { doc, setDoc, updateDoc, getDoc } from 'firebase/firestore';
 
 function getRedirectRoute(role: string): string {
   switch (role) {
@@ -18,95 +24,80 @@ function getRedirectRoute(role: string): string {
 }
 
 export async function signUp(formData: FormData) {
-  const supabase = createClient();
-
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const fullName = (formData.get('full_name') as string)?.trim();
 
-  // SECURITY FIX: Hardcode role to 'citizen' to prevent privilege escalation.
-  // Department ID is also ignored for public signups.
   const role = 'citizen';
 
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        role,
-        department_id: null,
-      },
-    },
-  });
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
 
-  if (error) {
+    await firebaseUpdateProfile(user, { displayName: fullName });
+
+    await setDoc(doc(db, 'profiles', user.uid), {
+      id: user.uid,
+      full_name: fullName,
+      role,
+      department_id: null,
+      email: user.email,
+      created_at: new Date().toISOString()
+    });
+
+    return { success: true, redirectTo: getRedirectRoute(role) };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  return { success: true, redirectTo: getRedirectRoute(role) };
 }
 
 export async function signIn(formData: FormData) {
-  const supabase = createClient();
-
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
 
-  if (error) {
+    const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+    const role = profileSnap.exists() ? profileSnap.data().role : 'citizen';
+
+    return { success: true, redirectTo: getRedirectRoute(role) };
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  let role = data.user?.user_metadata?.role || 'citizen';
-
-  return { success: true, redirectTo: getRedirectRoute(role) };
 }
 
 export async function signOut() {
-  const supabase = createClient();
-  await supabase.auth.signOut();
-  return { success: true, redirectTo: '/login' };
+  try {
+    await firebaseSignOut(auth);
+    return { success: true, redirectTo: '/login' };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
 
 export async function updateProfile(formData: FormData) {
-  const supabase = createClient();
   const fullName = (formData.get('full_name') as string)?.trim();
-
   if (!fullName) return { error: 'Name is required' };
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return { error: 'Unauthorized' };
 
-  // Update Auth Metadata
-  const { error: authError } = await supabase.auth.updateUser({
-    data: { full_name: fullName }
-  });
-
-  if (authError) return { error: authError.message };
-
-  // Update Profiles table
-  const { error: dbError } = await supabase
-    .from('profiles')
-    .update({ full_name: fullName })
-    .eq('id', user.id);
-
-  if (dbError) return { error: dbError.message };
-
-  return { success: true };
+  try {
+    await firebaseUpdateProfile(user, { displayName: fullName });
+    await updateDoc(doc(db, 'profiles', user.uid), { full_name: fullName });
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
 
 export async function quickLogin(role: string) {
-  const supabase = createClient();
-
   const emailMap: Record<string, string> = {
     'citizen': 'citizencivictracker@gmail.com',
     'government_officer': 'govofficercivictracker@gmail.com',
-    'department_admin': 'roadcivictracker@gmail.com', // Defaulting to road admin for the quick login button
+    'department_admin': 'roadcivictracker@gmail.com',
     'company_admin': 'companyadmincivictracker@gmail.com',
     'company_employee': 'companyemployeecivictracker@gmail.com',
     'super_admin': 'superadmincivictracker@gmail.com'
@@ -115,47 +106,65 @@ export async function quickLogin(role: string) {
   const email = emailMap[role] || `${role}@test.com`;
   const password = process.env.NEXT_PUBLIC_TEST_PASSWORD || 'Password123!';
 
-  let { error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    // If sign in fails, try to sign up
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: `Test ${role.replace('_', ' ')}`,
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    return { success: true, redirectTo: getRedirectRoute(role) };
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCred.user;
+        const fullName = `Test ${role.replace('_', ' ')}`;
+        
+        await firebaseUpdateProfile(user, { displayName: fullName });
+        await setDoc(doc(db, 'profiles', user.uid), {
+          id: user.uid,
+          full_name: fullName,
           role: role,
-        }
+          department_id: null,
+          email: user.email,
+          created_at: new Date().toISOString()
+        });
+
+        return { success: true, redirectTo: getRedirectRoute(role) };
+      } catch (signUpError: any) {
+        return { error: signUpError.message };
       }
-    });
-
-    if (signUpError) return { error: signUpError.message };
-
-    // Sign in after sign up
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    if (signInError) return { error: signInError.message };
+    }
+    return { error: error.message };
   }
-
-  // Removed HOTFIX: The seed script already ensures profiles are correct.
-  // This avoids a potential hang on the .update() call.
-
-  return { success: true, redirectTo: getRedirectRoute(role) };
 }
 
 export async function loginWithEmail(email: string) {
-  const supabase = createClient();
-  const password = 'Password123!';
+  const password = process.env.NEXT_PUBLIC_TEST_PASSWORD || 'Password123!';
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
 
-  if (error) {
-    return { error: error.message };
+    const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
+    const role = profileSnap.exists() ? profileSnap.data().role : 'citizen';
+
+    return { success: true, redirectTo: getRedirectRoute(role) };
+  } catch (error: any) {
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      // Create user if not exist (legacy logic)
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCred.user;
+        await setDoc(doc(db, 'profiles', user.uid), {
+          id: user.uid,
+          full_name: 'Test Citizen',
+          role: 'citizen',
+          department_id: null,
+          email: user.email,
+          created_at: new Date().toISOString()
+        });
+        return { success: true, redirectTo: getRedirectRoute('citizen') };
+      } catch (createError: any) {
+        return { error: 'Failed to synchronize with Firebase Auth.' };
+      }
+    }
+    return { error: 'Firebase authentication failed.' };
   }
-
-  const role = data.user?.user_metadata?.role || 'citizen';
-  return { success: true, redirectTo: getRedirectRoute(role) };
 }

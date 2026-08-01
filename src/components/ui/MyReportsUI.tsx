@@ -47,7 +47,7 @@ function StatusBadge({ status }: { status: string }) {
 function IssueCard({ issue }: { issue: any }) {
   const router = useRouter();
   const meta = TYPE_META[issue.issue_type] || TYPE_META.default;
-  const date = new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const date = new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const loc  = issue.location_label?.split(",")[0] || "Near you";
 
   return (

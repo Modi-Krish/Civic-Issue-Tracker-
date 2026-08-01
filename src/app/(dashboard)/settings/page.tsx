@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import SettingsUI from '@/components/ui/SettingsUI';
 
@@ -26,9 +25,17 @@ export default function SettingsPage() {
 
     async function fetchDept() {
       if (profile?.department_id) {
-        const supabase = createClient();
-        const { data: dept } = await supabase.from('departments').select('name').eq('id', profile.department_id).single();
-        setDeptName(dept?.name ?? null);
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+        
+        const deptRef = doc(db, 'departments', profile.department_id);
+        const deptSnap = await getDoc(deptRef);
+        
+        if (deptSnap.exists()) {
+          setDeptName(deptSnap.data().name);
+        } else {
+          setDeptName(null);
+        }
       }
       setLoading(false);
     }
@@ -39,7 +46,7 @@ export default function SettingsPage() {
   if (authLoading || loading || !user) return null;
 
   const roleConfig = ROLE_CONFIG[profile?.role || 'citizen'] || ROLE_CONFIG.citizen;
-  const memberSince = new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const memberSince = new Date(user.created_at || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <SettingsUI

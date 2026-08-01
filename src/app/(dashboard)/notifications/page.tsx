@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import React from "react";
 import { useRouter } from "next/navigation";
-
-const mockNotifications = [
-  { id: "1", type: "status_updated", title: "Issue status updated", body: "Your report 'Cracked Pavement Near City Hall' has moved to In Progress.", is_read: false, created_at: "2025-03-23T09:14:00Z", issue_id: "i1" },
-  { id: "2", type: "issue_assigned", title: "Field officer assigned", body: "An officer has been assigned to inspect 'Broken Streetlight on Elm Ave'.", is_read: false, created_at: "2025-03-22T16:45:00Z", issue_id: "i2" },
-  { id: "3", type: "reward_credited", title: "Points credited!", body: "You earned 50 points for reporting 'Overflowing Garbage Bin'. Keep it up!", is_read: false, created_at: "2025-03-21T11:30:00Z", issue_id: null },
-  { id: "4", type: "repair_approved", title: "Repair approved", body: "The repair for 'Flooded Underpass after Rain' has been approved and closed.", is_read: true, created_at: "2025-03-20T08:00:00Z", issue_id: "i4" },
-  { id: "5", type: "issue_reported", title: "Report received", body: "We've received your report about 'Graffiti on Community Board'. Thank you!", is_read: true, created_at: "2025-03-19T14:20:00Z", issue_id: "i5" },
-  { id: "6", type: "repair_rejected", title: "Repair marked incomplete", body: "The submitted repair for 'Pothole on Station Road' needs further review.", is_read: true, created_at: "2025-03-18T10:05:00Z", issue_id: "i6" },
-];
+import { auth } from "@/lib/firebase";
+import { subscribeToNotifications, markNotificationRead, markAllNotificationsRead } from "@/services/firestore";
 
 const TYPE_CONFIG = {
   status_updated:  { emoji: "🔄", accent: "#60a5fa", bg: "#1e3a5f" },
@@ -24,6 +17,7 @@ const TYPE_CONFIG = {
 };
 
 function timeAgo(iso: string) {
+  if (!iso) return "just now";
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60)    return "just now";
   if (diff < 3600)  return Math.floor(diff / 60) + "m ago";
@@ -31,10 +25,12 @@ function timeAgo(iso: string) {
   return Math.floor(diff / 86400) + "d ago";
 }
 
-
 function NotifCard({ notif, onMarkRead }: any) {
   const cfg = TYPE_CONFIG[notif.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.default;
   const [pressed, setPressed] = useState(false);
+
+  // Firestore timestamps might be objects, so convert if necessary
+  const createdAt = notif.created_at?.toDate ? notif.created_at.toDate().toISOString() : notif.created_at;
 
   return (
     <div
@@ -57,7 +53,7 @@ function NotifCard({ notif, onMarkRead }: any) {
               {notif.title}
             </span>
             <span style={{ fontSize:10, color:"rgba(255,255,255,0.28)", fontWeight:500, whiteSpace:"nowrap", flexShrink:0, paddingTop:1 }}>
-              {timeAgo(notif.created_at)}
+              {timeAgo(createdAt)}
             </span>
           </div>
           <p style={{ fontSize:12, color:"rgba(255,255,255,0.45)", lineHeight:1.55, margin:"0 0 8px 0" }}>{notif.body}</p>
@@ -85,9 +81,9 @@ function EmptyState() {
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"60px 20px", textAlign:"center", borderRadius:22, border:"1px dashed rgba(255,255,255,0.09)", background:"rgba(255,255,255,0.015)", marginTop:8 }}>
       <div style={{ width:68, height:68, borderRadius:20, marginBottom:18, background:"rgba(255, 46, 17, 0.1)", border:"1px solid rgba(255, 46, 17, 0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>🔔</div>
-      <div style={{ fontSize:17, fontWeight:800, letterSpacing:"-0.02em", marginBottom:8 }}>All caught up!</div>
+      <div style={{ fontSize:17, fontWeight:800, letterSpacing:"-0.02em", marginBottom:8 }}>No notifications.</div>
       <div style={{ fontSize:13, color:"rgba(255,255,255,0.38)", lineHeight:1.65, maxWidth:220 }}>
-        You'll be notified when there are updates on your reports.
+        You'll be notified when there are updates.
       </div>
     </div>
   );
@@ -96,17 +92,45 @@ function EmptyState() {
 export default function NotificationsPage() {
   const router = useRouter();
   
-
-  const [showEmpty, setShowEmpty] = useState(false);
-  const [notifs, setNotifs] = useState(mockNotifications);
+  const [notifs, setNotifs] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
 
-  const allNotifs = showEmpty ? [] : notifs;
-  const unreadCount = allNotifs.filter(n => !n.is_read).length;
-  const displayed = filter === "unread" ? allNotifs.filter(n => !n.is_read) : allNotifs;
+  useEffect(() => {
+    // Wait for Firebase auth to initialize
+    const unsubscribeAuth = auth.onAuthStateChanged(user => {
+      if (user) {
+        // Subscribe to Firestore notifications collection
+        const unsubscribeNotifs = subscribeToNotifications(user.uid, (data) => {
+          setNotifs(data);
+          setLoading(false);
+        });
+        return () => unsubscribeNotifs();
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
-  function markRead(id: string) { setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n)); }
-  function markAllRead() { setNotifs(prev => prev.map(n => ({ ...n, is_read: true }))); }
+  const unreadCount = notifs.filter(n => !n.is_read).length;
+  const displayed = filter === "unread" ? notifs.filter(n => !n.is_read) : notifs;
+
+  async function markRead(id: string) { 
+    // Optimistic UI update
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n)); 
+    // Fire & forget to Firestore
+    await markNotificationRead(id);
+  }
+  
+  async function markAllRead() { 
+    // Optimistic UI update
+    setNotifs(prev => prev.map(n => ({ ...n, is_read: true }))); 
+    // Fire & forget to Firestore
+    if (auth.currentUser) {
+      await markAllNotificationsRead(auth.currentUser.uid, notifs);
+    }
+  }
 
   return (
     <div style={{ minHeight:"100vh", background:"#0d0d0f", fontFamily:"'Inter',-apple-system,sans-serif", color:"#fff" }}>
@@ -124,9 +148,6 @@ export default function NotificationsPage() {
             <span style={{ fontSize:14, fontWeight:700, letterSpacing:"-0.02em" }}>CivicTracker</span>
           </div>
           <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <button onClick={() => setShowEmpty(v => !v)} style={{ padding:"5px 9px", borderRadius:8, fontSize:10, fontWeight:700, background:"rgba(255,255,255,0.05)", border:"0.5px solid rgba(255,255,255,0.1)", color:"rgba(255,255,255,0.38)", cursor:"pointer", textTransform:"uppercase", letterSpacing:"0.04em" }}>
-              {showEmpty ? "Data" : "Empty"}
-            </button>
             <div style={{ width:32, height:32, borderRadius:10, background:"linear-gradient(135deg, #FF2E11, #A79277)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>A</div>
           </div>
         </div>
@@ -161,9 +182,9 @@ export default function NotificationsPage() {
         </div>
 
         {/* Filter tabs */}
-        {allNotifs.length > 0 && (
+        {notifs.length > 0 && (
           <div style={{ display:"flex", gap:7, marginBottom:16 }}>
-            {[["all","All",allNotifs.length],["unread","Unread",unreadCount]].map(([val,label,count]) => {
+            {[["all","All",notifs.length],["unread","Unread",unreadCount]].map(([val,label,count]) => {
               const active = filter === val;
               return (
                 <button key={val as string} onClick={() => setFilter(val as string)} style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 14px", borderRadius:99, fontSize:11, fontWeight:700, cursor:"pointer", transition:"all 0.15s", WebkitTapHighlightColor:"transparent",
@@ -180,7 +201,9 @@ export default function NotificationsPage() {
         )}
 
         {/* Cards */}
-        {allNotifs.length === 0 ? <EmptyState /> :
+        {loading ? (
+          <div style={{ textAlign:"center", padding:"48px 16px", color:"rgba(255,255,255,0.26)", fontSize:14 }}>Loading...</div>
+        ) : notifs.length === 0 ? <EmptyState /> :
           displayed.length === 0 ? (
             <div style={{ textAlign:"center", padding:"48px 16px", color:"rgba(255,255,255,0.26)", fontSize:14 }}>No unread notifications.</div>
           ) : (

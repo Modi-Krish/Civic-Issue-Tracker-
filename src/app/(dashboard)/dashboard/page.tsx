@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import DashboardUI from '@/components/ui/DashboardUI';
 
@@ -15,43 +14,80 @@ export default function DashboardPage() {
   useEffect(() => {
     if (authLoading) return;
 
-    async function fetchDashboard() {
+    let unsubMyIssues: (() => void) | null = null;
+    let unsubNearby: (() => void) | null = null;
+    let unsubRewards: (() => void) | null = null;
+
+    async function setupRealtime() {
       if (!user) {
-        const { data: { session } } = await createClient().auth.getSession();
-        if (!session) {
-          router.push('/login');
-          return;
-        }
-        return; // wait for context to sync
+        router.push('/login');
+        return;
       }
-      const supabase = createClient();
-      const [
-        { count: reportedCount },
-        { count: resolvedCount },
-        { data: rewards },
-        { data: recentIssues },
-        { data: nearbyIssues }
-      ] = await Promise.all([
-        supabase.from("issues").select("*", { count: "exact", head: true }).eq("reporter_id", user!.id),
-        supabase.from("issues").select("*", { count: "exact", head: true }).eq("reporter_id", user!.id).eq("status", "CLOSED"),
-        supabase.from("rewards").select("points").eq("user_id", user!.id),
-        supabase.from("issues").select("*").eq("reporter_id", user!.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("issues").select("*").neq("reporter_id", user!.id).order("created_at", { ascending: false }).limit(3),
-      ]);
+      
+      try {
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      const totalPoints = (rewards || []).reduce((acc: number, curr: any) => acc + (curr.points || 0), 0);
-      const activeIssue = (recentIssues || []).find((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED");
+        let myIssues: any[] = [];
+        let nearbyIssues: any[] = [];
+        let totalPoints = 0;
 
-      setDashData({
-        stats: { reported: reportedCount || 0, resolved: resolvedCount || 0, points: totalPoints || 0 },
-        nearby: nearbyIssues || [],
-        recent: recentIssues || [],
-        active: activeIssue || null,
-      });
-      setLoading(false);
+        const updateState = () => {
+          const reportedCount = myIssues.length;
+          const resolvedCount = myIssues.filter(i => i.status === 'CLOSED').length;
+          
+          let recent = [...myIssues];
+          const activeIssue = recent.find((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED");
+          recent = recent.slice(0, 5);
+
+          let nearby = [...nearbyIssues];
+          nearby = nearby.slice(0, 3);
+
+          setDashData({
+            stats: { reported: reportedCount, resolved: resolvedCount, points: totalPoints },
+            nearby: nearby,
+            recent: recent,
+            active: activeIssue || null,
+          });
+          setLoading(false);
+        };
+
+        // 1. My Issues
+        const qMyIssues = query(collection(db, 'issues'), where('reporter_id', '==', user.uid), orderBy('created_at', 'desc'));
+        unsubMyIssues = onSnapshot(qMyIssues, (snap) => {
+          myIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          updateState();
+        });
+
+        // 2. Nearby Issues
+        const qNearby = query(collection(db, 'issues'), where('reporter_id', '!=', user.uid), orderBy('created_at', 'desc'));
+        unsubNearby = onSnapshot(qNearby, (snap) => {
+          nearbyIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          updateState();
+        });
+
+        // 3. Rewards
+        const qRewards = query(collection(db, 'rewards'), where('user_id', '==', user.uid));
+        unsubRewards = onSnapshot(qRewards, (snap) => {
+          totalPoints = 0;
+          snap.forEach(doc => { totalPoints += doc.data().points || 0; });
+          updateState();
+        });
+
+      } catch (error) {
+        console.error("Error setting up dashboard listeners:", error);
+        setDashData({ stats: { reported: 0, resolved: 0, points: 0 }, nearby: [], recent: [], active: null });
+        setLoading(false);
+      }
     }
 
-    fetchDashboard();
+    setupRealtime();
+
+    return () => {
+      if (unsubMyIssues) unsubMyIssues();
+      if (unsubNearby) unsubNearby();
+      if (unsubRewards) unsubRewards();
+    };
   }, [user, authLoading, router]);
 
   if (authLoading || loading || !dashData) {

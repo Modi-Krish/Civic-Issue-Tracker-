@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import {
   Users, TrendingUp, CheckCircle, AlertTriangle,
@@ -23,45 +22,60 @@ export default function EmployeesPage() {
     if (!user || !profile?.department_id) { setLoading(false); return; }
 
     async function fetchData() {
-      const supabase = createClient();
-      const [
-        { data: empData },
-        { data: issuesData },
-        { data: deptData }
-      ] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, created_at, account_status').eq('department_id', profile!.department_id!).eq('role', 'employee'),
-        supabase.from('issues').select('*').eq('department_id', profile!.department_id!),
-        supabase.from('departments').select('name').eq('id', profile!.department_id!).single(),
-      ]);
+      try {
+        const { collection, query, where, getDocs, doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      setDept(deptData);
-      const rawEmployeeList = empData || [];
-      const issueList = (issuesData || []) as Issue[];
+        // 1. Employees
+        const qEmp = query(
+          collection(db, 'profiles'), 
+          where('department_id', '==', profile!.department_id!), 
+          where('role', '==', 'employee')
+        );
+        const empSnap = await getDocs(qEmp);
+        const rawEmployeeList = empSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      setPendingUsers(rawEmployeeList.filter((e: any) => e.account_status === 'PENDING'));
-      const approvedEmployees = rawEmployeeList.filter((e: any) => e.account_status === 'APPROVED');
+        // 2. Issues
+        const qIssues = query(
+          collection(db, 'issues'), 
+          where('department_id', '==', profile!.department_id!)
+        );
+        const issuesSnap = await getDocs(qIssues);
+        const issueList = issuesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Issue[];
 
-      const stats = approvedEmployees.map((emp: any) => {
-        const assigned = issueList.filter(i => i.assigned_employee_id === emp.id);
-        const resolved = assigned.filter(i => i.status === 'CLOSED' || i.status === 'APPROVED');
-        const inProgress = assigned.filter(i => i.status === 'IN_PROGRESS' || i.status === 'EMPLOYEE_ASSIGNED');
-        const submitted = assigned.filter(i => i.status === 'SUBMITTED_FOR_APPROVAL');
-        const rejected = assigned.filter(i => i.status === 'REJECTED');
-        const successRate = assigned.length > 0 ? Math.round((resolved.length / assigned.length) * 100) : 0;
-        const score = resolved.length * 10 + inProgress.length * 3 - rejected.length * 5;
-        return { ...emp, totalAssigned: assigned.length, resolved: resolved.length, inProgress: inProgress.length, submitted: submitted.length, rejected: rejected.length, successRate, score };
-      });
-      stats.sort((a: any, b: any) => b.score - a.score);
-      setEmployeeStats(stats);
+        // 3. Department
+        const deptRef = doc(db, 'departments', profile!.department_id!);
+        const deptSnap = await getDoc(deptRef);
+        setDept(deptSnap.exists() ? deptSnap.data() : null);
 
-      const totalResolved = issueList.filter(i => i.status === 'CLOSED' || i.status === 'APPROVED').length;
-      const totalAssigned = issueList.filter(i => i.assigned_employee_id !== null).length;
-      setSummaryStats({
-        total: approvedEmployees.length,
-        rate: totalAssigned > 0 ? Math.round((totalResolved / totalAssigned) * 100) : 0,
-        resolved: totalResolved,
-      });
-      setLoading(false);
+        setPendingUsers(rawEmployeeList.filter((e: any) => e.account_status === 'PENDING'));
+        const approvedEmployees = rawEmployeeList.filter((e: any) => e.account_status !== 'PENDING');
+
+        const stats = approvedEmployees.map((emp: any) => {
+          const assigned = issueList.filter(i => i.assigned_employee_id === emp.id);
+          const resolved = assigned.filter(i => i.status === 'CLOSED' || i.status === 'APPROVED');
+          const inProgress = assigned.filter(i => i.status === 'IN_PROGRESS' || i.status === 'EMPLOYEE_ASSIGNED');
+          const submitted = assigned.filter(i => i.status === 'SUBMITTED_FOR_APPROVAL');
+          const rejected = assigned.filter(i => i.status === 'REJECTED');
+          const successRate = assigned.length > 0 ? Math.round((resolved.length / assigned.length) * 100) : 0;
+          const score = resolved.length * 10 + inProgress.length * 3 - rejected.length * 5;
+          return { ...emp, totalAssigned: assigned.length, resolved: resolved.length, inProgress: inProgress.length, submitted: submitted.length, rejected: rejected.length, successRate, score };
+        });
+        stats.sort((a: any, b: any) => b.score - a.score);
+        setEmployeeStats(stats);
+
+        const totalResolved = issueList.filter(i => i.status === 'CLOSED' || i.status === 'APPROVED').length;
+        const totalAssigned = issueList.filter(i => i.assigned_employee_id !== null).length;
+        setSummaryStats({
+          total: approvedEmployees.length,
+          rate: totalAssigned > 0 ? Math.round((totalResolved / totalAssigned) * 100) : 0,
+          resolved: totalResolved,
+        });
+      } catch (error) {
+        console.error("Error fetching employee data:", error);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchData();

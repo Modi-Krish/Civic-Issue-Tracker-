@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import Link from 'next/link';
 import { Users, Clock, CheckCircle, AlertTriangle, Building2, ChevronRight } from 'lucide-react';
@@ -23,40 +22,80 @@ export default function DepartmentPage() {
       return;
     }
 
-    async function fetchData() {
-      const fallbackTimeout = setTimeout(() => {
-        setErrorToast("Loading is taking too long. Please try refreshing.");
-        setLoading(false);
-      }, 5000);
+      let unsubscribeIssues: (() => void) | null = null;
+      let unsubscribeEmployees: (() => void) | null = null;
+      let fallbackTimeout: NodeJS.Timeout;
 
-      try {
-        const supabase = createClient();
-        const [
-          { data: deptData, error: deptError },
-          { data: issuesData, error: issuesError },
-          { data: empData, error: empError }
-        ] = await Promise.all([
-          supabase.from('departments').select('name').eq('id', profile!.department_id!).single(),
-          supabase.from('issues').select('*').eq('department_id', profile!.department_id!).order('created_at', { ascending: false }),
-          supabase.from('profiles').select('id, full_name').eq('department_id', profile!.department_id!).eq('role', 'employee'),
-        ]);
+      async function setupRealtime() {
+        fallbackTimeout = setTimeout(() => {
+          setLoading((prev) => {
+            if (prev) {
+              setErrorToast("Loading is taking too long. Please try refreshing.");
+              return false;
+            }
+            return prev;
+          });
+        }, 5000);
 
-        if (deptError || issuesError || empError) {
-          setErrorToast("Failed to load department data.");
+        try {
+          const { collection, query, where, doc, getDoc, onSnapshot, orderBy } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+
+          // 1. Department (one-time fetch)
+          const deptRef = doc(db, 'departments', profile!.department_id!);
+          const deptSnap = await getDoc(deptRef);
+          const deptData = deptSnap.exists() ? deptSnap.data() : null;
+          setDept(deptData);
+
+          // 2. Issues (real-time)
+          const qIssues = query(
+            collection(db, 'issues'), 
+            where('department_id', '==', profile!.department_id!),
+            orderBy('created_at', 'desc')
+          );
+          unsubscribeIssues = onSnapshot(qIssues, (snapshot) => {
+            const issuesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            setAllIssues(issuesData as Issue[]);
+            
+            // If this is the first load, mark loading as false
+            setLoading((prev) => {
+              if (prev) {
+                clearTimeout(fallbackTimeout);
+                return false;
+              }
+              return prev;
+            });
+          }, (err) => {
+            console.error("Error listening to issues:", err);
+            setErrorToast("Lost connection to issue updates.");
+          });
+
+          // 3. Employees (real-time)
+          const qEmp = query(
+            collection(db, 'profiles'), 
+            where('department_id', '==', profile!.department_id!), 
+            where('role', '==', 'employee')
+          );
+          unsubscribeEmployees = onSnapshot(qEmp, (snapshot) => {
+            const empData = snapshot.docs.map(d => ({ id: d.id, full_name: d.data().full_name }));
+            setEmployees(empData);
+          });
+
+        } catch (err) {
+          console.error("Error setting up real-time listeners:", err);
+          setErrorToast("An unexpected error occurred while loading data.");
+          setLoading(false);
+          clearTimeout(fallbackTimeout);
         }
-
-        setDept(deptData);
-        setAllIssues((issuesData || []) as Issue[]);
-        setEmployees(empData || []);
-      } catch (err) {
-        setErrorToast("An unexpected error occurred while loading data.");
-      } finally {
-        clearTimeout(fallbackTimeout);
-        setLoading(false);
       }
-    }
 
-    fetchData();
+      setupRealtime();
+
+      return () => {
+        if (fallbackTimeout) clearTimeout(fallbackTimeout);
+        if (unsubscribeIssues) unsubscribeIssues();
+        if (unsubscribeEmployees) unsubscribeEmployees();
+      };
   }, [user, profile, authLoading]);
 
   if (authLoading || loading) {

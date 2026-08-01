@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
 import AdminReportsUI from '@/components/ui/AdminReportsUI';
 
@@ -15,28 +14,46 @@ export default function AdminReportsPage() {
   useEffect(() => {
     if (authLoading) return;
 
+    let unsubscribe: (() => void) | null = null;
+
     async function loadIssues() {
       if (!user) {
-        const { data: { session } } = await createClient().auth.getSession();
-        if (!session) { router.push('/login'); return; }
-        return; // wait for context to sync
+        router.push('/login');
+        return;
       }
       if (profile?.role !== 'super_admin') { router.push('/dashboard'); return; }
 
-      const supabase = createClient();
-      const [
-        { data: issues },
-        { data: departments }
-      ] = await Promise.all([
-        supabase.from("issues").select("*").order("created_at", { ascending: false }),
-        supabase.from("departments").select("id, name").order("name"),
-      ]);
+      try {
+        const { collection, getDocs, query, orderBy, onSnapshot } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      setData({ issues: issues || [], departments: departments || [] });
-      setLoading(false);
+        // 1. Departments (one-time fetch)
+        const qDept = query(collection(db, 'departments'), orderBy('name'));
+        const deptSnap = await getDocs(qDept);
+        const departments = deptSnap.docs.map(d => ({ id: d.id, name: d.data().name }));
+
+        // 2. Issues (real-time)
+        const qIssues = query(collection(db, 'issues'), orderBy('created_at', 'desc'));
+        unsubscribe = onSnapshot(qIssues, (snapshot) => {
+          const issues = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          setData({ issues, departments });
+          setLoading(false);
+        }, (err) => {
+          console.error("Error listening to issues:", err);
+          setLoading(false);
+        });
+
+      } catch (error) {
+        console.error("Error loading issues:", error);
+        setLoading(false);
+      }
     }
 
     loadIssues();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [user, profile, authLoading, router]);
 
   if (authLoading || loading || !data) {

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+
 import { Briefcase, Map, FileText, AlertTriangle, ShieldCheck, ArrowRight, BarChart3, Users } from 'lucide-react';
 import Link from 'next/link';
 
@@ -11,20 +11,38 @@ export default function GovernmentDashboard() {
 
   useEffect(() => {
     async function loadStats() {
-      const supabase = createClient();
-      
-      const { count: tenders } = await supabase.from('tenders').select('*', { count: 'exact', head: true }).eq('status', 'OPEN');
-      const { count: contracts } = await supabase.from('contracts').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE');
-      const { count: reported } = await supabase.from('issues').select('*', { count: 'exact', head: true }).eq('status', 'REPORTED');
-      const { count: unassigned } = await supabase.from('issues').select('*', { count: 'exact', head: true }).is('company_id', null);
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
 
-      setStats({
-        openTenders: tenders || 0,
-        activeContracts: contracts || 0,
-        reportedIssues: reported || 0,
-        unassignedIssues: unassigned || 0,
-      });
-      setLoading(false);
+        // Note: count() queries in Firestore require special logic (getCountFromServer) 
+        // but for simplicity in migration we will just getDocs and use .size since db is small.
+        // For production, use getCountFromServer.
+        const { getCountFromServer } = await import('firebase/firestore');
+        
+        const qTenders = query(collection(db, 'tenders'), where('status', '==', 'OPEN'));
+        const snapTenders = await getCountFromServer(qTenders);
+
+        const qContracts = query(collection(db, 'contracts'), where('status', '==', 'ACTIVE'));
+        const snapContracts = await getCountFromServer(qContracts);
+
+        const qReported = query(collection(db, 'issues'), where('status', '==', 'REPORTED'));
+        const snapReported = await getCountFromServer(qReported);
+
+        const qUnassigned = query(collection(db, 'issues'), where('company_id', '==', null));
+        const snapUnassigned = await getCountFromServer(qUnassigned);
+
+        setStats({
+          openTenders: snapTenders.data().count,
+          activeContracts: snapContracts.data().count,
+          reportedIssues: snapReported.data().count,
+          unassignedIssues: snapUnassigned.data().count,
+        });
+      } catch (error) {
+        console.error("Error loading government stats:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     loadStats();
   }, []);

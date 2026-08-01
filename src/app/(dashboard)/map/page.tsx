@@ -5,7 +5,6 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { MapPin, Navigation, Search, Info, Plus, LayoutDashboard, FileText, Map as MapIcon, Settings, ChevronRight } from 'lucide-react';
-import { createClient } from "@/lib/supabase/client";
 
 const LEAFLET_CSS_LINK = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 
@@ -44,18 +43,32 @@ export default function MapPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const { data } = await supabase.from('issues').select('*').order('created_at', { ascending: false });
-      const mapped = (data || []).map((i: any) => ({
-        ...i,
-        area: i.location_label || "Local Area",
-        emoji: ISSUE_EMOJI[i.issue_type] || "📋",
-        dist: "Near",
-        lat: i.location_lat || 28.635,
-        lng: i.location_lng || 77.224
-      }));
-      setIssues(mapped);
-      setLoading(false);
+      try {
+        const { collection, getDocs, query, orderBy } = await import('firebase/firestore');
+        const { db } = await import('@/lib/firebase');
+
+        const q = query(collection(db, 'issues'), orderBy('created_at', 'desc'));
+        const snapshot = await getDocs(q);
+        
+        const mapped = snapshot.docs.map(doc => {
+          const i = doc.data();
+          return {
+            id: doc.id,
+            ...i,
+            area: i.location_label || "Local Area",
+            emoji: ISSUE_EMOJI[i.issue_type] || "📋",
+            dist: "Near",
+            lat: i.location_lat || 28.635,
+            lng: i.location_lng || 77.224
+          };
+        });
+
+        setIssues(mapped);
+      } catch (error) {
+        console.error("Error loading map issues:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);

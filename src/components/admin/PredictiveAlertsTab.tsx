@@ -104,14 +104,14 @@ export default function PredictiveAlertsTab() {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }} className="w-full max-w-full overflow-x-hidden">
       
       {/* ── SECTION A: STALE DATA WARNING BANNER ── */}
       {healthStatus?.isStale && (
-        <div style={{ padding: "14px 20px", borderRadius: 16, background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.4)", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#f87171" }}>
+        <div style={{ padding: "14px 18px", borderRadius: 16, background: "rgba(239, 68, 68, 0.15)", border: "1.5px solid rgba(239, 68, 68, 0.4)", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, color: "#f87171" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 700 }}>
-            <AlertOctagon size={20} />
-            ⚠️ Alert data may be outdated. Last successful analysis: {healthStatus.staleSinceHours ?? 36} hours ago.
+            <AlertOctagon size={20} className="shrink-0" />
+            <span>Alert data may be outdated. Last run: {healthStatus.staleSinceHours ?? 36}h ago.</span>
           </div>
           <button
             onClick={handleRunAnalysis}
@@ -122,52 +122,52 @@ export default function PredictiveAlertsTab() {
         </div>
       )}
 
-      {/* ── SECTION B: SUMMARY STAT CARDS (ROW OF 4) ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-        <div style={{ padding: 20, borderRadius: 20, background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(239, 68, 68, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
-            <ShieldAlert size={22} />
+      {/* ── SECTION B: SUMMARY STAT CARDS (MOBILE OPTIMIZED GRID) ── */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div style={{ padding: "16px 14px", borderRadius: 18, background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239, 68, 68, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }} className="shrink-0">
+            <ShieldAlert size={20} />
           </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Critical Patterns</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#ef4444" }}>{criticalCount}</div>
-          </div>
-        </div>
-
-        <div style={{ padding: 20, borderRadius: 20, background: "rgba(249, 115, 22, 0.08)", border: "1px solid rgba(249, 115, 22, 0.2)", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(249, 115, 22, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316" }}>
-            <AlertTriangle size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>High Risk</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#f97316" }}>{highCount}</div>
+          <div className="min-w-0">
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }} className="truncate">Critical</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#ef4444" }}>{criticalCount}</div>
           </div>
         </div>
 
-        <div style={{ padding: 20, borderRadius: 20, background: "rgba(14, 165, 233, 0.08)", border: "1px solid rgba(14, 165, 233, 0.2)", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(14, 165, 233, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0ea5e9" }}>
-            <Calendar size={22} />
+        <div style={{ padding: "16px 14px", borderRadius: 18, background: "rgba(249, 115, 22, 0.08)", border: "1px solid rgba(249, 115, 22, 0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(249, 115, 22, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316" }} className="shrink-0">
+            <AlertTriangle size={20} />
           </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Urgent (&le;14 Days)</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#0ea5e9" }}>{upcomingCount}</div>
+          <div className="min-w-0">
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }} className="truncate">High Risk</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#f97316" }}>{highCount}</div>
           </div>
         </div>
 
-        <div style={{ padding: 20, borderRadius: 20, background: "rgba(139, 92, 246, 0.08)", border: "1px solid rgba(139, 92, 246, 0.2)", display: "flex", alignItems: "center", gap: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "rgba(139, 92, 246, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a78bfa" }}>
-            <Bell size={22} />
+        <div style={{ padding: "16px 14px", borderRadius: 18, background: "rgba(14, 165, 233, 0.08)", border: "1px solid rgba(14, 165, 233, 0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(14, 165, 233, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0ea5e9" }} className="shrink-0">
+            <Calendar size={20} />
           </div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>Unread Alerts</div>
-            <div style={{ fontSize: 26, fontWeight: 900, color: "#a78bfa" }}>{unreadCount}</div>
+          <div className="min-w-0">
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }} className="truncate">Urgent (&le;14d)</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#0ea5e9" }}>{upcomingCount}</div>
+          </div>
+        </div>
+
+        <div style={{ padding: "16px 14px", borderRadius: 18, background: "rgba(139, 92, 246, 0.08)", border: "1px solid rgba(139, 92, 246, 0.2)", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(139, 92, 246, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a78bfa" }} className="shrink-0">
+            <Bell size={20} />
+          </div>
+          <div className="min-w-0">
+            <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }} className="truncate">Unread Alerts</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#a78bfa" }}>{unreadCount}</div>
           </div>
         </div>
       </div>
 
-      {/* ── SECTION C: FILTER BAR & CONTROLS ── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16 }}>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {/* ── SECTION C: FILTER BAR & CONTROLS (HORIZONTAL SCROLL ON MOBILE) ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 14 }}>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, width: "100%", maxWidth: "100%", WebkitOverflowScrolling: "touch" }} className="no-scrollbar">
           {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM_LOW', 'UPCOMING'] as const).map(f => (
             <button
               key={f}
@@ -179,8 +179,10 @@ export default function PredictiveAlertsTab() {
                 fontWeight: 800,
                 border: "none",
                 cursor: "pointer",
+                whiteSpace: "nowrap",
                 background: filter === f ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.04)",
-                color: filter === f ? "white" : "rgba(255,255,255,0.6)"
+                color: filter === f ? "white" : "rgba(255,255,255,0.6)",
+                minHeight: 38
               }}>
               {f === 'ALL' ? 'All Patterns' : f === 'MEDIUM_LOW' ? 'Medium / Low' : f}
             </button>
@@ -191,7 +193,7 @@ export default function PredictiveAlertsTab() {
           onClick={handleRunAnalysis}
           disabled={runningAnalysis}
           style={{
-            padding: "10px 18px",
+            padding: "10px 16px",
             borderRadius: 12,
             background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
             color: "white",
@@ -201,8 +203,12 @@ export default function PredictiveAlertsTab() {
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
-            gap: 8
-          }}>
+            justifyContent: "center",
+            gap: 8,
+            width: "100%",
+            minHeight: 44
+          }}
+          className="sm:w-auto">
           <RefreshCw size={16} className={runningAnalysis ? "animate-spin" : ""} />
           {runningAnalysis ? "Scanning..." : "Refresh Analysis"}
         </button>
@@ -210,17 +216,17 @@ export default function PredictiveAlertsTab() {
 
       {/* ── SECTION D & E: PATTERN CARDS LIST & EMPTY STATE ── */}
       {loading ? (
-        <div style={{ textAlign: "center", padding: 60, color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
+        <div style={{ textAlign: "center", padding: "40px 20px", color: "rgba(255,255,255,0.4)", fontSize: 14 }}>
           Scanning historical infrastructure patterns...
         </div>
       ) : filteredPatterns.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, borderRadius: 24, border: "1.5px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.01)" }}>
-          <CheckCircle2 size={48} color="#10b981" style={{ marginBottom: 12, opacity: 0.8 }} />
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: "white", margin: "0 0 6px" }}>No Recurring Issues Detected</h3>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No recurring issues detected. Run analysis to scan complaint history.</p>
+        <div style={{ textAlign: "center", padding: "40px 20px", borderRadius: 20, border: "1.5px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.01)" }}>
+          <CheckCircle2 size={40} color="#10b981" style={{ marginBottom: 10, opacity: 0.8 }} className="mx-auto" />
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: "white", margin: "0 0 6px" }}>No Recurring Issues Detected</h3>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No recurring issues found under this filter. Tap Refresh to re-analyze history.</p>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {filteredPatterns.map(pattern => (
             <PatternCard
               key={pattern.id}

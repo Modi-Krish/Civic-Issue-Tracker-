@@ -10,11 +10,17 @@ const STATUS_UI: Record<IssueStatus, { label: string; bg: string; color: string;
   IN_PROGRESS: { label: "In Progress", bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
   APPROVED: { label: "Approved", bg: "#3a2a1a", color: "#FF2E11", dot: "#FF2E11" },
   DEPARTMENT_ASSIGNED: { label: "Assigned", bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
+  COMPANY_ASSIGNED: { label: "Company Assigned", bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
+  COMPANY_EMPLOYEE_ASSIGNED: { label: "Emp. Assigned", bg: "#1a2e3a", color: "#a78bfa", dot: "#8b5cf6" },
   EMPLOYEE_ASSIGNED: { label: "Emp. Assigned", bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
   SUBMITTED_FOR_APPROVAL: { label: "Pending", bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
   REJECTED: { label: "Rejected", bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
+  COMMUNITY_REVIEW: { label: "Community Review", bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
+  VERIFIED: { label: "Verified", bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
+  COMMUNITY_REJECTED: { label: "Community Rejected", bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
   CLOSED: { label: "Closed", bg: "#1f1f1f", color: "#9ca3af", dot: "#6b7280" },
 };
+
 
 export default function StatusBadge({ status, size = 'sm' }: StatusBadgeProps) {
   const cfg = STATUS_UI[status] || STATUS_UI.REPORTED;

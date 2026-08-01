@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Issue } from '@/lib/types/database';
 import { Play, Upload, Send } from 'lucide-react';
 import Image from 'next/image';
+import { useImageUpload } from '@/hooks/useImageUpload';
 
 interface Props {
   issue: Issue;
@@ -16,6 +17,7 @@ export default function EmployeeActions({ issue }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [repairImage, setRepairImage] = useState<File | null>(null);
   const [repairPreview, setRepairPreview] = useState<string | null>(null);
+  const { uploadImage, isUploading } = useImageUpload({ cityId: 'vadodara', type: 'after' });
 
   async function handleStatusUpdate(newStatus: 'IN_PROGRESS') {
     setLoading(true);
@@ -57,18 +59,13 @@ export default function EmployeeActions({ issue }: Props) {
       const user = auth.currentUser;
       if (!user) return;
 
-      // Upload repair image (currently mocked since storage is not fully set up for employee actions in this iteration or handled via useImageUpload, but we can do a dummy string for now or use useImageUpload. Wait, let's just create a dummy path as per phase 1, or use the actual storage logic we set up)
-      // For simplicity, we just use a fake path here, since the real one requires hooking into Supabase storage or Firebase storage. The prompt said Supabase storage should be used for images. But we can't easily upload directly without a hook. Let's just put a dummy string for now, or adapt the upload.
-      
-      const fileExt = repairImage.name.split('.').pop();
-      const filePath = `${user.uid}/repair-${Date.now()}.${fileExt}`;
-      
-      // Let's use the API route for upload if possible, or just a dummy.
-      // Assuming dummy for now to avoid breaking the flow.
-      const afterImagePath = filePath; 
+      const imageMetadata = await uploadImage(repairImage);
+      if (!imageMetadata) {
+        throw new Error('Image upload failed.');
+      }
 
       const issueRef = doc(db, 'issues', issue.id);
-      await updateDoc(issueRef, { status: 'SUBMITTED_FOR_APPROVAL', after_image_path: afterImagePath });
+      await updateDoc(issueRef, { status: 'SUBMITTED_FOR_APPROVAL', after_image: imageMetadata });
 
       await addDoc(collection(db, 'issue_status_logs'), {
         issue_id: issue.id,
@@ -150,12 +147,12 @@ export default function EmployeeActions({ issue }: Props) {
           {repairImage && (
             <button
               onClick={handleSubmitRepair}
-              disabled={loading}
+              disabled={loading || isUploading}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
               style={{ background: 'var(--success)' }}
             >
               <Send className="w-4 h-4" />
-              Submit
+              {isUploading ? 'Uploading...' : 'Submit'}
             </button>
           )}
         </div>

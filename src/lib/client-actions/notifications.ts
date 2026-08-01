@@ -67,3 +67,39 @@ export async function markNotificationRead(notificationId: string) {
     return { error: error.message };
   }
 }
+
+/**
+ * Dispatch a system notification to a target user.
+ */
+export async function sendSystemNotification({
+  userId,
+  title,
+  body,
+  type = 'status_updated',
+  issueId = null,
+  tenderId = null
+}: {
+  userId: string;
+  title: string;
+  body: string;
+  type?: string;
+  issueId?: string | null;
+  tenderId?: string | null;
+}) {
+  if (!userId) return;
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      userId,
+      title,
+      body,
+      type,
+      issue_id: issueId,
+      tender_id: tenderId,
+      is_read: false,
+      created_at: serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Failed to send notification:", err);
+  }
+}
+

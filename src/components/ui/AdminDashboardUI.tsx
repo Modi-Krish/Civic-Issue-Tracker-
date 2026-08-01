@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, CheckCircle2, BarChart2, ArrowRight, TrendingUp, Building2 } from 'lucide-react';
+import { FileText, CheckCircle2, BarChart2, ArrowRight, TrendingUp, Building2, RefreshCw } from 'lucide-react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase/client';
+
+import PredictiveAlertsTab from '@/components/admin/PredictiveAlertsTab';
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; dot: string }> = {
   REPORTED:              { label: "Reported",         bg: "#1e3a5f", color: "#60a5fa", dot: "#3b82f6" },
@@ -33,6 +38,8 @@ function StatusBadge({ status }: { status: string }) {
 interface DeptStat {
   id: string;
   name: string;
+  slug?: string;
+  management_mode?: string;
   total: number;
   resolved: number;
   open: number;
@@ -50,9 +57,55 @@ export default function AdminDashboardUI({
   user, profile, initialStats, initialDeptStats, initialRecent
 }: AdminDashboardUIProps) {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'PREDICTIVE_ALERTS' | 'OVERVIEW'>('PREDICTIVE_ALERTS');
+  const [unreadAlerts, setUnreadAlerts] = useState<number>(0);
   const [stats] = useState(initialStats);
-  const [deptStats] = useState(initialDeptStats);
+  const [deptStats, setDeptStats] = useState(initialDeptStats);
   const [recentIssues] = useState(initialRecent);
+  const [togglingDept, setTogglingDept] = useState<string | null>(null);
+
+  useState(() => {
+    async function fetchAlertsCount() {
+      try {
+        const res = await fetch('/api/analytics/patterns?status=ACTIVE');
+        const data = await res.json();
+        if (data.unreadAlertsCount !== undefined) {
+          setUnreadAlerts(data.unreadAlertsCount);
+        }
+      } catch (err) {
+        console.warn('Failed to fetch unread alerts count:', err);
+      }
+    }
+    fetchAlertsCount();
+  });
+
+  const handleToggleMode = async (e: React.MouseEvent, dept: DeptStat) => {
+    e.stopPropagation();
+    if (togglingDept) return;
+    setTogglingDept(dept.id);
+    
+    const newMode = dept.management_mode === 'TENDER' ? 'DEPARTMENT' : 'TENDER';
+    
+    try {
+      // 1. Update Firestore
+      const deptRef = doc(db, 'departments', dept.id);
+      await updateDoc(deptRef, { management_mode: newMode });
+      
+      // 2. Update Supabase
+      if (dept.slug) {
+        await supabase.from('departments').update({ management_mode: newMode }).eq('slug', dept.slug);
+      } else {
+        console.warn("Department slug not found, could not sync to Supabase.");
+      }
+
+      setDeptStats(prev => prev.map(d => d.id === dept.id ? { ...d, management_mode: newMode } : d));
+    } catch (err) {
+      console.error("Failed to toggle mode:", err);
+      alert("Error toggling mode. Check console.");
+    } finally {
+      setTogglingDept(null);
+    }
+  };
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Admin";
   const firstName = fullName.split(" ")[0];
@@ -72,7 +125,7 @@ export default function AdminDashboardUI({
         <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(167, 139, 250, 0.12) 0%, transparent 70%)", borderRadius: "50%" }} />
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", padding: "0 16px 100px" }}>
 
         {/* Header */}
         <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 4px 28px" }}>
@@ -95,7 +148,33 @@ export default function AdminDashboardUI({
           </div>
         </header>
 
-        {/* Hero — System Health */}
+        {/* Tab Selector */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16 }}>
+          <button
+            onClick={() => setActiveTab('PREDICTIVE_ALERTS')}
+            style={{
+              padding: "10px 20px", borderRadius: 12,
+              background: activeTab === 'PREDICTIVE_ALERTS' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
+              color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8
+            }}>
+            🚨 Predictive Infrastructure Alerts {unreadAlerts > 0 && <span style={{ background: "#ef4444", color: "white", borderRadius: 99, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>{unreadAlerts} NEW</span>}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('OVERVIEW')}
+            style={{
+              padding: "10px 20px", borderRadius: 12,
+              background: activeTab === 'OVERVIEW' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
+              color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8
+            }}>
+            📊 Department & System Overview
+          </button>
+        </div>
+
+        {activeTab === 'PREDICTIVE_ALERTS' ? (
+          <PredictiveAlertsTab />
+        ) : (
+          <>
         <section style={{ marginBottom: 28 }}>
           <div style={{ borderRadius: 24, overflow: "hidden", border: "1.5px solid rgba(139, 92, 246, 0.25)", background: "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 146, 119, 0.05) 100%)", padding: 22 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
@@ -160,16 +239,32 @@ export default function AdminDashboardUI({
                           <Building2 size={16} color="#a78bfa" />
                         </div>
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>{dept.name}</div>
-                          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>{dept.total} total · {dept.open} open</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, display: "flex", alignItems: "center", gap: 8 }}>
+                          {dept.name}
+                          <span style={{ fontSize: 9, padding: "2px 6px", borderRadius: 4, background: dept.management_mode === 'TENDER' ? 'rgba(59,130,246,0.2)' : 'rgba(167,139,250,0.2)', color: dept.management_mode === 'TENDER' ? '#60a5fa' : '#a78bfa', textTransform: 'uppercase' }}>
+                            {dept.management_mode || 'DEPARTMENT'}
+                          </span>
                         </div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontWeight: 600 }}>{dept.total} total · {dept.open} open</div>
                       </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <button 
+                        onClick={(e) => handleToggleMode(e, dept)}
+                        disabled={togglingDept === dept.id}
+                        style={{ fontSize: 10, fontWeight: 800, padding: "6px 10px", borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", cursor: togglingDept === dept.id ? "wait" : "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                      >
+                        {togglingDept === dept.id ? <RefreshCw size={10} className="animate-spin" /> : null}
+                        SWITCH TO {dept.management_mode === 'TENDER' ? 'GOV' : 'TENDER'}
+                      </button>
+                      
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{rate}%</span>
                         <ArrowRight size={10} color="#a78bfa" />
                       </div>
                     </div>
-                    <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  </div>
+                  <div style={{ height: 4, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
                       <div style={{ height: "100%", borderRadius: 99, width: `${rate}%`, background: `linear-gradient(90deg, ${barColor}, ${barColor}99)` }} />
                     </div>
                   </div>
@@ -211,9 +306,10 @@ export default function AdminDashboardUI({
             </div>
           )}
         </section>
+        </>
+        )}
       </div>
 
-      
     </div>
   );
 }

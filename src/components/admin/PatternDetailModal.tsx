@@ -37,101 +37,118 @@ export default function PatternDetailModal({ pattern, onClose, onStatusChange }:
   const timelineEvents = detailData?.timelineEvents || [];
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#121215", border: "1.5px solid rgba(255,255,255,0.1)", borderRadius: 24, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", padding: 28, position: "relative", color: "white" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, backdropFilter: "blur(8px)" }} className="flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div
+        style={{
+          background: "#121215",
+          border: "1.5px solid rgba(255,255,255,0.1)",
+          color: "white"
+        }}
+        className="w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 relative shadow-2xl">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          style={{ position: "absolute", top: 20, right: 20, width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-          <X size={18} />
+          style={{
+            position: "absolute", top: 16, right: 16, width: 40, height: 40, borderRadius: 12,
+            background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+            color: "white", cursor: "pointer"
+          }}
+          className="flex items-center justify-center active:scale-95 transition-transform">
+          <X size={20} />
         </button>
 
         {/* Modal Header */}
-        <div style={{ marginBottom: 20 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)", textTransform: "uppercase" }}>
+        <div className="mb-5 pr-10">
+          <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.3)", textTransform: "uppercase" }}>
             {pattern.severity_level} SEVERITY PATTERN
           </span>
-          <h2 style={{ fontSize: 22, fontWeight: 900, margin: "10px 0 4px" }}>
+          <h2 className="text-lg sm:text-2xl font-black mt-2 mb-1 capitalize text-white">
             {pattern.category_id} Cluster History & Prediction
           </h2>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: 0, display: "flex", alignItems: "center", gap: 6 }}>
-            <MapPin size={14} color="#0ea5e9" /> {pattern.location_description} ({pattern.cluster_lat.toFixed(4)}, {pattern.cluster_lng.toFixed(4)})
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }} className="flex items-center gap-1.5 truncate">
+            <MapPin size={14} color="#0ea5e9" className="shrink-0" />
+            <span className="truncate">
+              {pattern.location_description || `Centroid (${pattern.cluster_lat.toFixed(4)}, ${pattern.cluster_lng.toFixed(4)})`}
+            </span>
           </p>
         </div>
 
         {/* Stats Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24, background: "rgba(0,0,0,0.3)", padding: 16, borderRadius: 16, border: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 p-3.5 rounded-2xl bg-black/30 border border-white/5">
           <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Risk Score</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: pattern.risk_score >= 70 ? "#ef4444" : "#fbbf24" }}>{pattern.risk_score} / 100</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Risk Score</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: pattern.risk_score >= 70 ? "#ef4444" : "#fbbf24" }}>{pattern.risk_score} / 100</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Confidence</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#0ea5e9" }}>{pattern.prediction_confidence}%</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Confidence</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#0ea5e9" }}>{pattern.prediction_confidence}%</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Median Interval</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "white" }}>{pattern.median_interval_days} Days</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Median Interval</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "white" }}>{pattern.median_interval_days} Days</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Predicted Next</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#ef4444", marginTop: 4 }}>{new Date(pattern.predicted_next_at).toLocaleDateString()}</div>
+            <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", fontWeight: 700 }}>Predicted Next</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#ef4444", marginTop: 2 }}>{new Date(pattern.predicted_next_at).toLocaleDateString()}</div>
           </div>
         </div>
 
         {/* Recommendation Box */}
         {pattern.recommendation_text && (
-          <div style={{ background: "rgba(14, 165, 233, 0.1)", border: "1px solid rgba(14, 165, 233, 0.25)", borderRadius: 16, padding: 16, marginBottom: 24 }}>
-            <h4 style={{ fontSize: 12, fontWeight: 800, color: "#0ea5e9", margin: "0 0 4px", textTransform: "uppercase" }}>Automated Rule Recommendation</h4>
-            <p style={{ fontSize: 13, color: "white", margin: 0 }}>{pattern.recommendation_text}</p>
+          <div className="bg-sky-500/10 border border-sky-500/25 rounded-2xl p-4 mb-5">
+            <h4 style={{ fontSize: 11, fontWeight: 800, color: "#0ea5e9", textTransform: "uppercase", margin: "0 0 4px" }}>Automated Rule Recommendation</h4>
+            <p style={{ fontSize: 13, color: "white", margin: 0, lineHeight: 1.5 }}>{pattern.recommendation_text}</p>
           </div>
         )}
 
         {/* Status Lifecycle Actions */}
-        <div style={{ marginBottom: 24, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 10 }}>Update Pattern Lifecycle Status</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div className="mb-5 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+          <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", marginBottom: 8 }}>Update Pattern Lifecycle Status</div>
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => onStatusChange(pattern.id, 'UNDER_INVESTIGATION')}
-              style={{ padding: "8px 14px", borderRadius: 10, background: pattern.status === 'UNDER_INVESTIGATION' ? "#0ea5e9" : "rgba(255,255,255,0.05)", color: "white", fontSize: 12, fontWeight: 700, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}>
+              style={{ minHeight: 40 }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${pattern.status === 'UNDER_INVESTIGATION' ? 'bg-sky-500 text-white border-sky-400' : 'bg-white/5 text-white border-white/10'}`}>
               🔍 Under Investigation
             </button>
             <button
-              onClick={() => onStatusChange(pattern.id, 'INFRASTRUCTURE_UPGRADE')}
-              style={{ padding: "8px 14px", borderRadius: 10, background: pattern.status === 'INFRASTRUCTURE_UPGRADE' ? "#8b5cf6" : "rgba(255,255,255,0.05)", color: "white", fontSize: 12, fontWeight: 700, border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}>
-              🛠️ Upgrade Scheduled
+              onClick={() => onStatusChange(pattern.id, 'MAINTENANCE_SCHEDULED')}
+              style={{ minHeight: 40 }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${pattern.status === 'MAINTENANCE_SCHEDULED' ? 'bg-purple-500 text-white border-purple-400' : 'bg-white/5 text-white border-white/10'}`}>
+              🛠️ Maintenance Scheduled
             </button>
             <button
               onClick={() => onStatusChange(pattern.id, 'RESOLVED')}
-              style={{ padding: "8px 14px", borderRadius: 10, background: pattern.status === 'RESOLVED' ? "#10b981" : "rgba(16, 185, 129, 0.2)", color: "#10b981", fontSize: 12, fontWeight: 700, border: "1px solid rgba(16, 185, 129, 0.3)", cursor: "pointer" }}>
-              ✔️ Mark Resolved & Fixed
+              style={{ minHeight: 40 }}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${pattern.status === 'RESOLVED' ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/5 text-white border-white/10'}`}>
+              ✅ Mark Resolved
             </button>
           </div>
         </div>
 
-        {/* Mapped Complaints Timeline */}
+        {/* Incident History Timeline */}
         <div>
-          <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 8 }}>
-            Complaint Cluster Timeline ({mappedIssues.length || pattern.occurrence_count} Occurrences)
-          </h3>
-
+          <h3 className="text-sm font-extrabold text-white uppercase tracking-wider mb-3">Linked Complaint Timeline</h3>
           {loading ? (
-            <div style={{ padding: 30, textAlign: "center", color: "rgba(255,255,255,0.4)" }}>Loading cluster complaints...</div>
-          ) : mappedIssues.length === 0 ? (
-            <div style={{ padding: 20, textAlign: "center", color: "rgba(255,255,255,0.3)" }}>No individual complaints mapped yet.</div>
+            <div className="text-center py-6 text-xs text-white/40">Loading historical timeline...</div>
+          ) : timelineEvents.length === 0 ? (
+            <div className="text-center py-6 text-xs text-white/40 bg-white/[0.01] rounded-2xl border border-white/5">
+              Historical incidents linked to this spatial centroid.
+            </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {mappedIssues.map((issue: any, index: number) => (
-                <div key={issue.id} style={{ padding: 14, borderRadius: 14, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, margin: "0 0 2px" }}>{issue.title}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
-                      Reported on {new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString()} • Status: {issue.status}
+            <div className="space-y-2.5">
+              {timelineEvents.map((evt: any, index: number) => (
+                <div key={index} className="p-3 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-sky-400" />
+                    <div>
+                      <div className="font-bold text-white">Complaint #{evt.issue_id || evt.id}</div>
+                      <div className="text-[11px] text-white/50">{new Date(evt.created_at).toLocaleDateString()}</div>
                     </div>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 800, padding: "4px 8px", borderRadius: 8, background: "rgba(14, 165, 233, 0.15)", color: "#0ea5e9" }}>
-                    Occurrence #{index + 1}
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-white/5 text-white/70 border border-white/10">
+                    {evt.status || 'RESOLVED'}
                   </span>
                 </div>
               ))}

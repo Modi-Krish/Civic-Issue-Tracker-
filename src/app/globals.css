@@ -252,6 +252,15 @@ button:active {
   animation: spin 1s linear infinite;
 }
 
+/* ─── Hide Scrollbar Utility ─────────────────────────────────────── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ─── Status Badge Colors ─────────────────────────────────────────── */
 .badge-reported { background: var(--info); color: white; }
 .badge-department-assigned { background: var(--accent); color: var(--text-on-light); }

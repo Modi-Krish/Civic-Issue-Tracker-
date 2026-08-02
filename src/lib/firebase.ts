@@ -17,6 +17,10 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 
+if (typeof window !== 'undefined' && (!apiKey || apiKey === 'placeholder-api-key')) {
+  console.warn('⚠️ [Firebase Init] NEXT_PUBLIC_FIREBASE_API_KEY is missing or placeholder. Please set Firebase environment variables in Vercel project settings.');
+}
+
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);

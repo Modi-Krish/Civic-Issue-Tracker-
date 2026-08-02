@@ -47,7 +47,17 @@ export async function signUp(formData: FormData) {
 
     return { success: true, redirectTo: getRedirectRoute(role) };
   } catch (error: any) {
-    return { error: error.message };
+    if (error.code === 'auth/unauthorized-domain') {
+      return { 
+        error: `Firebase Auth Error: Domain not authorized (${typeof window !== 'undefined' ? window.location.hostname : 'Vercel'}). Please add this domain to Authorized Domains in Firebase Console -> Authentication -> Settings.`
+      };
+    }
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { 
+        error: 'Firebase Auth Error: Invalid API Key. Please verify NEXT_PUBLIC_FIREBASE_API_KEY in Vercel project environment variables.'
+      };
+    }
+    return { error: error?.message || 'Authentication failed.' };
   }
 }
 
@@ -64,6 +74,16 @@ export async function signIn(formData: FormData) {
 
     return { success: true, redirectTo: getRedirectRoute(role) };
   } catch (error: any) {
+    if (error.code === 'auth/unauthorized-domain') {
+      return { 
+        error: `Firebase Auth Error: Domain not authorized (${typeof window !== 'undefined' ? window.location.hostname : 'Vercel'}). Add this domain in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+      };
+    }
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { 
+        error: 'Firebase Auth Error: Invalid API Key. Ensure NEXT_PUBLIC_FIREBASE_API_KEY is configured in Vercel environment variables.'
+      };
+    }
     return { error: error.message };
   }
 }
@@ -131,6 +151,16 @@ export async function quickLogin(role: string) {
         return { error: signUpError.message };
       }
     }
+    if (error.code === 'auth/unauthorized-domain') {
+      return { 
+        error: `Firebase Auth Error: Domain not authorized (${typeof window !== 'undefined' ? window.location.hostname : 'Vercel'}). Add this domain in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+      };
+    }
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { 
+        error: 'Firebase Auth Error: Invalid API Key. Ensure NEXT_PUBLIC_FIREBASE_API_KEY is set in Vercel environment variables.'
+      };
+    }
     return { error: error.message };
   }
 }
@@ -162,9 +192,24 @@ export async function loginWithEmail(email: string) {
         });
         return { success: true, redirectTo: getRedirectRoute('citizen') };
       } catch (createError: any) {
-        return { error: 'Failed to synchronize with Firebase Auth.' };
+        if (createError.code === 'auth/unauthorized-domain') {
+          return { 
+            error: `Firebase Auth Error: Domain not authorized (${typeof window !== 'undefined' ? window.location.hostname : 'Vercel'}). Add domain in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+          };
+        }
+        return { error: createError?.message || 'Failed to synchronize with Firebase Auth.' };
       }
     }
-    return { error: 'Firebase authentication failed.' };
+    if (error.code === 'auth/unauthorized-domain') {
+      return { 
+        error: `Firebase Auth Error: Domain not authorized (${typeof window !== 'undefined' ? window.location.hostname : 'Vercel'}). Add domain in Firebase Console -> Authentication -> Settings -> Authorized Domains.`
+      };
+    }
+    if (error.code === 'auth/api-key-not-valid' || error.code === 'auth/invalid-api-key') {
+      return { 
+        error: 'Firebase Auth Error: Invalid API Key. Ensure NEXT_PUBLIC_FIREBASE_API_KEY is configured in Vercel environment variables.'
+      };
+    }
+    return { error: error?.message || `Firebase authentication failed (${error.code || 'unknown'}).` };
   }
 }

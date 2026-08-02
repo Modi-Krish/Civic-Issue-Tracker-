@@ -104,20 +104,22 @@ export default function PredictiveAlertsTab() {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }} className="w-full max-w-full overflow-x-hidden">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }} className="w-full max-w-full overflow-x-hidden font-sans">
 
       {/* ── SECTION A: STALE DATA WARNING BANNER ── */}
       {healthStatus?.isStale && (
         <div style={{ padding: "14px 18px", borderRadius: 16, background: "#fef2f2", border: "1.5px solid #fecaca", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, color: "#b91c1c" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 700 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 700 }} className="leading-tight">
             <AlertOctagon size={20} className="shrink-0" />
             <span>Alert data may be outdated. Last run: {healthStatus.staleSinceHours ?? 36}h ago.</span>
           </div>
           <button
+            type="button"
             onClick={handleRunAnalysis}
             disabled={runningAnalysis}
-            style={{ padding: "8px 14px", borderRadius: 10, background: "#dc2626", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer" }}>
-            Run Analysis Now
+            style={{ padding: "8px 14px", borderRadius: 10, background: "#dc2626", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer" }}
+            className="flex items-center gap-1.5 shrink-0">
+            <span>Run Analysis Now</span>
           </button>
         </div>
       )}
@@ -128,9 +130,9 @@ export default function PredictiveAlertsTab() {
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc2626" }} className="shrink-0">
             <ShieldAlert size={20} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 leading-tight">
             <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.4 }} className="truncate">Critical</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#dc2626" }}>{criticalCount}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#dc2626", marginTop: 2 }}>{criticalCount}</div>
           </div>
         </div>
 
@@ -138,9 +140,9 @@ export default function PredictiveAlertsTab() {
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "#ffedd5", display: "flex", alignItems: "center", justifyContent: "center", color: "#ea580c" }} className="shrink-0">
             <AlertTriangle size={20} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 leading-tight">
             <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.4 }} className="truncate">High Risk</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#ea580c" }}>{highCount}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#ea580c", marginTop: 2 }}>{highCount}</div>
           </div>
         </div>
 
@@ -148,9 +150,9 @@ export default function PredictiveAlertsTab() {
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7" }} className="shrink-0">
             <Calendar size={20} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 leading-tight">
             <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.4 }} className="truncate">Urgent (&le;14d)</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#0284c7" }}>{upcomingCount}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#0284c7", marginTop: 2 }}>{upcomingCount}</div>
           </div>
         </div>
 
@@ -158,9 +160,9 @@ export default function PredictiveAlertsTab() {
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "#ede9fe", display: "flex", alignItems: "center", justifyContent: "center", color: "#7c3aed" }} className="shrink-0">
             <Bell size={20} />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 leading-tight">
             <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.4 }} className="truncate">Unread Alerts</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#7c3aed" }}>{unreadCount}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#7c3aed", marginTop: 2 }}>{unreadCount}</div>
           </div>
         </div>
       </div>
@@ -171,6 +173,7 @@ export default function PredictiveAlertsTab() {
           {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM_LOW', 'UPCOMING'] as const).map(f => (
             <button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
               style={{
                 padding: "8px 14px",
@@ -190,6 +193,7 @@ export default function PredictiveAlertsTab() {
         </div>
 
         <button
+          type="button"
           onClick={handleRunAnalysis}
           disabled={runningAnalysis}
           style={{
@@ -211,7 +215,7 @@ export default function PredictiveAlertsTab() {
           }}
           className="sm:w-auto">
           <RefreshCw size={16} className={runningAnalysis ? "animate-spin" : ""} />
-          {runningAnalysis ? "Scanning..." : "Refresh Analysis"}
+          <span>{runningAnalysis ? "Scanning..." : "Refresh Analysis"}</span>
         </button>
       </div>
 

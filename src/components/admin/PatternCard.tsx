@@ -48,8 +48,8 @@ function RiskGauge({ score = 75, max = 100 }: { score: number; max?: number }) {
   const strokeColor = score >= 70 ? '#E24B4A' : score >= 40 ? '#EF9F27' : '#0F6E56';
 
   return (
-    <div className="flex flex-col items-center flex-shrink-0">
-      <svg width="56" height="56" viewBox="0 0 56 56">
+    <div className="flex flex-col items-center justify-center flex-shrink-0 text-center select-none">
+      <svg width="56" height="56" viewBox="0 0 56 56" className="block">
         <circle
           cx="28"
           cy="28"
@@ -72,19 +72,28 @@ function RiskGauge({ score = 75, max = 100 }: { score: number; max?: number }) {
         />
         <text
           x="28"
-          y="26"
+          y="27"
           textAnchor="middle"
+          dominantBaseline="central"
           fontSize="15"
-          fontWeight="500"
+          fontWeight="600"
           fill="#2C2C2A"
         >
           {score}
         </text>
-        <text x="28" y="38" textAnchor="middle" fontSize="8" fill="#918F84">
+        <text
+          x="28"
+          y="39"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="8"
+          fontWeight="500"
+          fill="#918F84"
+        >
           /{max}
         </text>
       </svg>
-      <div className="text-[10px] text-[#918F84] tracking-wide mt-0.5">
+      <div className="text-[10px] font-medium text-[#918F84] tracking-wide mt-0.5 text-center leading-none">
         risk score
       </div>
     </div>
@@ -93,12 +102,12 @@ function RiskGauge({ score = 75, max = 100 }: { score: number; max?: number }) {
 
 function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="bg-[#FCFBF7] p-3.5 px-4.5">
-      <div className="text-[11px] text-[#918F84] flex items-center gap-1.5 uppercase tracking-wider font-medium">
-        <Icon size={13} />
-        {label}
+    <div className="bg-[#FCFBF7] p-3.5 px-4.5 flex flex-col justify-between min-w-0">
+      <div className="text-[11px] text-[#918F84] flex items-center gap-1.5 uppercase tracking-wider font-medium leading-none">
+        <Icon size={13} className="shrink-0" />
+        <span className="truncate">{label}</span>
       </div>
-      <div className="text-[16px] font-medium text-[#2C2C2A] mt-1 truncate">
+      <div className="text-[15px] font-medium text-[#2C2C2A] mt-1.5 leading-snug truncate">
         {value}
       </div>
     </div>
@@ -108,12 +117,12 @@ function Stat({ icon: Icon, label, value }: { icon: any; label: string; value: s
 function FactorBar({ label, value, max = 30, color }: { label: string; value: number; max?: number; color: string }) {
   const pct = Math.min(100, Math.max(0, Math.round((value / Math.max(1, max)) * 100)));
   return (
-    <div>
-      <div className="flex justify-between text-[13px] mb-1.5">
-        <span className="text-[#2C2C2A] font-medium">{label}</span>
-        <span className="font-medium text-[#2C2C2A]">{value}</span>
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between text-[13px] leading-tight">
+        <span className="text-[#2C2C2A] font-medium truncate">{label}</span>
+        <span className="font-semibold text-[#2C2C2A] shrink-0 ml-2">{value}</span>
       </div>
-      <div className="h-[5px] bg-[#F0EEE5] rounded-full overflow-hidden">
+      <div className="h-[5px] bg-[#F0EEE5] rounded-full overflow-hidden w-full">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, background: color }}
@@ -195,23 +204,23 @@ export default function PatternCard({
       <div className="bg-white rounded-[14px] border border-[#DEDACB] overflow-hidden shadow-sm">
         {/* Header */}
         <div className="flex items-start justify-between p-5 pb-4 gap-4">
-          <div className="flex gap-3.5 min-w-0 flex-1">
+          <div className="flex items-start gap-3.5 min-w-0 flex-1">
             <div
               style={{ backgroundColor: catStyle.bg }}
-              className="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center flex-shrink-0"
+              className="w-[42px] h-[42px] rounded-[10px] flex items-center justify-center flex-shrink-0 mt-0.5"
             >
               {catStyle.icon}
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 leading-normal">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[16px] font-medium text-[#2C2C2A] capitalize truncate">
+                <span className="text-[16px] font-medium text-[#2C2C2A] capitalize leading-snug">
                   {title}
                 </span>
-                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full capitalize ${severityBadgeClass}`}>
+                <span className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full capitalize leading-tight shrink-0 ${severityBadgeClass}`}>
                   {severity}
                 </span>
               </div>
-              <div className="text-[13px] text-[#79776E] mt-0.5 truncate">
+              <div className="text-[13px] text-[#79776E] mt-1 leading-normal truncate">
                 {location}
               </div>
             </div>
@@ -230,19 +239,19 @@ export default function PatternCard({
         {/* Next expected failure banner */}
         <div className="mx-5 mt-4 bg-[#FAEEDA] border border-[#F0D9A8] rounded-[10px] px-3.5 py-2.5 flex items-center gap-2">
           <AlertTriangle size={16} color="#854F0B" className="flex-shrink-0" />
-          <span className="text-[13px] text-[#633806]">
-            <span className="font-medium">Next expected failure</span> — in{' '}
+          <span className="text-[13px] text-[#633806] leading-snug">
+            <span className="font-semibold">Next expected failure</span> — in{' '}
             {nextFailureDays} days, {nextFailureDate}
           </span>
         </div>
 
         {/* XAI breakdown */}
-        <div className="px-5 pt-5 pb-1.5">
-          <div className="text-[11px] font-medium tracking-wide text-[#918F84] mb-3.5 uppercase">
+        <div className="px-5 pt-5 pb-2">
+          <div className="text-[11px] font-medium tracking-wide text-[#918F84] mb-3.5 uppercase leading-none">
             EXPLAINABLE AI RISK BREAKDOWN
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-7 gap-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
             <FactorBar
               label="Occurrences"
               value={factors.occurrences}
@@ -269,7 +278,7 @@ export default function PatternCard({
             />
           </div>
 
-          <div className="mt-4 text-[12px] text-[#918F84] font-mono">
+          <div className="mt-4 text-[12px] text-[#918F84] font-mono leading-tight truncate">
             risk = count({factors.occurrences}) + frequency(
             {factors.frequency}) + trend({factors.trendVelocity}) + category(
             {factors.categoryWeight})
@@ -277,30 +286,31 @@ export default function PatternCard({
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-5 mt-3.5 border-t border-[#EAE6D9]">
+        <div className="flex items-center justify-between px-5 pt-4 pb-5 mt-3 border-t border-[#EAE6D9]">
           <button
             type="button"
             onClick={() => onViewDetail(pattern)}
-            className="text-[13px] text-[#5F5E5A] flex items-center gap-1.5 hover:text-[#2C2C2A] transition-colors cursor-pointer"
+            className="text-[13px] text-[#5F5E5A] font-medium flex items-center gap-1.5 hover:text-[#2C2C2A] transition-colors cursor-pointer"
           >
-            view history <ArrowRight size={14} />
+            <span>view history</span>
+            <ArrowRight size={14} className="shrink-0" />
           </button>
 
           <button
             type="button"
             onClick={() => onResolve(pattern.id)}
             disabled={isResolving}
-            className="bg-[#0F6E56] text-white text-[13px] font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#085041] transition-colors cursor-pointer disabled:opacity-60"
+            className="bg-[#0F6E56] text-white text-[13px] font-medium px-4 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#085041] transition-colors cursor-pointer disabled:opacity-60 shrink-0"
           >
             {isResolving ? (
               <>
-                <Loader2 size={15} className="animate-spin text-white" />
-                resolving...
+                <Loader2 size={15} className="animate-spin text-white shrink-0" />
+                <span>resolving...</span>
               </>
             ) : (
               <>
-                <CircleCheck size={15} />
-                mark resolved
+                <CircleCheck size={15} className="shrink-0" />
+                <span>mark resolved</span>
               </>
             )}
           </button>

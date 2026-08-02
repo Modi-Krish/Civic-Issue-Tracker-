@@ -5,21 +5,17 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
 const firebaseConfig = {
-  apiKey: apiKey || 'placeholder-api-key',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'placeholder.firebaseapp.com',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'placeholder-project-id',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'placeholder.appspot.com',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '123456789',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:123456789:web:123456789'
+  apiKey: apiKey || '',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'civic-issue-tracker-132ba.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'civic-issue-tracker-132ba',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'civic-issue-tracker-132ba.firebasestorage.app',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '460992713173',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:460992713173:web:2490ef0fe0e026909aad5c'
 };
 
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
-
-if (typeof window !== 'undefined' && (!apiKey || apiKey === 'placeholder-api-key')) {
-  console.warn('⚠️ [Firebase Init] NEXT_PUBLIC_FIREBASE_API_KEY is missing or placeholder. Please set Firebase environment variables in Vercel project settings.');
-}
 
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);

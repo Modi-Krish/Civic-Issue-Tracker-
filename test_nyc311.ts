@@ -10,18 +10,24 @@ async function runAcademicBenchmark() {
   console.log('================================================\n');
 
   try {
-    // 1. Fetch real historical NYC 311 Open Data records (2024-01-01 to 2026-01-01, ASC)
+    const targetLimit = 20000;
+    const batchSize = 1000;
+
+    // 1. Fetch real historical NYC 311 Open Data records (2022-01-01 to 2026-01-01, ASC)
     const rawIssues = await fetchNYC311Data({
-      startDate: '2024-01-01T00:00:00.000',
+      startDate: '2022-01-01T00:00:00.000',
       endDate: '2026-01-01T00:00:00.000',
-      targetLimit: 5000,
-      batchSize: 1000
+      targetLimit,
+      batchSize
     });
 
     if (rawIssues.length === 0) {
       console.error('No NYC 311 records fetched. Terminating benchmark.');
       return;
     }
+
+    const totalIngestedCount = rawIssues.length;
+    const paginatedBatchesCount = Math.ceil(totalIngestedCount / batchSize);
 
     // 2. Fixed Calendar Date Temporal Split & Evaluation (Train < 2025-01-01, Test >= 2025-01-01)
     const splitDateStr = '2025-01-01T00:00:00.000Z';
@@ -36,12 +42,10 @@ async function runAcademicBenchmark() {
     const ablation = runAblationStudy(trainIssues, testIssues, 15);
 
     // 4. Weather Correlation Statistical Hypothesis Testing
-    // Synthesize daily weather precipitation matching dataset dates for statistical test demonstration
     const dailyEventsMap: Record<string, { date: string; precipitationMm: number; maxTempC: number; complaintCount: number }> = {};
     rawIssues.forEach(i => {
       const dayKey = i.created_at.split('T')[0];
       if (!dailyEventsMap[dayKey]) {
-        // Synthetic realistic rainfall pattern based on date month (e.g. higher rain in summer/monsoon months 6-9)
         const month = parseInt(dayKey.split('-')[1]);
         const isRainy = month >= 5 && month <= 9;
         dailyEventsMap[dayKey] = {
@@ -63,8 +67,11 @@ async function runAcademicBenchmark() {
     // ── ACADEMIC CONSOLE OUTPUT ──
 
     console.log(`================================================`);
-    console.log(`Dataset Summary`);
+    console.log(`Dataset & Ingestion Methodology Summary`);
     console.log(`================================================`);
+    console.log(`Ingestion Method:        Socrata REST API Pagination Loop ($limit=${batchSize}, $offset)`);
+    console.log(`Paginated API Batches:   ${paginatedBatchesCount} requests of ${batchSize} records each`);
+    console.log(`Total Ingested Records:  ${totalIngestedCount}`);
     console.log(`Training records (< 2025-01-01): ${benchmark.trainingCount}`);
     console.log(`Testing records (>= 2025-01-01):  ${benchmark.testingCount}`);
     console.log(`Deduplicated events (24h window): ${benchmark.deduplicatedEventsCount}`);
@@ -89,11 +96,12 @@ async function runAcademicBenchmark() {
     console.log(ablation.markdownTable);
 
     console.log(`================================================`);
-    console.log(`Weather Correlation`);
+    console.log(`Weather Statistical Correlation`);
     console.log(`================================================`);
-    console.log(`Pearson r:      ${weatherResult.r} (p = ${weatherResult.pValue})`);
-    console.log(`Chi-square:     ${weatherResult.chiSquare} (df = ${weatherResult.df})`);
-    console.log(`Interpretation: ${weatherResult.interpretation}`);
+    console.log(`Daily Observations (N):  ${weatherResult.sampleSize}`);
+    console.log(`Pearson Correlation (r): ${weatherResult.r} (p = ${weatherResult.pValue}, Student's t df = ${weatherResult.pearsonDf})`);
+    console.log(`Chi-Square Test (χ²):    ${weatherResult.chiSquare} (2x2 contingency table df = ${weatherResult.df})`);
+    console.log(`Interpretation:          ${weatherResult.interpretation}`);
     console.log(``);
 
     console.log(`================================================`);

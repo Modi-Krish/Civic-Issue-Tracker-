@@ -2,7 +2,9 @@ export interface WeatherTestResult {
   r: number;
   pValue: number;
   chiSquare: number;
-  df: number;
+  df: number; // 2x2 contingency table df = (2-1)*(2-1) = 1
+  pearsonDf: number; // Student's t-test df = N - 2
+  sampleSize: number; // N daily observations
   interpretation: string;
 }
 
@@ -32,6 +34,8 @@ function calculatePValueForPearson(r: number, n: number): number {
 /**
  * Performs Pearson correlation (r), Chi-square (χ²), p-value calculation,
  * and degrees of freedom derivation between daily weather precipitation and complaint spikes.
+ * Chi-Square test of independence on 2x2 contingency table has df = 1.
+ * Pearson correlation Student's t-test has df = N - 2.
  */
 export function runWeatherStatisticalTest(events: DailyWeatherEvent[]): WeatherTestResult {
   const n = events.length;
@@ -41,7 +45,9 @@ export function runWeatherStatisticalTest(events: DailyWeatherEvent[]): WeatherT
       r: 0,
       pValue: 1,
       chiSquare: 0,
-      df: 0,
+      df: 1,
+      pearsonDf: Math.max(0, n - 2),
+      sampleSize: n,
       interpretation: 'Insufficient sample size for weather correlation testing (n < 5).'
     };
   }
@@ -68,9 +74,12 @@ export function runWeatherStatisticalTest(events: DailyWeatherEvent[]): WeatherT
   const rRaw = denX > 0 && denY > 0 ? num / Math.sqrt(denX * denY) : 0;
   const r = Math.round(rRaw * 1000) / 1000;
   const pValue = calculatePValueForPearson(r, n);
-  const df = n - 2;
+  const pearsonDf = n - 2;
 
   // 2. Chi-Square Test (χ²) on 2x2 Contingency Table (High Rain > 10mm vs High Complaint > 2)
+  // Standard 2x2 contingency table has df = (2 - 1) * (2 - 1) = 1
+  const df = 1;
+
   let highRainHighComp = 0;
   let highRainLowComp = 0;
   let lowRainHighComp = 0;
@@ -107,10 +116,10 @@ export function runWeatherStatisticalTest(events: DailyWeatherEvent[]): WeatherT
   // Interpretation
   let interpretation = 'No statistically significant association observed.';
   if (pValue < 0.05 && r > 0.3) {
-    interpretation = `Statistically significant positive correlation detected between precipitation and complaint spikes (r=${r}, p=${pValue}, χ²=${chiSquare}, df=${df}).`;
+    interpretation = `Statistically significant positive correlation confirmed (Pearson r=${r}, p=${pValue}, N=${n} daily observations, df=${pearsonDf}). Chi-Square test of independence on 2x2 contingency table yields χ²=${chiSquare} (df=1).`;
   } else if (pValue < 0.05) {
-    interpretation = `Statistically significant relationship confirmed (p=${pValue}, χ²=${chiSquare}, df=${df}).`;
+    interpretation = `Statistically significant relationship confirmed (p=${pValue}, N=${n}, Pearson df=${pearsonDf}). 2x2 Chi-Square test of independence yields χ²=${chiSquare} (df=1).`;
   }
 
-  return { r, pValue, chiSquare, df, interpretation };
+  return { r, pValue, chiSquare, df, pearsonDf, sampleSize: n, interpretation };
 }

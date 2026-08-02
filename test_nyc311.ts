@@ -13,9 +13,9 @@ async function runAcademicBenchmark() {
     const targetLimit = 20000;
     const batchSize = 1000;
 
-    // 1. Fetch real historical NYC 311 Open Data records (2022-01-01 to 2026-01-01, ASC)
+    // 1. Fetch real historical NYC 311 Open Data records (2024-06-01 to 2026-01-01, ASC)
     const rawIssues = await fetchNYC311Data({
-      startDate: '2022-01-01T00:00:00.000',
+      startDate: '2024-06-01T00:00:00.000',
       endDate: '2026-01-01T00:00:00.000',
       targetLimit,
       batchSize

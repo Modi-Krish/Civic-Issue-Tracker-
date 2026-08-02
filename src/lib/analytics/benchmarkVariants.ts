@@ -36,6 +36,18 @@ export function runAblationStudy(
 ): AblationStudyResult {
   const variants: VariantMetrics[] = [];
 
+  // Group test issues by category for O(1) category lookup and bounding box filtering
+  const testByCategory: Record<string, RawIssue[]> = {};
+  for (const t of testIssues) {
+    const cat = (t.category_id || '').toLowerCase();
+    if (!testByCategory[cat]) testByCategory[cat] = [];
+    testByCategory[cat].push(t);
+  }
+
+  // Pre-calculate test clusters for FN evaluation
+  const testDedup = deduplicateEvents(testIssues);
+  const testClusters = clusterByCategory(testDedup);
+
   // Helper to evaluate a variant prediction set
   const evaluate = (
     name: string,
@@ -47,27 +59,35 @@ export function runAblationStudy(
     let fp = 0;
 
     for (const pred of predictions) {
+      const cat = (pred.category_id || '').toLowerCase();
+      const candidates = testByCategory[cat] || [];
       const predTime = pred.predictedNext.getTime();
-      const match = testIssues.find(t => {
-        if ((t.category_id || '').toLowerCase() !== (pred.category_id || '').toLowerCase()) return false;
-        const dist = haversineMetres(pred.lat, pred.lng, t.latitude, t.longitude);
-        if (dist > pred.radius) return false;
-        const diffDays = Math.abs(new Date(t.created_at).getTime() - predTime) / (86400 * 1000);
-        return diffDays <= toleranceDays;
+      const radius = pred.radius;
+      const approxDeg = radius / 111000;
+
+      const match = candidates.find(t => {
+        if (Math.abs(t.latitude - pred.lat) > approxDeg) return false;
+        if (Math.abs(t.longitude - pred.lng) > approxDeg) return false;
+
+        const timeDiffDays = Math.abs(new Date(t.created_at).getTime() - predTime) / (86400 * 1000);
+        if (timeDiffDays > toleranceDays) return false;
+
+        return haversineMetres(pred.lat, pred.lng, t.latitude, t.longitude) <= radius;
       });
 
       if (match) tp++;
       else fp++;
     }
 
-    // Estimate FN from test set clusters
-    const testDedup = deduplicateEvents(testIssues);
-    const testClusters = clusterByCategory(testDedup);
     let fn = 0;
     for (const tc of testClusters) {
       if (tc.events.length >= ANALYSIS_CONFIG.MIN_OCCURRENCES_TO_FLAG) {
+        const cat = (tc.category_id || '').toLowerCase();
+        const approxDeg = tc.radius_metres / 111000;
         const match = predictions.find(p =>
-          p.category_id === tc.category_id &&
+          (p.category_id || '').toLowerCase() === cat &&
+          Math.abs(p.lat - tc.centroid_lat) <= approxDeg &&
+          Math.abs(p.lng - tc.centroid_lng) <= approxDeg &&
           haversineMetres(p.lat, p.lng, tc.centroid_lat, tc.centroid_lng) <= tc.radius_metres
         );
         if (!match) fn++;

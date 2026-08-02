@@ -1,7 +1,26 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, Calendar, MapPin, CheckCircle2, TrendingUp, TrendingDown, Minus, ArrowRight, Droplet, Wrench, Trash2, Lightbulb, Zap } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  MapPin,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ArrowRight,
+  Droplet,
+  Wrench,
+  Trash2,
+  Lightbulb,
+  Zap,
+  Clock,
+  Layers,
+  ShieldCheck,
+  Loader2,
+  Info
+} from 'lucide-react';
 
 interface PatternCardProps {
   pattern: any;
@@ -11,214 +30,428 @@ interface PatternCardProps {
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  'water-leakage': <Droplet size={18} color="#60a5fa" />,
-  'water leakage': <Droplet size={18} color="#60a5fa" />,
-  'water': <Droplet size={18} color="#60a5fa" />,
-  'roads': <Wrench size={18} color="#f59e0b" />,
-  'road': <Wrench size={18} color="#f59e0b" />,
-  'electricity': <Zap size={18} color="#fbbf24" />,
-  'garbage': <Trash2 size={18} color="#34d399" />,
-  'sanitation': <Trash2 size={18} color="#34d399" />,
-  'streetlights': <Lightbulb size={18} color="#FF2E11" />,
-  'default': <AlertTriangle size={18} color="#a78bfa" />
+  'water-leakage': <Droplet className="w-5 h-5 text-blue-600" />,
+  'water leakage': <Droplet className="w-5 h-5 text-blue-600" />,
+  'water': <Droplet className="w-5 h-5 text-blue-600" />,
+  'roads': <Wrench className="w-5 h-5 text-amber-600" />,
+  'road': <Wrench className="w-5 h-5 text-amber-600" />,
+  'electricity': <Zap className="w-5 h-5 text-yellow-600" />,
+  'garbage': <Trash2 className="w-5 h-5 text-emerald-600" />,
+  'sanitation': <Trash2 className="w-5 h-5 text-emerald-600" />,
+  'streetlights': <Lightbulb className="w-5 h-5 text-rose-600" />,
+  'default': <AlertTriangle className="w-5 h-5 text-purple-600" />
 };
 
-export default function PatternCard({ pattern, onViewDetail, onResolve, loadingId }: PatternCardProps) {
+export default function PatternCard({
+  pattern,
+  onViewDetail,
+  onResolve,
+  loadingId
+}: PatternCardProps) {
   const catKey = (pattern.category_id || '').toLowerCase();
   const Icon = CATEGORY_ICONS[catKey] || CATEGORY_ICONS.default;
 
-  const isCritical = pattern.severity_level === 'CRITICAL' || pattern.severity_level === 'HIGH';
   const daysUntilNext = pattern.predicted_next_at
-    ? Math.round((new Date(pattern.predicted_next_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    ? Math.round(
+        (new Date(pattern.predicted_next_at).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24)
+      )
     : 0;
+
   const isUrgentNext = daysUntilNext <= 14;
+  const isResolving = loadingId === pattern.id;
 
-  const severityColor =
-    pattern.severity_level === 'CRITICAL' ? '#ef4444' :
-    pattern.severity_level === 'HIGH' ? '#f97316' :
-    pattern.severity_level === 'MEDIUM' ? '#f59e0b' : '#9ca3af';
-
-  const severityBg =
-    pattern.severity_level === 'CRITICAL' ? 'rgba(239, 68, 68, 0.15)' :
-    pattern.severity_level === 'HIGH' ? 'rgba(249, 115, 22, 0.15)' :
-    pattern.severity_level === 'MEDIUM' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(156, 163, 175, 0.15)';
-
-  // XAI Breakdown factors
-  const breakdown = pattern.score_breakdown || {
-    occurrenceCount: Math.round(pattern.risk_score * 0.35),
-    frequency: Math.round(pattern.risk_score * 0.35),
-    trendBonus: Math.round(pattern.risk_score * 0.2),
-    categoryWeight: Math.round(pattern.risk_score * 0.1),
-    total: pattern.risk_score || 0
+  // Severity Left Border & Badge Styling
+  const getSeverityStyles = (level: string) => {
+    switch (level) {
+      case 'CRITICAL':
+        return {
+          border: 'border-l-red-500',
+          badgeBg: 'bg-red-50 text-red-700 border-red-200',
+          scoreColor: '#ef4444',
+          ringColor: 'stroke-red-500'
+        };
+      case 'HIGH':
+        return {
+          border: 'border-l-orange-500',
+          badgeBg: 'bg-orange-50 text-orange-700 border-orange-200',
+          scoreColor: '#f97316',
+          ringColor: 'stroke-orange-500'
+        };
+      case 'MEDIUM':
+        return {
+          border: 'border-l-amber-500',
+          badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
+          scoreColor: '#f59e0b',
+          ringColor: 'stroke-amber-500'
+        };
+      default:
+        return {
+          border: 'border-l-emerald-500',
+          badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+          scoreColor: '#10b981',
+          ringColor: 'stroke-emerald-500'
+        };
+    }
   };
 
-  const totalScore = pattern.risk_score || 1;
-  const pCount = Math.max(0, Math.min(100, (breakdown.occurrenceCount / Math.max(1, totalScore)) * 100));
-  const pFreq = Math.max(0, Math.min(100, (breakdown.frequency / Math.max(1, totalScore)) * 100));
-  const pTrend = Math.max(0, Math.min(100, (breakdown.trendBonus / Math.max(1, totalScore)) * 100));
-  const pCat = Math.max(0, Math.min(100, (breakdown.categoryWeight / Math.max(1, totalScore)) * 100));
+  const severityStyles = getSeverityStyles(pattern.severity_level);
+
+  // Dynamic Score Ring Color Calculation
+  const getScoreRingColor = (score: number) => {
+    if (score >= 70) return { stroke: '#ef4444', text: 'text-red-600' };
+    if (score >= 40) return { stroke: '#f59e0b', text: 'text-amber-600' };
+    return { stroke: '#10b981', text: 'text-emerald-600' };
+  };
+
+  const scoreColorObj = getScoreRingColor(pattern.risk_score || 0);
+
+  // SVG Circular Ring Calculation
+  const riskScore = Math.min(100, Math.max(0, pattern.risk_score || 0));
+  const radius = 24;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (riskScore / 100) * circumference;
+
+  // XAI Breakdown Factors
+  const breakdown = pattern.score_breakdown || {
+    occurrenceCount: Math.round(riskScore * 0.35),
+    frequency: Math.round(riskScore * 0.35),
+    trendBonus: Math.round(riskScore * 0.2),
+    categoryWeight: Math.round(riskScore * 0.1),
+    total: riskScore
+  };
+
+  const totalScore = Math.max(1, riskScore);
+  const pCount = Math.min(100, Math.max(0, (breakdown.occurrenceCount / totalScore) * 100));
+  const pFreq = Math.min(100, Math.max(0, (breakdown.frequency / totalScore) * 100));
+  const pTrend = Math.min(100, Math.max(0, (breakdown.trendBonus / totalScore) * 100));
+  const pCat = Math.min(100, Math.max(0, (breakdown.categoryWeight / totalScore) * 100));
+
+  // Format Prediction Date
+  const formatPredictionDate = (dateStr: string) => {
+    if (!dateStr) return 'N/A';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
-    <div
-      style={{
-        borderRadius: 20,
-        background: "rgba(255,255,255,0.02)",
-        border: `1.5px solid ${isCritical ? severityColor + '40' : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: isCritical ? `0 8px 32px ${severityColor}10` : 'none',
-      }}
-      className="p-4 sm:p-6 flex flex-col gap-4 w-full max-w-full overflow-hidden">
-      
-      {/* Header Row */}
-      <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 12,
-              background: `${severityColor}15`,
-              border: `1px solid ${severityColor}30`,
-            }}
-            className="flex items-center justify-center shrink-0 mt-0.5">
+    <article
+      aria-label={`${pattern.category_id} Infrastructure Pattern`}
+      className={`relative bg-white rounded-2xl border border-gray-200 border-l-[6px] ${severityStyles.border} shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden p-5 sm:p-6 flex flex-col gap-6 w-full`}
+    >
+      {/* ── HEADER SECTION ── */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+          <div className="w-11 h-11 rounded-xl bg-slate-100 border border-slate-200/80 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
             {Icon}
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center flex-wrap gap-2 mb-1">
-              <h3 className="text-base sm:text-lg font-extrabold text-white capitalize truncate">
+              <h3 className="text-[19px] sm:text-xl font-bold text-slate-900 capitalize tracking-tight truncate">
                 {pattern.category_id} Infrastructure Pattern
               </h3>
               <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  padding: "2px 8px",
-                  borderRadius: 99,
-                  background: severityBg,
-                  color: severityColor,
-                  border: `1px solid ${severityColor}35`,
-                  letterSpacing: "0.05em"
-                }}>
+                className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold uppercase tracking-wider border ${severityStyles.badgeBg}`}
+              >
                 {pattern.severity_level}
               </span>
             </div>
 
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }} className="flex items-center gap-1.5 truncate">
-              <MapPin size={13} color="#0ea5e9" className="shrink-0" />
+            <p className="text-xs text-slate-500 font-medium flex items-center gap-1.5 truncate">
+              <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
               <span className="truncate">
-                {pattern.location_description || `Centroid (${pattern.cluster_lat?.toFixed(4)}, ${pattern.cluster_lng?.toFixed(4)})`}
+                {pattern.location_description ||
+                  `Centroid (${pattern.cluster_lat?.toFixed(4)}, ${pattern.cluster_lng?.toFixed(4)})`}
               </span>
             </p>
           </div>
         </div>
 
-        {/* Risk Score Pill */}
-        <div className="self-end sm:self-auto bg-black/30 px-3.5 py-2 rounded-xl border border-white/10 shrink-0">
-          <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Risk Score</div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: pattern.risk_score >= 70 ? "#ef4444" : pattern.risk_score >= 40 ? "#fbbf24" : "#10b981" }}>
-            {pattern.risk_score} <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>/ 100</span>
+        {/* Circular Risk Score Ring */}
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200/70 p-2.5 px-3.5 rounded-2xl shrink-0 self-end sm:self-auto shadow-2xs">
+          <div className="relative w-14 h-14 flex items-center justify-center">
+            <svg className="w-14 h-14 -rotate-90 transform" viewBox="0 0 60 60">
+              {/* Background Circle */}
+              <circle
+                cx="30"
+                cy="30"
+                r={radius}
+                className="stroke-slate-200"
+                strokeWidth="5"
+                fill="transparent"
+              />
+              {/* Animated Value Progress Circle */}
+              <circle
+                cx="30"
+                cy="30"
+                r={radius}
+                stroke={scoreColorObj.stroke}
+                strokeWidth="5"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+                className="transition-all duration-700 ease-out"
+              />
+            </svg>
+
+            {/* Inner Ring Text */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+              <span className={`text-base font-black tracking-tight ${scoreColorObj.text}`}>
+                {riskScore}
+              </span>
+              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                Risk
+              </span>
+            </div>
+          </div>
+          
+          <div className="hidden xs:flex flex-col">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Risk Score
+            </span>
+            <span className="text-xs font-extrabold text-slate-700">
+              {riskScore} / 100
+            </span>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Metrics Grid (2x2 on Mobile, 4x1 on Desktop) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3 rounded-xl bg-black/20 border border-white/5">
-        <div>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Occurrences</span>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "white", marginTop: 2 }}>{pattern.occurrence_count} Incidents</div>
-        </div>
-
-        <div>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Interval</span>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "white", marginTop: 2 }}>~{pattern.median_interval_days} days</div>
-        </div>
-
-        <div>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Trend</span>
-          <div style={{ fontSize: 12, fontWeight: 800, color: pattern.trend === 'INCREASING' ? "#ef4444" : pattern.trend === 'DECREASING' ? "#10b981" : "#fbbf24" }} className="flex items-center gap-1 mt-0.5">
-            {pattern.trend === 'INCREASING' ? <TrendingUp size={14} /> : pattern.trend === 'DECREASING' ? <TrendingDown size={14} /> : <Minus size={14} />}
-            {pattern.trend === 'INCREASING' ? '↑ Accelerating' : pattern.trend === 'DECREASING' ? '↓ Slowing' : '→ Stable'}
+      {/* ── KPI MINI CARDS GRID ── */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* 1. Occurrences */}
+        <div className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 flex flex-col justify-between transition-colors shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Occurrences
+            </span>
+            <Layers className="w-4 h-4 text-blue-500" />
+          </div>
+          <div className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            {pattern.occurrence_count}{' '}
+            <span className="text-xs font-semibold text-slate-500">Incidents</span>
           </div>
         </div>
 
-        <div>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontWeight: 700, textTransform: "uppercase" }}>Confidence</span>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#0ea5e9", marginTop: 2 }}>{pattern.prediction_confidence}% Wilson</div>
-        </div>
-      </div>
-
-      {/* XAI Risk Score Breakdown Bar */}
-      <div className="p-3 rounded-xl bg-black/25 border border-white/5 flex flex-col gap-2">
-        <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-          Explainable AI (XAI) Breakdown
-        </div>
-
-        <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.06)", overflow: "hidden", display: "flex" }}>
-          <div style={{ width: `${pCount}%`, background: "#3b82f6" }} title={`Occurrences: ${breakdown.occurrenceCount}`} />
-          <div style={{ width: `${pFreq}%`, background: "#f59e0b" }} title={`Frequency: ${breakdown.frequency}`} />
-          <div style={{ width: `${pTrend}%`, background: "#ef4444" }} title={`Trend: ${breakdown.trendBonus}`} />
-          <div style={{ width: `${pCat}%`, background: "#8b5cf6" }} title={`Category: ${breakdown.categoryWeight}`} />
+        {/* 2. Interval */}
+        <div className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 flex flex-col justify-between transition-colors shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Interval
+            </span>
+            <Clock className="w-4 h-4 text-amber-500" />
+          </div>
+          <div className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            ~{pattern.median_interval_days}{' '}
+            <span className="text-xs font-semibold text-slate-500">Days</span>
+          </div>
         </div>
 
-        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontWeight: 600 }}>
-          Score {pattern.risk_score} = Count({breakdown.occurrenceCount}) + Freq({breakdown.frequency}) + Trend({breakdown.trendBonus}) + Cat({breakdown.categoryWeight})
+        {/* 3. Trend */}
+        <div className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 flex flex-col justify-between transition-colors shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Trend
+            </span>
+            {pattern.trend === 'INCREASING' ? (
+              <TrendingUp className="w-4 h-4 text-red-500" />
+            ) : pattern.trend === 'DECREASING' ? (
+              <TrendingDown className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <Minus className="w-4 h-4 text-amber-500" />
+            )}
+          </div>
+          <div
+            className={`text-base sm:text-lg font-bold tracking-tight ${
+              pattern.trend === 'INCREASING'
+                ? 'text-red-600'
+                : pattern.trend === 'DECREASING'
+                ? 'text-emerald-600'
+                : 'text-amber-600'
+            }`}
+          >
+            {pattern.trend === 'INCREASING'
+              ? 'Accelerating'
+              : pattern.trend === 'DECREASING'
+              ? 'Slowing'
+              : 'Stable'}
+          </div>
         </div>
-      </div>
 
-      {/* Next Prediction */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div style={{ color: isUrgentNext ? "#ef4444" : "rgba(255,255,255,0.7)", fontWeight: 700 }} className="flex items-center gap-1.5">
-          <Calendar size={14} color={isUrgentNext ? "#ef4444" : "#0ea5e9"} />
-          Predicted: <span className={isUrgentNext ? "underline" : ""}>
-            {daysUntilNext > 0 ? `In ${daysUntilNext} days` : 'Overdue'} ({new Date(pattern.predicted_next_at).toLocaleDateString()})
-          </span>
+        {/* 4. Confidence */}
+        <div className="bg-slate-50 hover:bg-slate-100/80 border border-slate-200/70 rounded-xl p-3.5 flex flex-col justify-between transition-colors shadow-2xs">
+          <div className="flex items-center justify-between text-slate-400 mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              Confidence
+            </span>
+            <ShieldCheck className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="text-base sm:text-lg font-bold text-purple-700 tracking-tight">
+            {pattern.prediction_confidence}%{' '}
+            <span className="text-xs font-semibold text-slate-500">Wilson</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PREDICTION CARD ── */}
+      <section
+        className={`p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+          isUrgentNext
+            ? 'bg-amber-50/80 border-amber-200 text-amber-950'
+            : 'bg-blue-50/60 border-blue-100 text-blue-950'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              isUrgentNext
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-blue-100 text-blue-700'
+            }`}
+          >
+            <Calendar className="w-5 h-5" />
+          </div>
+
+          <div>
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              📅 Next Expected Failure
+            </div>
+            <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5">
+              {daysUntilNext > 0
+                ? `Expected in ${daysUntilNext} Days`
+                : 'Overdue Recurrence'}{' '}
+              <span className="text-xs font-normal text-slate-600">
+                ({formatPredictionDate(pattern.predicted_next_at)})
+              </span>
+            </div>
+          </div>
         </div>
 
         {pattern.seasonal_decomposition_applied && (
-          <span style={{ fontSize: 9, fontWeight: 800, padding: "2px 6px", borderRadius: 6, background: "rgba(139, 92, 246, 0.2)", color: "#a78bfa" }}>
+          <span className="self-start sm:self-auto px-3 py-1 rounded-lg bg-purple-100 border border-purple-200 text-purple-800 text-[11px] font-extrabold tracking-wide">
             Seasonal Index: {pattern.seasonal_index}
           </span>
         )}
-      </div>
+      </section>
 
-      {/* Action Buttons */}
-      <div className="flex gap-2.5 pt-2 border-t border-dashed border-white/10">
+      {/* ── AI RISK BREAKDOWN (XAI STACKED PROGRESS ROWS) ── */}
+      <section className="bg-slate-50/80 border border-slate-200/70 rounded-xl p-4 flex flex-col gap-3">
+        <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5 text-slate-400" />
+            Explainable AI (XAI) Risk Breakdown
+          </span>
+          <span className="text-xs font-bold text-slate-700">
+            Total Score: {riskScore} / 100
+          </span>
+        </div>
+
+        {/* Stacked Factor Progress Rows */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5 pt-1">
+          {/* Factor 1: Occurrences */}
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-semibold text-slate-700">Occurrences</span>
+              <span className="font-bold text-slate-900">{breakdown.occurrenceCount}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                style={{ width: `${pCount}%` }}
+                title={`Occurrences Contribution: ${breakdown.occurrenceCount}`}
+              />
+            </div>
+          </div>
+
+          {/* Factor 2: Frequency */}
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-semibold text-slate-700">Frequency</span>
+              <span className="font-bold text-slate-900">{breakdown.frequency}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all duration-500"
+                style={{ width: `${pFreq}%` }}
+                title={`Frequency Contribution: ${breakdown.frequency}`}
+              />
+            </div>
+          </div>
+
+          {/* Factor 3: Trend Bonus */}
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-semibold text-slate-700">Trend Velocity</span>
+              <span className="font-bold text-slate-900">{breakdown.trendBonus}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-rose-500 rounded-full transition-all duration-500"
+                style={{ width: `${pTrend}%` }}
+                title={`Trend Velocity Contribution: ${breakdown.trendBonus}`}
+              />
+            </div>
+          </div>
+
+          {/* Factor 4: Category Weight */}
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-semibold text-slate-700">Category Weight</span>
+              <span className="font-bold text-slate-900">{breakdown.categoryWeight}</span>
+            </div>
+            <div className="h-2 w-full bg-slate-200/80 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-purple-500 rounded-full transition-all duration-500"
+                style={{ width: `${pCat}%` }}
+                title={`Category Weight Contribution: ${breakdown.categoryWeight}`}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Formula Footnote */}
+        <div className="text-[11px] font-medium text-slate-500 pt-1 border-t border-slate-200/50">
+          Risk Formula = Count({breakdown.occurrenceCount}) + Frequency({breakdown.frequency}) + Trend({breakdown.trendBonus}) + Category({breakdown.categoryWeight})
+        </div>
+      </section>
+
+      {/* ── ACTION BUTTONS ── */}
+      <footer className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-slate-200/80">
         <button
+          type="button"
           onClick={() => onViewDetail(pattern)}
-          style={{
-            flex: 1,
-            padding: "10px 14px",
-            borderRadius: 12,
-            background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            color: "white",
-            fontSize: 12,
-            fontWeight: 800,
-            cursor: "pointer",
-            minHeight: 44
-          }}
-          className="flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
-          View History <ArrowRight size={14} />
+          className="flex-1 h-[46px] rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-800 border border-slate-200 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-2xs cursor-pointer focus:ring-2 focus:ring-slate-400 focus:outline-none"
+        >
+          View History <ArrowRight className="w-4 h-4 text-slate-600" />
         </button>
 
         <button
+          type="button"
           onClick={() => onResolve(pattern.id)}
-          disabled={loadingId === pattern.id}
-          style={{
-            padding: "10px 14px",
-            borderRadius: 12,
-            background: "rgba(16, 185, 129, 0.15)",
-            border: "1px solid rgba(16, 185, 129, 0.3)",
-            color: "#10b981",
-            fontSize: 12,
-            fontWeight: 800,
-            cursor: "pointer",
-            minHeight: 44
-          }}
-          className="flex items-center justify-center gap-1.5 active:scale-95 transition-transform">
-          <CheckCircle2 size={14} /> Mark Resolved
+          disabled={isResolving}
+          className="flex-1 h-[46px] rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer focus:ring-2 focus:ring-emerald-400 focus:outline-none"
+        >
+          {isResolving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+              Resolving...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 className="w-4 h-4 text-white" />
+              Mark Resolved
+            </>
+          )}
         </button>
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }

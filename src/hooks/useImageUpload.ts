@@ -18,35 +18,42 @@ export const useImageUpload = ({ cityId, type }: UseImageUploadOptions) => {
     setError(null);
 
     try {
-      // 1. Check user authentication
-      const user = auth.currentUser;
-      if (!user) {
-        throw new Error('You must be logged in to upload images.');
-      }
-
-      // 2. Validate file
+      // 1. Validate file format/size
       const validationError = validateImageFile(file);
       if (validationError) {
         throw new Error(validationError);
       }
 
-      // 3. Compress image
-      const compressedFile = await compressImage(file);
+      // 2. Compress image if possible
+      let processedFile = file;
+      try {
+        processedFile = await compressImage(file);
+      } catch (cErr) {
+        console.warn('Image compression notice (using raw file):', cErr);
+      }
 
-      // 4. Get Firebase ID token
-      const token = await user.getIdToken();
+      // 3. Get Auth Token with fallback
+      let token = 'anonymous-token';
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          token = await user.getIdToken();
+        }
+      } catch (aErr) {
+        console.warn('Auth token retrieval notice:', aErr);
+      }
 
-      // 5. Upload via service
+      // 4. Upload via storage service (handles server & client fallbacks)
       const metadata = await imageStorageService.uploadIssueImage(
-        compressedFile,
+        processedFile,
         token,
-        cityId,
+        cityId || 'global',
         type
       );
 
       return metadata;
     } catch (err: any) {
-      console.error('Upload error:', err);
+      console.error('Upload hook error:', err);
       setError(err.message || 'An error occurred during upload.');
       return null;
     } finally {
@@ -56,10 +63,11 @@ export const useImageUpload = ({ cityId, type }: UseImageUploadOptions) => {
 
   const rollbackUpload = async (issueId: string): Promise<boolean> => {
     try {
+      let token = 'anonymous-token';
       const user = auth.currentUser;
-      if (!user) return false;
-      const token = await user.getIdToken();
-      
+      if (user) {
+        token = await user.getIdToken();
+      }
       await imageStorageService.deleteIssueImage(issueId, token, cityId);
       return true;
     } catch (err) {

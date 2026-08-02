@@ -236,7 +236,7 @@ export default function PredictiveAlertsTab() {
             <PatternCard
               key={pattern.id}
               pattern={pattern}
-              onViewDetail={(p) => setSelectedPattern(p)}
+              onViewDetail={(p: any) => setSelectedPattern(p)}
               onResolve={handleResolvePattern}
               loadingId={actionLoadingId}
             />

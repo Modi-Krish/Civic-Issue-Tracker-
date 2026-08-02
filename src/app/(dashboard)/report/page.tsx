@@ -3,6 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useAuth } from '@/lib/supabase/auth-context';
 import { submitIssue } from '@/lib/client-actions/issue';
 import { ISSUE_TYPES, ISSUE_TYPE_TO_DEPARTMENT, type IssueType } from '@/lib/types/database';
 import { Camera, MapPin, ArrowLeft, X, Send, Navigation, CheckCircle2 } from 'lucide-react';
@@ -75,6 +76,27 @@ const labelStyle: React.CSSProperties = {
 
 export default function ReportPage() {
   const router = useRouter();
+  const { user, profile, loading: authLoading } = useAuth();
+  
+  React.useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (profile && profile.role !== 'citizen') {
+      const roleMap: Record<string, string> = {
+        super_admin: '/admin',
+        government_officer: '/government',
+        department_admin: '/department',
+        company_admin: '/company-admin',
+        company_employee: '/company-employee',
+        employee: '/tasks'
+      };
+      router.push(roleMap[profile.role] || '/login');
+    }
+  }, [user, profile, authLoading, router]);
+
   const [step, setStep] = useState<Step>('photo');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -165,7 +187,7 @@ export default function ReportPage() {
   if (step === 'photo') {
     return (
       <div style={{ minHeight: '100dvh', background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px 60px' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto', padding: '0 16px 60px' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '24px 0 32px' }}>
             <button
@@ -297,7 +319,7 @@ export default function ReportPage() {
 
       {/* Sheet */}
       <div style={{ marginTop: -24, borderRadius: '28px 28px 0 0', background: T.base, padding: '24px 20px' }}>
-        <div style={{ maxWidth: 460, margin: '0 auto' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto' }}>
 
           <div style={{ marginBottom: 24 }}>
             <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', margin: '0 0 6px', color: T.text1 }}>

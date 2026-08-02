@@ -94,7 +94,7 @@ export default function TasksPage() {
       color: T.text1,
       paddingBottom: 100,
     }}>
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Header */}
         <div style={{ padding: '32px 0 24px' }}>

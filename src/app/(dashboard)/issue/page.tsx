@@ -339,7 +339,7 @@ function IssueDetailContent() {
         background: T.raised, borderBottom: `1px solid ${T.border}`,
         boxShadow: `0 4px 16px ${T.shD}`,
       }}>
-        <div style={{ maxWidth: 560, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
           <button onClick={() => router.back()} style={{
             width: 36, height: 36, borderRadius: 12,
             border: `1px solid ${T.border}`, background: T.raised,
@@ -359,7 +359,7 @@ function IssueDetailContent() {
       </div>
 
       {/* ── Content ── */}
-      <div style={{ position: "relative", maxWidth: 560, margin: "0 auto", padding: "16px 16px 100px" }}>
+      <div style={{ position: "relative", maxWidth: 900, margin: "0 auto", padding: "16px 16px 100px" }}>
 
         {/* Type hero chip */}
         <div style={{

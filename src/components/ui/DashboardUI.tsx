@@ -7,9 +7,6 @@ import {
   FileText, ChevronRight,
 } from "lucide-react";
 
-// ---------------------------------------------------------------------------
-// Design tokens — neomorphism-lite (same source of truth as auth + landing)
-// ---------------------------------------------------------------------------
 const T = {
   base:         "#EDEBE4",
   raised:       "#F5F3EC",
@@ -32,9 +29,6 @@ const SH = {
   insetSoft: `inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
 };
 
-// ---------------------------------------------------------------------------
-// Status config — using design-brief dept palette
-// ---------------------------------------------------------------------------
 const STATUS_CONFIG = {
   REPORTED:               { label: "Reported",         bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
   DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
@@ -52,9 +46,6 @@ const PROGRESS_MAP: Record<string, number> = {
   APPROVED: 100, REJECTED: 100, CLOSED: 100,
 };
 
-// ---------------------------------------------------------------------------
-// Status Badge
-// ---------------------------------------------------------------------------
 function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.REPORTED;
   return (
@@ -73,9 +64,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Progress Tracker
-// ---------------------------------------------------------------------------
 function ProgressTracker({ status }: { status: string }) {
   const pct = PROGRESS_MAP[status] ?? 15;
   return (
@@ -91,8 +79,6 @@ function ProgressTracker({ status }: { status: string }) {
         </span>
         <span style={{ fontSize: 12, fontWeight: 800, color: T.accent }}>{pct}%</span>
       </div>
-
-      {/* Inset track */}
       <div style={{
         height: 10, borderRadius: 99,
         background: T.raised,
@@ -105,7 +91,6 @@ function ProgressTracker({ status }: { status: string }) {
           transition: "width 0.6s ease",
         }} />
       </div>
-
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         {["Reported", "Assigned", "Resolved"].map((s, i) => (
           <span key={s} style={{
@@ -119,9 +104,6 @@ function ProgressTracker({ status }: { status: string }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Section header helper
-// ---------------------------------------------------------------------------
 function SectionHeader({
   title, accent, action, onAction,
 }: {
@@ -158,9 +140,6 @@ function SectionHeader({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
 interface DashboardUIProps {
   user: { email?: string; user_metadata?: { full_name?: string }; uid?: string };
   profile: { full_name?: string; role?: string } | null;
@@ -199,31 +178,75 @@ export default function DashboardUI({
       color: T.text1,
       overflowX: "hidden",
     }}>
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
+      <style>{`
+        .dash-container {
+          width: 100%;
+          max-width: 100%;
+          padding: 0 16px calc(90px + env(safe-area-inset-bottom, 0px));
+        }
+        @media (min-width: 1024px) {
+          .dash-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 32px 90px;
+          }
+        }
+        .dash-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-bottom: 28px;
+        }
+        .dash-main-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        @media (min-width: 1024px) {
+          .dash-main-layout {
+            grid-template-columns: 1fr 380px;
+            align-items: start;
+          }
+        }
+        .dash-issue-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        @media (min-width: 768px) {
+          .dash-issue-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1024px) {
+          .dash-issue-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
 
-        {/* ─── Header ──────────────────────────────────────────────────── */}
+      <div className="dash-container">
+
+        {/* ─── Header ─────────────────────────────────────────────── */}
         <header style={{
           display: "flex", alignItems: "center",
           justifyContent: "space-between",
           padding: "24px 4px 28px",
+          flexWrap: "wrap", gap: 12,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            {/* Avatar chip */}
             <div style={{
               width: 48, height: 48, borderRadius: 15,
               background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 19, fontWeight: 800, color: "#fff",
-              boxShadow: SH.raised,
-              flexShrink: 0,
+              boxShadow: SH.raised, flexShrink: 0,
             }}>
               {initial}
             </div>
             <div>
-              <div style={{
-                fontSize: 19, fontWeight: 800,
-                letterSpacing: "-0.03em", lineHeight: 1.2, color: T.text1,
-              }}>
+              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2, color: T.text1 }}>
                 Hello, {firstName} 👋
               </div>
               <div style={{ fontSize: 11, color: T.text3, fontWeight: 500, marginTop: 2 }}>
@@ -231,8 +254,6 @@ export default function DashboardUI({
               </div>
             </div>
           </div>
-
-          {/* Role badge */}
           <div style={{
             fontSize: 10, fontWeight: 700, textTransform: "capitalize",
             letterSpacing: "0.04em", color: T.accentOnTint,
@@ -244,91 +265,8 @@ export default function DashboardUI({
           </div>
         </header>
 
-        {/* ─── Active Issue / CTA Hero ─────────────────────────────────── */}
-        <section style={{ marginBottom: 24 }}>
-          {activeIssue ? (
-            /* ── Active tracker card ── */
-            <div style={{
-              borderRadius: 24, padding: 24,
-              background: T.raised, boxShadow: SH.raised,
-            }}>
-              <div style={{
-                display: "flex", justifyContent: "space-between",
-                alignItems: "flex-start", marginBottom: 20,
-              }}>
-                <div>
-                  <div style={{
-                    fontSize: 10, fontWeight: 800, color: T.accent,
-                    textTransform: "uppercase", letterSpacing: "0.1em",
-                    marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
-                  }}>
-                    <span style={{
-                      width: 6, height: 6, borderRadius: "50%", background: T.accent,
-                      animation: "pulseGreen 2s ease-in-out infinite",
-                    }} />
-                    Active Tracker
-                  </div>
-                  <div style={{
-                    fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em",
-                    lineHeight: 1.25, color: T.text1, maxWidth: 200,
-                  }}>
-                    {activeIssue.title}
-                  </div>
-                </div>
-                <StatusBadge status={activeIssue.status} />
-              </div>
-              <ProgressTracker status={activeIssue.status} />
-            </div>
-          ) : (
-            /* ── CTA hero (no active issue) ── */
-            <div style={{
-              borderRadius: 24, padding: "30px 26px",
-              background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
-              boxShadow: `8px 8px 20px rgba(29,158,117,0.28), -4px -4px 12px rgba(255,255,255,0.55)`,
-              position: "relative", overflow: "hidden",
-            }}>
-              <div style={{
-                position: "absolute", bottom: -40, right: -40,
-                width: 180, height: 180, borderRadius: "50%",
-                background: "rgba(255,255,255,0.09)", pointerEvents: "none",
-              }} />
-              <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{
-                  fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em",
-                  lineHeight: 1.2, marginBottom: 10, color: "#fff",
-                }}>
-                  Your city<br />is in your hands.
-                </div>
-                <p style={{
-                  fontSize: 13, color: "rgba(255,255,255,0.82)",
-                  marginBottom: 22, maxWidth: 210, lineHeight: 1.55,
-                }}>
-                  Report local issues to build a better neighborhood.
-                </p>
-                <button
-                  onClick={() => router.push("/report")}
-                  style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    padding: "11px 22px", borderRadius: 14,
-                    background: "#fff", color: T.accentDark,
-                    fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
-                    border: "none", cursor: "pointer",
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                  }}
-                >
-                  <Plus size={15} strokeWidth={2.5} />
-                  Report Issue
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ─── Stats Row ───────────────────────────────────────────────── */}
-        <section style={{
-          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 12, marginBottom: 28,
-        }}>
+        {/* ─── Stats Row ──────────────────────────────────────────── */}
+        <div className="dash-stats-grid">
           {stats.map(stat => {
             const Icon = stat.Icon;
             return (
@@ -363,166 +301,250 @@ export default function DashboardUI({
               </div>
             );
           })}
-        </section>
+        </div>
 
-        {/* ─── Nearby Problems ─────────────────────────────────────────── */}
-        <section style={{ marginBottom: 28 }}>
-          <SectionHeader
-            title="Nearby Problems"
-            accent={T.accent}
-            action="Open Map →"
-            onAction={() => router.push("/map")}
-          />
+        {/* ─── Main layout: hero + sidebar ─────────────────────────── */}
+        <div className="dash-main-layout">
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {nearbyIssues.length === 0 ? (
-              <div style={{
-                padding: "28px 20px", textAlign: "center",
-                background: T.raised, borderRadius: 18,
-                boxShadow: SH.insetSoft,
-              }}>
-                <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>
-                  Everything looks quiet around here.
-                </p>
-              </div>
-            ) : (
-              nearbyIssues.map(item => (
-                <div
-                  key={item.id}
-                  onClick={() => router.push(`/issue?id=${item.id}`)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 14,
-                    padding: "14px 16px", borderRadius: 18,
-                    background: T.raised, boxShadow: SH.raised,
-                    cursor: "pointer",
-                  }}
-                >
+          {/* Left column: active tracker + nearby */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+
+            {/* ─── Active Issue / CTA Hero ─────────────────────────── */}
+            <section>
+              {activeIssue ? (
+                <div style={{
+                  borderRadius: 24, padding: 24,
+                  background: T.raised, boxShadow: SH.raised,
+                }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 14,
-                    background: T.accentTint,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: T.accent, flexShrink: 0,
-                    boxShadow: SH.raisedSm,
+                    display: "flex", justifyContent: "space-between",
+                    alignItems: "flex-start", marginBottom: 20,
                   }}>
-                    <MapPin size={20} strokeWidth={1.8} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 13.5, fontWeight: 700, color: T.text1,
-                      marginBottom: 4,
-                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {item.title}
-                    </div>
-                    <div style={{
-                      fontSize: 11, fontWeight: 500, color: T.text3,
-                      display: "flex", alignItems: "center", gap: 4,
-                    }}>
-                      <MapPin size={10} color={T.text3} />
-                      {item.location_label?.split(",")[0] ?? "Near you"}
-                    </div>
-                  </div>
-                  <div style={{
-                    display: "flex", flexDirection: "column",
-                    alignItems: "flex-end", gap: 8, flexShrink: 0,
-                  }}>
-                    <StatusBadge status={item.status} />
-                    <ChevronRight size={14} color={T.text3} />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* ─── Your History ────────────────────────────────────────────── */}
-        <section>
-          <SectionHeader
-            title="Your History"
-            accent="#854F0B"
-            action="View All"
-            onAction={() => router.push("/my-reports")}
-          />
-
-          {recentIssues.length === 0 ? (
-            <div style={{
-              padding: "40px 20px", textAlign: "center",
-              background: T.raised, borderRadius: 20,
-              boxShadow: SH.inset,
-            }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: 14,
-                background: T.accentTint,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                margin: "0 auto 14px", color: T.accent,
-                boxShadow: SH.raisedSm,
-              }}>
-                <FileText size={22} strokeWidth={1.8} />
-              </div>
-              <p style={{ fontSize: 13, color: T.text3, margin: "0 0 16px" }}>
-                Help your city by reporting an issue!
-              </p>
-              <button
-                onClick={() => router.push("/report")}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "10px 20px", borderRadius: 12,
-                  background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
-                  color: "#fff", fontSize: 13, fontWeight: 700,
-                  border: "none", cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: SH.raisedSm,
-                }}
-              >
-                <Plus size={14} />
-                Report now
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {recentIssues.map(issue => (
-                <div
-                  key={issue.id}
-                  onClick={() => router.push(`/issue?id=${issue.id}`)}
-                  style={{
-                    display: "flex", alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "14px 16px", borderRadius: 18,
-                    background: T.raised, boxShadow: SH.raised,
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{
-                      width: 38, height: 38, borderRadius: 12,
-                      background: T.accentTint,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      color: T.accent, flexShrink: 0,
-                      boxShadow: SH.raisedSm,
-                    }}>
-                      <FileText size={17} strokeWidth={1.8} />
-                    </div>
                     <div>
                       <div style={{
-                        fontSize: 13.5, fontWeight: 700, color: T.text1,
-                        marginBottom: 3, maxWidth: 180,
-                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        fontSize: 10, fontWeight: 800, color: T.accent,
+                        textTransform: "uppercase", letterSpacing: "0.1em",
+                        marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
                       }}>
-                        {issue.title}
+                        <span style={{
+                          width: 6, height: 6, borderRadius: "50%", background: T.accent,
+                          animation: "pulseGreen 2s ease-in-out infinite",
+                        }} />
+                        Active Tracker
                       </div>
                       <div style={{
-                        fontSize: 10, fontWeight: 600, color: T.text3,
-                        textTransform: "uppercase", letterSpacing: "0.06em",
+                        fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em",
+                        lineHeight: 1.25, color: T.text1, maxWidth: 240,
                       }}>
-                        {new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        {activeIssue.title}
                       </div>
                     </div>
+                    <StatusBadge status={activeIssue.status} />
                   </div>
-                  <StatusBadge status={issue.status} />
+                  <ProgressTracker status={activeIssue.status} />
                 </div>
-              ))}
-            </div>
-          )}
-        </section>
+              ) : (
+                <div style={{
+                  borderRadius: 24, padding: "30px 26px",
+                  background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+                  boxShadow: `8px 8px 20px rgba(29,158,117,0.28), -4px -4px 12px rgba(255,255,255,0.55)`,
+                  position: "relative", overflow: "hidden",
+                }}>
+                  <div style={{
+                    position: "absolute", bottom: -40, right: -40,
+                    width: 180, height: 180, borderRadius: "50%",
+                    background: "rgba(255,255,255,0.09)", pointerEvents: "none",
+                  }} />
+                  <div style={{ position: "relative", zIndex: 1 }}>
+                    <div style={{
+                      fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em",
+                      lineHeight: 1.2, marginBottom: 10, color: "#fff",
+                    }}>
+                      Your city<br />is in your hands.
+                    </div>
+                    <p style={{
+                      fontSize: 13, color: "rgba(255,255,255,0.82)",
+                      marginBottom: 22, maxWidth: 210, lineHeight: 1.55,
+                    }}>
+                      Report local issues to build a better neighborhood.
+                    </p>
+                    <button
+                      onClick={() => router.push("/report")}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 7,
+                        padding: "11px 22px", borderRadius: 14,
+                        background: "#fff", color: T.accentDark,
+                        fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+                        border: "none", cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                      }}
+                    >
+                      <Plus size={15} strokeWidth={2.5} />
+                      Report Issue
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
+
+            {/* ─── Nearby Problems ─────────────────────────────────── */}
+            <section>
+              <SectionHeader
+                title="Nearby Problems"
+                accent={T.accent}
+                action="Open Map →"
+                onAction={() => router.push("/map")}
+              />
+              {nearbyIssues.length === 0 ? (
+                <div style={{
+                  padding: "28px 20px", textAlign: "center",
+                  background: T.raised, borderRadius: 18,
+                  boxShadow: SH.insetSoft,
+                }}>
+                  <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>
+                    Everything looks quiet around here.
+                  </p>
+                </div>
+              ) : (
+                <div className="dash-issue-grid">
+                  {nearbyIssues.map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => router.push(`/issue?id=${item.id}`)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "14px 16px", borderRadius: 18,
+                        background: T.raised, boxShadow: SH.raised,
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 14,
+                        background: T.accentTint,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: T.accent, flexShrink: 0,
+                        boxShadow: SH.raisedSm,
+                      }}>
+                        <MapPin size={20} strokeWidth={1.8} />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 13.5, fontWeight: 700, color: T.text1,
+                          marginBottom: 4,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {item.title}
+                        </div>
+                        <div style={{
+                          fontSize: 11, fontWeight: 500, color: T.text3,
+                          display: "flex", alignItems: "center", gap: 4,
+                        }}>
+                          <MapPin size={10} color={T.text3} />
+                          {item.location_label?.split(",")[0] ?? "Near you"}
+                        </div>
+                      </div>
+                      <div style={{
+                        display: "flex", flexDirection: "column",
+                        alignItems: "flex-end", gap: 8, flexShrink: 0,
+                      }}>
+                        <StatusBadge status={item.status} />
+                        <ChevronRight size={14} color={T.text3} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Right column: your history */}
+          <section>
+            <SectionHeader
+              title="Your History"
+              accent="#854F0B"
+              action="View All"
+              onAction={() => router.push("/my-reports")}
+            />
+            {recentIssues.length === 0 ? (
+              <div style={{
+                padding: "40px 20px", textAlign: "center",
+                background: T.raised, borderRadius: 20,
+                boxShadow: SH.inset,
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 14,
+                  background: T.accentTint,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  margin: "0 auto 14px", color: T.accent,
+                  boxShadow: SH.raisedSm,
+                }}>
+                  <FileText size={22} strokeWidth={1.8} />
+                </div>
+                <p style={{ fontSize: 13, color: T.text3, margin: "0 0 16px" }}>
+                  Help your city by reporting an issue!
+                </p>
+                <button
+                  onClick={() => router.push("/report")}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "10px 20px", borderRadius: 12,
+                    background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+                    color: "#fff", fontSize: 13, fontWeight: 700,
+                    border: "none", cursor: "pointer", fontFamily: "inherit",
+                    boxShadow: SH.raisedSm,
+                  }}
+                >
+                  <Plus size={14} />
+                  Report now
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {recentIssues.map(issue => (
+                  <div
+                    key={issue.id}
+                    onClick={() => router.push(`/issue?id=${issue.id}`)}
+                    style={{
+                      display: "flex", alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "14px 16px", borderRadius: 18,
+                      background: T.raised, boxShadow: SH.raised,
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        width: 38, height: 38, borderRadius: 12,
+                        background: T.accentTint,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: T.accent, flexShrink: 0,
+                        boxShadow: SH.raisedSm,
+                      }}>
+                        <FileText size={17} strokeWidth={1.8} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{
+                          fontSize: 13.5, fontWeight: 700, color: T.text1,
+                          marginBottom: 3,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>
+                          {issue.title}
+                        </div>
+                        <div style={{
+                          fontSize: 10, fontWeight: 600, color: T.text3,
+                          textTransform: "uppercase", letterSpacing: "0.06em",
+                        }}>
+                          {new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                        </div>
+                      </div>
+                    </div>
+                    <StatusBadge status={issue.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `

@@ -23,6 +23,19 @@ export default function DashboardPage() {
         router.push('/login');
         return;
       }
+
+      if (profile && profile.role !== 'citizen') {
+        const roleMap: Record<string, string> = {
+          super_admin: '/admin',
+          government_officer: '/government',
+          department_admin: '/department',
+          company_admin: '/company-admin',
+          company_employee: '/company-employee',
+          employee: '/tasks'
+        };
+        router.push(roleMap[profile.role] || '/login');
+        return;
+      }
       
       try {
         const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');

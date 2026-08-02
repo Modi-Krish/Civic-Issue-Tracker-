@@ -3,9 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Plus, MapPin, Clock, ChevronRight } from "lucide-react";
+import { Search, Plus, MapPin, Clock, ChevronRight, Filter } from "lucide-react";
 
-// ── Design tokens ────────────────────────────────────────────────────────────
 const T = {
   base:         "#EDEBE4",
   raised:       "#F5F3EC",
@@ -28,7 +27,6 @@ const SH = {
   insetSoft: `inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
 };
 
-// ── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
   REPORTED:               { label: "Reported",         bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
   IN_PROGRESS:            { label: "In Progress",      bg: "#EAF3DE", fg: "#27500A", dot: "#27500A" },
@@ -40,7 +38,6 @@ const STATUS_CONFIG = {
   CLOSED:                 { label: "Closed",           bg: "#F0EEE8", fg: "#888780", dot: "#888780" },
 };
 
-// ── Issue type dept-color chips ───────────────────────────────────────────────
 const TYPE_META: Record<string, { emoji: string; bg: string; fg: string }> = {
   "Road Damage":       { emoji: "🚧", bg: "#E6F1FB", fg: "#0C447C" },
   "Water Leakage":     { emoji: "💧", bg: "#EAF3DE", fg: "#27500A" },
@@ -54,7 +51,6 @@ const TYPE_META: Record<string, { emoji: string; bg: string; fg: string }> = {
 
 const FILTERS = ["All", "REPORTED", "IN_PROGRESS", "APPROVED", "CLOSED"];
 
-// ── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const c = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.REPORTED;
   return (
@@ -73,7 +69,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ── Issue Card ────────────────────────────────────────────────────────────────
 function IssueCard({ issue }: { issue: any }) {
   const router = useRouter();
   const meta = TYPE_META[issue.issue_type] ?? TYPE_META.default;
@@ -91,14 +86,12 @@ function IssueCard({ issue }: { issue: any }) {
         boxShadow: SH.raised,
         cursor: "pointer",
         WebkitTapHighlightColor: "transparent",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease",
       }}
     >
-      {/* Dept-color top stripe */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${meta.fg}55, transparent 80%)` }} />
-
       <div style={{ padding: "14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          {/* Emoji chip */}
           <div style={{
             width: 44, height: 44, borderRadius: 14, flexShrink: 0,
             background: meta.bg,
@@ -108,7 +101,6 @@ function IssueCard({ issue }: { issue: any }) {
           }}>
             {meta.emoji}
           </div>
-
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 14.5, fontWeight: 800, letterSpacing: "-0.01em",
@@ -121,13 +113,10 @@ function IssueCard({ issue }: { issue: any }) {
               {issue.issue_type}
             </div>
           </div>
-
           <ChevronRight size={14} color={T.text3} />
         </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between", flexWrap: "wrap" }}>
           <StatusBadge status={issue.status} />
-
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: T.text3, fontWeight: 500 }}>
               <MapPin size={11} color={T.accent} />
@@ -144,7 +133,6 @@ function IssueCard({ issue }: { issue: any }) {
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function MyReportsUI({ initialIssues }: { initialIssues: any[] }) {
   const router = useRouter();
   const [issues] = useState<any[]>(initialIssues);
@@ -169,19 +157,77 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: T.text1,
     }}>
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
+      <style>{`
+        .reports-container {
+          width: 100%;
+          padding: 0 16px calc(90px + env(safe-area-inset-bottom, 0px));
+        }
+        @media (min-width: 768px) {
+          .reports-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 32px 90px;
+          }
+        }
+        .reports-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+          padding-top: 16px;
+        }
+        @media (min-width: 1024px) {
+          .reports-layout {
+            grid-template-columns: 240px 1fr;
+            align-items: start;
+          }
+        }
+        .reports-sidebar {
+          display: none;
+        }
+        @media (min-width: 1024px) {
+          .reports-sidebar {
+            display: block;
+            position: sticky;
+            top: 20px;
+          }
+        }
+        .reports-mobile-filters {
+          display: flex;
+          gap: 7px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+        @media (min-width: 1024px) {
+          .reports-mobile-filters {
+            display: none;
+          }
+        }
+        .reports-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+          }
+        }
+      `}</style>
 
+      <div className="reports-container">
         {/* ── Sticky Header ── */}
         <div style={{
           position: "sticky", top: 0, zIndex: 50,
           background: T.raised,
           boxShadow: `0 4px 16px ${T.shD}`,
           borderBottom: `1px solid ${T.border}`,
-          padding: "24px 0 12px",
+          padding: "20px 0 12px",
           margin: "0 -16px",
           paddingLeft: 16, paddingRight: 16,
         }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>
                 My Reports
@@ -201,7 +247,7 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
           </div>
 
           {/* Search bar */}
-          <div style={{ position: "relative", marginBottom: 12 }}>
+          <div style={{ position: "relative", marginBottom: 10 }}>
             <Search size={14} color={T.text3} style={{
               position: "absolute", left: 14, top: "50%",
               transform: "translateY(-50%)", pointerEvents: "none",
@@ -212,23 +258,17 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
-                width: "100%", padding: "12px 14px 12px 40px",
+                width: "100%", padding: "11px 14px 11px 40px",
                 borderRadius: 14, border: `1px solid ${T.border}`,
-                background: T.raised,
-                boxShadow: SH.insetSoft,
+                background: T.raised, boxShadow: SH.insetSoft,
                 color: T.text1, fontSize: 14, fontWeight: 500,
-                outline: "none", boxSizing: "border-box",
-                fontFamily: "inherit",
+                outline: "none", boxSizing: "border-box", fontFamily: "inherit",
               }}
             />
           </div>
 
-          {/* Filter pills */}
-          <div style={{
-            display: "flex", gap: 7,
-            overflowX: "auto", paddingBottom: 4,
-            msOverflowStyle: "none" as any, scrollbarWidth: "none" as any,
-          }}>
+          {/* Mobile filter pills */}
+          <div className="reports-mobile-filters" style={{ msOverflowStyle: "none" as any, scrollbarWidth: "none" as any }}>
             {FILTERS.map(s => {
               const active = filter === s;
               const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG];
@@ -236,13 +276,11 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
                 <button key={s} onClick={() => setFilter(s)} style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
                   flexShrink: 0, padding: "7px 14px", borderRadius: 99,
-                  fontSize: 11, fontWeight: 700, cursor: "pointer",
-                  border: "none",
+                  fontSize: 11, fontWeight: 700, cursor: "pointer", border: "none",
                   background: active ? (cfg ? cfg.bg : T.accentTint) : T.raised,
                   color: active ? (cfg ? cfg.fg : T.accentOnTint) : T.text3,
                   boxShadow: active ? SH.insetSoft : SH.raisedSm,
-                  fontFamily: "inherit",
-                  WebkitTapHighlightColor: "transparent",
+                  fontFamily: "inherit", WebkitTapHighlightColor: "transparent",
                 }}>
                   {s === "All" ? "All" : (STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label ?? s)}
                   <span style={{
@@ -258,45 +296,80 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
           </div>
         </div>
 
-        {/* ── Content ── */}
-        <div style={{ paddingTop: 16 }}>
-          {issues.length === 0 ? (
-            <div style={{
-              padding: "60px 20px", textAlign: "center",
-              background: T.raised, borderRadius: 24,
-              boxShadow: SH.inset, marginTop: 8,
-            }}>
-              <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.5 }}>📋</div>
-              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: T.text1 }}>No reports yet</h3>
-              <p style={{ fontSize: 13, color: T.text3, lineHeight: 1.6, maxWidth: 220, margin: "0 auto 24px" }}>
-                Start making your city better by reporting an issue.
-              </p>
-              <button
-                onClick={() => router.push("/report")}
-                style={{
-                  padding: "12px 24px", borderRadius: 14,
-                  background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
-                  border: "none", color: "white",
-                  fontWeight: 800, fontSize: 14,
-                  cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: SH.raisedSm,
-                }}
-              >
-                File a Report
-              </button>
+        {/* ── Main layout ── */}
+        <div className="reports-layout">
+
+          {/* Desktop sidebar filters */}
+          <aside className="reports-sidebar">
+            <div style={{ borderRadius: 20, background: T.raised, boxShadow: SH.raised, overflow: "hidden" }}>
+              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+                <Filter size={13} color={T.text3} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>Filter by Status</span>
+              </div>
+              <div style={{ padding: 8, display: "flex", flexDirection: "column", gap: 2 }}>
+                {FILTERS.map(s => {
+                  const active = filter === s;
+                  const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG];
+                  return (
+                    <button key={s} onClick={() => setFilter(s)} style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "10px 14px", borderRadius: 12,
+                      fontSize: 13, fontWeight: active ? 800 : 600, cursor: "pointer", border: "none",
+                      background: active ? (cfg ? cfg.bg : T.accentTint) : "transparent",
+                      color: active ? (cfg ? cfg.fg : T.accentOnTint) : T.text2,
+                      fontFamily: "inherit", textAlign: "left",
+                      transition: "background 0.15s ease",
+                    }}>
+                      <span>{s === "All" ? "All Reports" : (STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label ?? s)}</span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, borderRadius: 99, padding: "2px 8px",
+                        background: active ? "rgba(0,0,0,0.1)" : T.base,
+                        color: active ? "inherit" : T.text3,
+                        minWidth: 24, textAlign: "center",
+                      }}>
+                        {counts[s] ?? 0}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          ) : filtered.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "60px 20px",
-              color: T.text3, fontSize: 13,
-            }}>
-              No results match your search.
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {filtered.map(issue => <IssueCard key={issue.id} issue={issue} />)}
-            </div>
-          )}
+          </aside>
+
+          {/* Issue list */}
+          <div>
+            {issues.length === 0 ? (
+              <div style={{
+                padding: "60px 20px", textAlign: "center",
+                background: T.raised, borderRadius: 24, boxShadow: SH.inset,
+              }}>
+                <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.5 }}>📋</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: T.text1 }}>No reports yet</h3>
+                <p style={{ fontSize: 13, color: T.text3, lineHeight: 1.6, maxWidth: 220, margin: "0 auto 24px" }}>
+                  Start making your city better by reporting an issue.
+                </p>
+                <button
+                  onClick={() => router.push("/report")}
+                  style={{
+                    padding: "12px 24px", borderRadius: 14,
+                    background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+                    border: "none", color: "white", fontWeight: 800, fontSize: 14,
+                    cursor: "pointer", fontFamily: "inherit", boxShadow: SH.raisedSm,
+                  }}
+                >
+                  File a Report
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 20px", color: T.text3, fontSize: 13 }}>
+                No results match your search.
+              </div>
+            ) : (
+              <div className="reports-grid">
+                {filtered.map(issue => <IssueCard key={issue.id} issue={issue} />)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

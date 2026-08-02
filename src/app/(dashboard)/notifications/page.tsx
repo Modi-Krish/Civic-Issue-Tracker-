@@ -201,7 +201,7 @@ export default function NotificationsPage() {
         boxShadow: `0 4px 16px ${T.shD}`,
         padding: "16px",
       }}>
-        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: unreadCount > 0 ? 12 : 0 }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>
@@ -273,7 +273,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 16px 100px" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "16px 16px 100px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "48px 16px", color: T.text3, fontSize: 14 }}>Loading…</div>
         ) : notifs.length === 0 ? (

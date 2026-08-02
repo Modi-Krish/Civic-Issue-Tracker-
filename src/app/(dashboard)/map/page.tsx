@@ -125,7 +125,7 @@ export default function MapPage() {
       color: T.text1,
       paddingBottom: 100,
     }}>
-      <div style={{ maxWidth: 500, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Header */}
         <div style={{ padding: '24px 0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -232,9 +232,14 @@ export default function DepartmentPage() {
   };
 
   return (
-    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', -apple-system, sans-serif", color: T.text1, paddingBottom: 60 }}>
-      
-      <div style={{ maxWidth: "100%", margin: "0 auto", padding: "0 24px" }}>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', -apple-system, sans-serif", color: T.text1, paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))" }}>
+      <style>{`
+        .dept-inner { width: 100%; padding: 0 16px; }
+        @media (min-width: 768px) { .dept-inner { max-width: 1300px; margin: 0 auto; padding: 0 32px; } }
+        .dept-header { padding: 24px 0 20px; display: flex; flex-direction: column; gap: 16px; }
+        @media (min-width: 640px) { .dept-header { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
+      `}</style>
+      <div className="dept-inner">
 
         {errorToast && (
           <div style={{ padding: "14px", borderRadius: 14, background: "#FCEBEB", border: "1.5px solid #791F1F", fontSize: 13, color: "#791F1F", fontWeight: 700, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -244,7 +249,7 @@ export default function DepartmentPage() {
         )}
 
         {/* Header */}
-        <div style={{ padding: "32px 0 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        <div className="dept-header">
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "4px 12px", borderRadius: 99, background: "#EEEDFE", border: `1px solid ${T.border}`, width: "fit-content", boxShadow: SH.raisedSm }}>
               <Building2 size={12} color="#3C3489" />
@@ -252,7 +257,7 @@ export default function DepartmentPage() {
                 {dept?.name || 'Department'} Division
               </span>
             </div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>Department Governance</h1>
+            <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1, lineHeight: 1.2 }}>Department Governance</h1>
           </div>
 
           {dept?.management_mode === 'TENDER' && (

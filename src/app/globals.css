@@ -90,6 +90,8 @@ body {
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
 }
 
 /* ─── Scrollbar Styling ───────────────────────────────────────────── */
@@ -271,19 +273,87 @@ button:active {
 .badge-rejected { background: var(--danger); color: white; }
 .badge-closed { background: var(--success); color: white; }
 
-/* ─── Mobile-First Responsive ─────────────────────────────────────── */
+/* ─── Responsive Layout System ────────────────────────────────────── */
+
+/* Base page container — mobile first */
 .page-container {
   width: 100%;
   max-width: 100%;
-  padding: 1rem;
-  padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px)); /* space for bottom nav on mobile */
+  padding: 1rem 1rem calc(90px + env(safe-area-inset-bottom, 0px));
 }
 
-@media (min-width: 640px) {
+/* Desktop: centered with max-width */
+@media (min-width: 768px) {
   .page-container {
-    max-width: 1280px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
-    padding-bottom: 2rem;
+    padding: 2rem 2rem 90px;
+  }
+}
+
+/* Responsive 2-column grid */
+.resp-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .resp-grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Responsive 3-column grid */
+.resp-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .resp-grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 1024px) {
+  .resp-grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Responsive 4-column grid */
+.resp-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+@media (min-width: 768px) {
+  .resp-grid-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Sidebar layout: sidebar + main */
+.resp-sidebar-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 1024px) {
+  .resp-sidebar-layout {
+    grid-template-columns: 280px 1fr;
+    align-items: start;
+  }
+}
+
+/* Hero + side panel layout */
+.resp-hero-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+@media (min-width: 1024px) {
+  .resp-hero-layout {
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+  }
+}
+
+/* Sticky sidebar on desktop */
+@media (min-width: 1024px) {
+  .resp-sticky-sidebar {
+    position: sticky;
+    top: 20px;
   }
 }

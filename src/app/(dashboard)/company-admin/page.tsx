@@ -436,26 +436,37 @@ export default function CompanyAdminDashboard() {
 
   const pageStyle: React.CSSProperties = {
     minHeight: "100dvh", background: T.base, fontFamily: "'Inter', sans-serif",
-    color: T.text1, padding: "32px 24px", maxWidth: "100%", margin: "0 auto"
+    color: T.text1,
+    padding: "0 0 calc(90px + env(safe-area-inset-bottom, 0px))",
+    maxWidth: "100%", margin: "0 auto"
   };
 
   const statCardStyle = {
-    padding: 24, borderRadius: 24,
+    padding: "18px 16px", borderRadius: 22,
     background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised,
-    display: "flex", alignItems: "center", gap: 20
+    display: "flex", alignItems: "center", gap: 16
   };
 
   return (
     <div style={pageStyle}>
+      <style>{`
+        .ca-inner { padding: 20px 16px 0; }
+        @media (min-width: 768px) { .ca-inner { max-width: 1300px; margin: 0 auto; padding: 32px 32px 0; } }
+        .ca-header { display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px; }
+        @media (min-width: 640px) { .ca-header { flex-direction: row; align-items: flex-end; justify-content: space-between; } }
+        .ca-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+        @media (min-width: 768px) { .ca-stat-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+      `}</style>
+      <div className="ca-inner">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+      <div className="ca-header">
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px", color: T.text1 }}>Company Operations</h1>
-          <p style={{ color: T.text3, margin: 0, fontSize: 14, fontWeight: 600 }}>Manage government tender bids, awarded contracts, and field personnel.</p>
+          <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 6px", color: T.text1, lineHeight: 1.15 }}>Company Operations</h1>
+          <p style={{ color: T.text3, margin: 0, fontSize: 13, fontWeight: 600, lineHeight: 1.5 }}>Manage government tender bids, awarded contracts, and field personnel.</p>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/company-admin/contracts" style={{ padding: "12px 20px", borderRadius: 14, background: T.raised, border: `1px solid ${T.border}`, color: T.accentDark, fontSize: 13, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: SH.raisedSm }}>
-            <ShieldCheck size={16} /> My Contracts ({myContractsList.length})
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Link href="/company-admin/contracts" style={{ padding: "10px 16px", borderRadius: 13, background: T.raised, border: `1px solid ${T.border}`, color: T.accentDark, fontSize: 12, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 7, boxShadow: SH.raisedSm, whiteSpace: "nowrap" }}>
+            <ShieldCheck size={15} /> My Contracts ({myContractsList.length})
           </Link>
         </div>
       </div>
@@ -467,7 +478,7 @@ export default function CompanyAdminDashboard() {
       )}
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 32 }}>
+      <div className="ca-stat-grid">
         <div style={statCardStyle}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: "#FAEEDA", display: "flex", alignItems: "center", justifyContent: "center", color: "#854F0B", boxShadow: SH.insetSoft }}>
             <Star size={24} />
@@ -982,6 +993,8 @@ export default function CompanyAdminDashboard() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }
+

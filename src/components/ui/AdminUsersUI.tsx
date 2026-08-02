@@ -126,7 +126,7 @@ export default function AdminUsersUI({ initialUsers, departments = [] }: { initi
 
   return (
     <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
-      <div style={{ maxWidth: "100%", margin: "0 auto", padding: "32px 16px 100px" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px 100px" }}>
         
         <header style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32 }}>
           <button onClick={() => router.push("/admin")} style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: 12, color: T.text1, cursor: "pointer", boxShadow: SH.raisedSm }}>

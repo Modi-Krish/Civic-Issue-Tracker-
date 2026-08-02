@@ -97,7 +97,7 @@ export default function RewardsPage() {
       color: T.text1,
       paddingBottom: 100,
     }}>
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Header */}
         <div style={{ padding: '32px 0 24px' }}>
@@ -126,7 +126,7 @@ export default function RewardsPage() {
                   <Award size={13} color="rgba(255,255,255,0.8)" />
                   <span style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>CUMULATIVE SCORE</span>
                 </div>
-                <div style={{ fontSize: 62, fontWeight: 900, color: 'white', letterSpacing: '-0.05em', lineHeight: 1 }}>{totalPoints.toLocaleString()}</div>
+                <div style={{ fontSize: 52, fontWeight: 900, color: 'white', letterSpacing: '-0.05em', lineHeight: 1 }}>{totalPoints.toLocaleString()}</div>
                 <div style={{ fontSize: 14, color: 'white', marginTop: 8, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 18 }}>{currentTier.emoji}</span> {currentTier.name} Status
                 </div>

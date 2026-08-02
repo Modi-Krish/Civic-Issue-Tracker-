@@ -88,12 +88,39 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
       background: T.base,
       fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
       color: T.text1,
-      paddingBottom: 100,
     }}>
-      <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 16px" }}>
+      <style>{`
+        .settings-container {
+          width: 100%;
+          padding: 0 16px calc(90px + env(safe-area-inset-bottom, 0px));
+        }
+        @media (min-width: 768px) {
+          .settings-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 32px 90px;
+          }
+        }
+        .settings-main-layout {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        @media (min-width: 1024px) {
+          .settings-main-layout {
+            grid-template-columns: 1fr 1fr;
+            align-items: start;
+          }
+        }
+        .settings-full-width {
+          grid-column: 1 / -1;
+        }
+      `}</style>
+
+      <div className="settings-container">
 
         {/* Header */}
-        <div style={{ padding: "28px 0 24px" }}>
+        <div style={{ padding: "28px 0 20px" }}>
           <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 4px", color: T.text1 }}>
             Settings
           </h1>
@@ -114,7 +141,7 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
           </div>
         )}
 
-        {/* Profile Hero */}
+        {/* Profile Hero — full width */}
         <div style={{
           borderRadius: 28, padding: "28px", marginBottom: 20,
           background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
@@ -211,8 +238,11 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
           </div>
         </div>
 
-        {/* Account Section */}
-        <SectionCard label="Account Identification" style={{ marginBottom: 20 }}>
+        {/* Main 2-col grid on desktop */}
+        <div className="settings-main-layout">
+
+          {/* Account Section */}
+          <SectionCard label="Account Identification">
           {[
             { icon: Mail,      label: "Email Address",    value: user.email ?? "—",                        bg: "#E6F1FB", fg: "#0C447C" },
             { icon: Shield,    label: "Access Level",     value: `${roleCfg.emoji} ${roleCfg.label}`,      bg: roleCfg.bg, fg: roleCfg.fg },
@@ -236,10 +266,10 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
               </div>
             </div>
           ))}
-        </SectionCard>
+          </SectionCard>
 
-        {/* Preferences Section */}
-        <SectionCard label="Experience Settings" style={{ marginBottom: 24 }}>
+          {/* Preferences Section */}
+          <SectionCard label="Experience Settings">
           {[
             { icon: Palette,    label: "Visual Theme",  value: "Warm Light",   bg: "#FAECE7", fg: "#712B13" },
             { icon: Bell,       label: "Push Alerts",   value: "All Enabled",  bg: "#FAEEDA", fg: "#854F0B" },
@@ -267,9 +297,10 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
               </div>
             </div>
           ))}
-        </SectionCard>
+          </SectionCard>
+        </div>
 
-        {/* Logout */}
+        {/* Logout — full width */}
         <button
           onClick={() => { if (confirm("Are you sure you want to sign out?")) handleLogout(); }}
           style={{

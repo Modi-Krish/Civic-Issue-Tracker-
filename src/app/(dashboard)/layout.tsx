@@ -40,7 +40,7 @@ export default function DashboardLayout({
 
   return (
     <div className="flex flex-col flex-1">
-      <main className="flex-1">{children}</main>
+      <main className="flex-1" style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))" }}>{children}</main>
       <BottomNav role={profile?.role} />
     </div>
   );

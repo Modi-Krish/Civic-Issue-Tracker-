@@ -1,190 +1,297 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { X, MapPin, CheckCircle2, ShieldCheck, Wrench, Search } from 'lucide-react';
+import React from 'react';
+import {
+  X,
+  ShieldAlert,
+  AlertTriangle,
+  Info,
+  MapPin,
+  Clock,
+  TrendingUp,
+  CalendarClock,
+  FileText,
+  Tag,
+  Activity,
+} from 'lucide-react';
 
 interface PatternDetailModalProps {
-  pattern: any | null;
+  pattern: any;
   onClose: () => void;
   onStatusChange: (patternId: string, newStatus: string) => void;
 }
 
+const severityConfig: Record<string, { gradient: string; icon: React.ReactNode; label: string }> = {
+  CRITICAL: { gradient: 'linear-gradient(135deg, #dc2626, #b91c1c)', icon: <ShieldAlert size={18} />, label: 'Critical' },
+  HIGH: { gradient: 'linear-gradient(135deg, #ea580c, #c2410c)', icon: <AlertTriangle size={18} />, label: 'High' },
+  MEDIUM: { gradient: 'linear-gradient(135deg, #d97706, #b45309)', icon: <AlertTriangle size={18} />, label: 'Medium' },
+  LOW: { gradient: 'linear-gradient(135deg, #16a34a, #15803d)', icon: <Info size={18} />, label: 'Low' },
+};
+
+const statusOptions = ['ACTIVE', 'MONITORING', 'ACKNOWLEDGED', 'RESOLVED'] as const;
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getDaysUntil(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  const diff = Math.round((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  if (diff <= 0) return 'Overdue';
+  if (diff === 1) return '1 day';
+  return `${diff} days`;
+}
+
 export default function PatternDetailModal({ pattern, onClose, onStatusChange }: PatternDetailModalProps) {
-  const [detailData, setDetailData] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!pattern?.id) return;
-    async function loadDetail() {
-      try {
-        const res = await fetch(`/api/analytics/patterns/${pattern.id}`);
-        const json = await res.json();
-        if (json.pattern) {
-          setDetailData(json);
-        }
-      } catch (err) {
-        console.error('Error loading pattern detail:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadDetail();
-  }, [pattern]);
-
-  if (!pattern) return null;
-
-  const timelineEvents = detailData?.timelineEvents || [];
-
-  const severityColor =
-    pattern.severity_level === 'CRITICAL' ? '#dc2626' :
-    pattern.severity_level === 'HIGH' ? '#ea580c' :
-    pattern.severity_level === 'MEDIUM' ? '#d97706' : '#64748b';
-
-  const severityBg =
-    pattern.severity_level === 'CRITICAL' ? '#fef2f2' :
-    pattern.severity_level === 'HIGH' ? '#fff7ed' :
-    pattern.severity_level === 'MEDIUM' ? '#fffbeb' : '#f1f5f9';
+  const severity = severityConfig[pattern.severity_level] || severityConfig.LOW;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 1000, backdropFilter: "blur(4px)" }} className="flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      {/* Backdrop */}
       <div
         style={{
-          background: "#ffffff",
-          border: "1.5px solid #e2e8f0",
-          color: "#0f172a"
+          position: 'absolute',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(6px)',
         }}
-        className="w-full max-w-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5 sm:p-7 relative shadow-2xl">
+      />
 
-        {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
+      {/* Modal panel */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100%',
+          maxWidth: 560,
+          maxHeight: '90vh',
+          borderRadius: 22,
+          background: '#ffffff',
+          boxShadow: '0 25px 60px -12px rgba(0, 0, 0, 0.25)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          animation: 'slideUp 0.25s ease-out',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
           style={{
-            position: "absolute", top: 16, right: 16, width: 40, height: 40, borderRadius: 12,
-            background: "#f1f5f9", border: "1px solid #e2e8f0",
-            color: "#0f172a", cursor: "pointer"
+            padding: '20px 22px 16px',
+            background: severity.gradient,
+            color: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 12,
           }}
-          className="flex items-center justify-center active:scale-95 transition-transform">
-          <X size={20} />
-        </button>
-
-        {/* Modal Header */}
-        <div className="mb-5 pr-10 leading-normal">
-          <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: severityBg, color: severityColor, border: `1px solid ${severityColor}35`, textTransform: "uppercase" }}>
-            {pattern.severity_level} SEVERITY PATTERN
-          </span>
-          <h2 style={{ color: "#0f172a" }} className="text-lg sm:text-2xl font-black mt-2 mb-1 capitalize leading-snug">
-            {pattern.category_id} Cluster History & Prediction
-          </h2>
-          <p style={{ fontSize: 12, color: "#64748b" }} className="flex items-center gap-1.5 truncate">
-            <MapPin size={14} color="#0ea5e9" className="shrink-0" />
-            <span className="truncate">
-              {pattern.location_description || `Centroid (${pattern.cluster_lat.toFixed(4)}, ${pattern.cluster_lng.toFixed(4)})`}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                opacity: 0.9,
+              }}
+            >
+              {severity.icon}
+              {severity.label} Severity
             </span>
-          </p>
+            <h2
+              style={{
+                fontSize: 18,
+                fontWeight: 800,
+                margin: 0,
+                lineHeight: 1.3,
+              }}
+            >
+              {pattern.pattern_type?.replace(/_/g, ' ') || 'Pattern Detail'}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: 'rgba(255, 255, 255, 0.2)',
+              border: 'none',
+              color: '#fff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'background 0.15s',
+            }}
+            className="hover:bg-white/30"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        {/* Stats Grid */}
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-5 p-3.5 rounded-2xl text-left">
-          <div>
-            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", fontWeight: 700 }}>Risk Score</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: pattern.risk_score >= 70 ? "#dc2626" : "#d97706" }}>{pattern.risk_score} / 100</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", fontWeight: 700 }}>Confidence</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#0284c7" }}>{pattern.prediction_confidence}%</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", fontWeight: 700 }}>Median Interval</div>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#0f172a" }}>{pattern.median_interval_days} Days</div>
-          </div>
-          <div>
-            <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", fontWeight: 700 }}>Predicted Next</div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#dc2626", marginTop: 2 }}>{new Date(pattern.predicted_next_at).toLocaleDateString()}</div>
-          </div>
-        </div>
-
-        {/* Recommendation Box */}
-        {pattern.recommendation_text && (
-          <div style={{ background: "#f0f9ff", border: "1px solid #bae6fd" }} className="rounded-2xl p-4 mb-5 leading-relaxed">
-            <h4 style={{ fontSize: 11, fontWeight: 800, color: "#0284c7", textTransform: "uppercase", margin: "0 0 4px" }}>Automated Rule Recommendation</h4>
-            <p style={{ fontSize: 13, color: "#0f172a", margin: 0, lineHeight: 1.5 }}>{pattern.recommendation_text}</p>
-          </div>
-        )}
-
-        {/* Status Lifecycle Actions */}
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }} className="mb-5 p-4 rounded-2xl">
-          <div style={{ fontSize: 10, fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", marginBottom: 8 }}>Update Pattern Lifecycle Status</div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onStatusChange(pattern.id, 'UNDER_INVESTIGATION')}
-              style={{
-                minHeight: 40,
-                background: pattern.status === 'UNDER_INVESTIGATION' ? '#0ea5e9' : '#ffffff',
-                color: pattern.status === 'UNDER_INVESTIGATION' ? '#ffffff' : '#334155',
-                borderColor: pattern.status === 'UNDER_INVESTIGATION' ? '#0ea5e9' : '#e2e8f0'
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5">
-              <Search size={14} /> Under Investigation
-            </button>
-            <button
-              type="button"
-              onClick={() => onStatusChange(pattern.id, 'MAINTENANCE_SCHEDULED')}
-              style={{
-                minHeight: 40,
-                background: pattern.status === 'MAINTENANCE_SCHEDULED' ? '#8b5cf6' : '#ffffff',
-                color: pattern.status === 'MAINTENANCE_SCHEDULED' ? '#ffffff' : '#334155',
-                borderColor: pattern.status === 'MAINTENANCE_SCHEDULED' ? '#8b5cf6' : '#e2e8f0'
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5">
-              <Wrench size={14} /> Maintenance Scheduled
-            </button>
-            <button
-              type="button"
-              onClick={() => onStatusChange(pattern.id, 'RESOLVED')}
-              style={{
-                minHeight: 40,
-                background: pattern.status === 'RESOLVED' ? '#10b981' : '#ffffff',
-                color: pattern.status === 'RESOLVED' ? '#ffffff' : '#334155',
-                borderColor: pattern.status === 'RESOLVED' ? '#10b981' : '#e2e8f0'
-              }}
-              className="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5">
-              <CheckCircle2 size={14} /> Mark Resolved
-            </button>
-          </div>
-        </div>
-
-        {/* Incident History Timeline */}
-        <div>
-          <h3 style={{ color: "#0f172a" }} className="text-sm font-extrabold uppercase tracking-wider mb-3">Linked Complaint Timeline</h3>
-          {loading ? (
-            <div style={{ color: "#94a3b8" }} className="text-center py-6 text-xs">Loading historical timeline...</div>
-          ) : timelineEvents.length === 0 ? (
-            <div style={{ color: "#94a3b8", background: "#f8fafc", border: "1px solid #e2e8f0" }} className="text-center py-6 text-xs rounded-2xl">
-              Historical incidents linked to this spatial centroid.
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {timelineEvents.map((evt: any, index: number) => (
-                <div key={index} style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }} className="p-3 rounded-xl flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
-                    <div>
-                      <div style={{ color: "#0f172a" }} className="font-bold">Complaint #{evt.issue_id || evt.id}</div>
-                      <div style={{ color: "#94a3b8" }} className="text-[11px]">{new Date(evt.created_at).toLocaleDateString()}</div>
-                    </div>
-                  </div>
-                  <span style={{ background: "#f1f5f9", color: "#475569", border: "1px solid #e2e8f0" }} className="text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0">
-                    {evt.status || 'RESOLVED'}
-                  </span>
-                </div>
-              ))}
+        {/* Scrollable body */}
+        <div style={{ overflowY: 'auto', padding: '20px 22px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {/* Description */}
+          {pattern.description && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
+                <FileText size={13} />
+                Description
+              </div>
+              <p style={{ fontSize: 14, color: '#334155', lineHeight: 1.6, margin: 0 }}>
+                {pattern.description}
+              </p>
             </div>
           )}
-        </div>
 
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-3">
+            {pattern.occurrence_count != null && (
+              <div style={{ padding: '14px 16px', borderRadius: 14, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+                  <TrendingUp size={13} />
+                  Occurrences
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#0f172a' }}>{pattern.occurrence_count}</div>
+              </div>
+            )}
+
+            {pattern.confidence_score != null && (
+              <div style={{ padding: '14px 16px', borderRadius: 14, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+                  <Activity size={13} />
+                  Confidence
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#0f172a' }}>{Math.round(pattern.confidence_score * 100)}%</div>
+                <div style={{ marginTop: 6, height: 6, borderRadius: 3, background: '#e2e8f0', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.round(pattern.confidence_score * 100)}%`, borderRadius: 3, background: 'linear-gradient(90deg, #0ea5e9, #8b5cf6)', transition: 'width 0.6s ease' }} />
+                </div>
+              </div>
+            )}
+
+            {pattern.affected_area && (
+              <div style={{ padding: '14px 16px', borderRadius: 14, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+                  <MapPin size={13} />
+                  Affected Area
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{pattern.affected_area}</div>
+              </div>
+            )}
+
+            {pattern.category && (
+              <div style={{ padding: '14px 16px', borderRadius: 14, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 }}>
+                  <Tag size={13} />
+                  Category
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#0f172a' }}>{pattern.category}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Prediction info */}
+          {pattern.predicted_next_at && (
+            <div style={{ padding: '14px 16px', borderRadius: 14, background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 6 }}>
+                <CalendarClock size={13} />
+                Predicted Next Occurrence
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap', gap: 8 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#1e40af' }}>{formatDate(pattern.predicted_next_at)}</span>
+                <span style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: getDaysUntil(pattern.predicted_next_at) === 'Overdue' ? '#dc2626' : '#3b82f6',
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: getDaysUntil(pattern.predicted_next_at) === 'Overdue' ? '#fef2f2' : '#dbeafe',
+                }}>
+                  {getDaysUntil(pattern.predicted_next_at)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Timestamps */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>
+            {pattern.first_seen_at && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Clock size={12} />
+                First seen: {formatDate(pattern.first_seen_at)}
+              </span>
+            )}
+            {pattern.last_seen_at && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Clock size={12} />
+                Last seen: {formatDate(pattern.last_seen_at)}
+              </span>
+            )}
+          </div>
+
+          {/* Status change */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>
+              Update Status
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {statusOptions.map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => onStatusChange(pattern.id, status)}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: pattern.status === status ? 'none' : '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    background: pattern.status === status ? 'linear-gradient(135deg, #0ea5e9, #8b5cf6)' : '#f8fafc',
+                    color: pattern.status === status ? '#fff' : '#475569',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Keyframe animation */}
+      <style>{`
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

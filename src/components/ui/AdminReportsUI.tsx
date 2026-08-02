@@ -77,7 +77,14 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
 
   return (
     <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
-      <div style={{ position: "relative", zIndex: 1, maxWidth: "100%", margin: "0 auto", padding: "0 16px 100px" }}>
+      <style>{`
+        .ar-container { width: 100%; padding: 0 16px 100px; }
+        @media (min-width: 768px) { .ar-container { max-width: 1400px; margin: 0 auto; padding: 0 32px 100px; } }
+        .ar-grid { display: flex; flex-direction: column; gap: 12px; }
+        @media (min-width: 768px) { .ar-grid { display: grid; grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1280px) { .ar-grid { grid-template-columns: repeat(3, 1fr); } }
+      `}</style>
+      <div className="ar-container">
 
         {/* Header */}
         <div style={{
@@ -148,13 +155,12 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
           </div>
         </div>
 
-        {/* Issue Cards */}
         {filtered.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 20px", color: T.text3, fontSize: 13, fontWeight: 600 }}>
             No issues match your filters.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="ar-grid">
             {filtered.map((issue: any) => {
               const dept = departments.find(d => d.id === issue.department_id);
               const date = new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });

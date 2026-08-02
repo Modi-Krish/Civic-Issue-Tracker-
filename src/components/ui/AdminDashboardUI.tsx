@@ -6,10 +6,8 @@ import { FileText, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { supabase } from '@/lib/supabase/client';
-
 import PredictiveAlertsTab from '@/components/admin/PredictiveAlertsTab';
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
   base:       '#EDEBE4',
   raised:     '#F5F3EC',
@@ -90,9 +88,7 @@ export default function AdminDashboardUI({
       try {
         const res = await fetch('/api/analytics/patterns?status=ACTIVE');
         const data = await res.json();
-        if (data.unreadAlertsCount !== undefined) {
-          setUnreadAlerts(data.unreadAlertsCount);
-        }
+        if (data.unreadAlertsCount !== undefined) setUnreadAlerts(data.unreadAlertsCount);
       } catch (err) {
         console.warn('Failed to fetch unread alerts count:', err);
       }
@@ -104,13 +100,10 @@ export default function AdminDashboardUI({
     e.stopPropagation();
     if (togglingDept) return;
     setTogglingDept(dept.id);
-    
     const newMode = dept.management_mode === 'TENDER' ? 'DEPARTMENT' : 'TENDER';
-    
     try {
       const deptRef = doc(db, 'departments', dept.id);
       await updateDoc(deptRef, { management_mode: newMode });
-      
       if (dept.slug) {
         await supabase.from('departments').update({ management_mode: newMode }).eq('slug', dept.slug);
       }
@@ -129,6 +122,7 @@ export default function AdminDashboardUI({
   const statCards = [
     { label: "Total Issues",  value: stats.total,       color: "#0C447C", bg: "#E6F1FB", icon: <FileText size={20}/> },
     { label: "Resolved",      value: stats.resolved,    color: "#27500A", bg: "#EAF3DE", icon: <CheckCircle2 size={20}/> },
+    { label: "Open",          value: stats.open,        color: "#791F1F", bg: "#FCEBEB", icon: <ArrowRight size={20}/> },
     { label: "Departments",   value: stats.departments, color: "#3C3489", bg: "#EEEDFE", icon: <Building2 size={20}/> },
   ];
 
@@ -136,12 +130,52 @@ export default function AdminDashboardUI({
 
   return (
     <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
-      <div style={{ maxWidth: "100%", margin: "0 auto", padding: "0 16px 100px" }}>
+      <style>{`
+        .admin-container {
+          width: 100%;
+          padding: 0 16px calc(90px + env(safe-area-inset-bottom, 0px));
+        }
+        @media (min-width: 768px) {
+          .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 32px 90px;
+          }
+        }
+        .admin-stat-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        @media (min-width: 768px) {
+          .admin-stat-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+          }
+        }
+        .admin-dept-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 768px) {
+          .admin-dept-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1280px) {
+          .admin-dept-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+      `}</style>
 
+      <div className="admin-container">
         {/* Header */}
         <header style={{ padding: "24px 0 20px" }} className="flex flex-wrap items-center justify-between gap-3">
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 16, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white", boxShadow: SH.raisedSm }} className="shrink-0">
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white", boxShadow: SH.raisedSm, flexShrink: 0 }}>
               {firstName.charAt(0)}
             </div>
             <div>
@@ -151,7 +185,7 @@ export default function AdminDashboardUI({
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }} className="w-full sm:w-auto justify-between sm:justify-end">
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
             <button onClick={() => router.push("/admin/users")} style={{ padding: "8px 16px", borderRadius: 12, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontSize: 12, fontWeight: 800, cursor: "pointer", minHeight: 38, boxShadow: SH.raisedSm }}>Manage Users</button>
             <div style={{ fontSize: 11, color: "#791F1F", fontWeight: 800, background: "#FCEBEB", padding: "6px 12px", borderRadius: 10, letterSpacing: "0.06em", boxShadow: SH.raisedSm }}>
               SUPER ADMIN
@@ -159,86 +193,83 @@ export default function AdminDashboardUI({
           </div>
         </header>
 
-        {/* Tab Selector (Horizontal Scroll on Mobile) */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: `1px solid ${T.border}`, paddingBottom: 16, overflowX: "auto", WebkitOverflowScrolling: "touch", width: "100%", maxWidth: "100%" }} className="no-scrollbar">
-          <button
-            onClick={() => setActiveTab('PREDICTIVE_ALERTS')}
-            style={{
-              padding: "10px 18px", borderRadius: 14,
-              background: activeTab === 'PREDICTIVE_ALERTS' ? T.raised : 'transparent',
-              color: activeTab === 'PREDICTIVE_ALERTS' ? T.accentDark : T.text3,
-              fontSize: 12, fontWeight: 800, border: activeTab === 'PREDICTIVE_ALERTS' ? `1px solid ${T.border}` : "1px solid transparent",
-              boxShadow: activeTab === 'PREDICTIVE_ALERTS' ? SH.raisedSm : 'none',
-              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
-            }}>
-            🚨 Predictive Alerts {unreadAlerts > 0 && <span style={{ background: "#791F1F", color: "white", borderRadius: 99, padding: "2px 7px", fontSize: 10, fontWeight: 900 }}>{unreadAlerts} NEW</span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('OVERVIEW')}
-            style={{
-              padding: "10px 18px", borderRadius: 14,
-              background: activeTab === 'OVERVIEW' ? T.raised : 'transparent',
-              color: activeTab === 'OVERVIEW' ? T.accentDark : T.text3,
-              fontSize: 12, fontWeight: 800, border: activeTab === 'OVERVIEW' ? `1px solid ${T.border}` : "1px solid transparent",
-              boxShadow: activeTab === 'OVERVIEW' ? SH.raisedSm : 'none',
-              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
-            }}>
-            📊 System Overview
-          </button>
+        {/* Tab Selector */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: `1px solid ${T.border}`, paddingBottom: 16, overflowX: "auto", WebkitOverflowScrolling: "touch" }} className="no-scrollbar">
+          {[
+            { key: 'PREDICTIVE_ALERTS', label: `🚨 Predictive Alerts`, badge: unreadAlerts > 0 ? `${unreadAlerts} NEW` : null },
+            { key: 'OVERVIEW', label: '📊 System Overview', badge: null },
+          ].map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key as any)}
+              style={{
+                padding: "10px 18px", borderRadius: 14,
+                background: activeTab === tab.key ? T.raised : 'transparent',
+                color: activeTab === tab.key ? T.accentDark : T.text3,
+                fontSize: 12, fontWeight: 800,
+                border: activeTab === tab.key ? `1px solid ${T.border}` : "1px solid transparent",
+                boxShadow: activeTab === tab.key ? SH.raisedSm : 'none',
+                cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8,
+                whiteSpace: "nowrap", flexShrink: 0, minHeight: 44,
+              }}
+            >
+              {tab.label}
+              {tab.badge && <span style={{ background: "#791F1F", color: "white", borderRadius: 99, padding: "2px 7px", fontSize: 10, fontWeight: 900 }}>{tab.badge}</span>}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'PREDICTIVE_ALERTS' ? (
           <PredictiveAlertsTab />
         ) : (
           <>
+            {/* Stats grid — 4-col on desktop */}
+            <section style={{ marginBottom: 28 }}>
+              <div className="admin-stat-grid">
+                {statCards.map(stat => (
+                  <div key={stat.label} style={{ borderRadius: 20, padding: "18px 16px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, color: stat.color, boxShadow: SH.insetSoft }}>
+                      {stat.icon}
+                    </div>
+                    <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: T.text1, marginBottom: 6 }}>{stat.value}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: T.text3 }}>{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* System health */}
             <section style={{ marginBottom: 28 }}>
               <div style={{ borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, padding: 24 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 12 }}>
                   <div>
                     <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>System Health</div>
                     <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.25, color: T.text1 }}>
                       {stats.open} issues open across {stats.departments} departments
                     </div>
                   </div>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: T.accent }}>{systemHealth}%</span>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: T.accent }}>{systemHealth}%</span>
                 </div>
-
-                <div style={{ marginBottom: 8 }}>
-                  <div style={{ height: 10, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
-                    <div style={{ height: "100%", width: `${systemHealth}%`, borderRadius: 99, background: `linear-gradient(90deg, ${T.accent}, ${T.accentDark})` }} />
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
-                    {["Reported", "In Progress", "Resolved"].map((s, i) => (
-                      <span key={s} style={{ fontSize: 10, fontWeight: 800, color: i === 0 ? T.accentDark : T.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
-                    ))}
-                  </div>
+                <div style={{ height: 10, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
+                  <div style={{ height: "100%", width: `${systemHealth}%`, borderRadius: 99, background: `linear-gradient(90deg, ${T.accent}, ${T.accentDark})` }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+                  {["Reported", "In Progress", "Resolved"].map((s, i) => (
+                    <span key={s} style={{ fontSize: 10, fontWeight: 800, color: i === 0 ? T.accentDark : T.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
+                  ))}
                 </div>
               </div>
             </section>
 
-            {/* Stats Grid */}
-            <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
-              {statCards.map(stat => (
-                <div key={stat.label} style={{ borderRadius: 20, padding: "18px 12px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, color: stat.color, boxShadow: SH.insetSoft }}>
-                    {stat.icon}
-                  </div>
-                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: T.text1, marginBottom: 6 }}>{stat.value}</div>
-                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: T.text3 }}>{stat.label}</div>
-                </div>
-              ))}
-            </section>
-
-            {/* Department Performance */}
+            {/* Department Performance — responsive grid */}
             <section style={{ marginBottom: 28 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "0 4px" }}>
-                <h2 style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.02em", color: T.text1 }}>
+                <h2 style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.02em", color: T.text1, margin: 0 }}>
                   Department Performance
                 </h2>
                 <button onClick={() => router.push("/admin/reports")} style={{ fontSize: 11, fontWeight: 800, color: T.accentDark, textTransform: "uppercase", letterSpacing: "0.08em", background: "none", border: "none", cursor: "pointer" }}>ALL ISSUES →</button>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div className="admin-dept-grid">
                 {deptStats.length === 0 ? (
                   <div style={{ padding: "30px", textAlign: "center", background: T.raised, borderRadius: 20, boxShadow: SH.insetSoft }}>
                     <p style={{ fontSize: 13, color: T.text3, fontWeight: 600 }}>No departments found.</p>
@@ -249,9 +280,9 @@ export default function AdminDashboardUI({
                     const barColor = rate >= 70 ? "#085041" : rate >= 40 ? "#854F0B" : "#791F1F";
                     return (
                       <div key={dept.id} style={{ borderRadius: 20, padding: "16px 20px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, cursor: "pointer" }} onClick={() => router.push("/admin/reports")}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
                           <span style={{ fontSize: 15, fontWeight: 900, color: T.text1 }}>{dept.name}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                             <button
                               onClick={(e) => handleToggleMode(e, dept)}
                               disabled={togglingDept === dept.id}
@@ -260,16 +291,20 @@ export default function AdminDashboardUI({
                                 background: dept.management_mode === 'TENDER' ? "#EAF3DE" : T.base,
                                 color: dept.management_mode === 'TENDER' ? "#27500A" : T.text3,
                                 border: `1px solid ${dept.management_mode === 'TENDER' ? "#27500A30" : T.border}`,
-                                cursor: "pointer",
-                                boxShadow: SH.raisedSm
-                              }}>
-                              {togglingDept === dept.id ? 'Updating...' : dept.management_mode === 'TENDER' ? 'Mode: Tender/Contractor' : 'Mode: Internal Dept'}
+                                cursor: "pointer", boxShadow: SH.raisedSm,
+                              }}
+                            >
+                              {togglingDept === dept.id ? 'Updating...' : dept.management_mode === 'TENDER' ? 'Mode: Tender' : 'Mode: Internal'}
                             </button>
                             <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{rate}%</span>
                           </div>
                         </div>
                         <div style={{ height: 8, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
                           <div style={{ height: "100%", width: `${rate}%`, borderRadius: 99, background: barColor }} />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: T.text3, fontWeight: 600 }}>
+                          <span>{dept.resolved}/{dept.total} resolved</span>
+                          <span>{dept.open} open</span>
                         </div>
                       </div>
                     );

@@ -7,7 +7,7 @@ import MyReportsUI from '@/components/ui/MyReportsUI';
 
 export default function MyReportsPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +19,19 @@ export default function MyReportsPage() {
     async function setupRealtime() {
       if (!user) {
         router.push('/login');
+        return;
+      }
+
+      if (profile && profile.role !== 'citizen') {
+        const roleMap: Record<string, string> = {
+          super_admin: '/admin',
+          government_officer: '/government',
+          department_admin: '/department',
+          company_admin: '/company-admin',
+          company_employee: '/company-employee',
+          employee: '/tasks'
+        };
+        router.push(roleMap[profile.role] || '/login');
         return;
       }
 

@@ -136,22 +136,28 @@ export default function CompanyEmployeeDashboard() {
   };
 
   return (
-    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', sans-serif", color: T.text1, paddingBottom: 80, overflowX: "hidden" }}>
-      <div style={{ position: "relative", zIndex: 1, maxWidth: "100%", margin: "0 auto", padding: "0 24px" }}>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', sans-serif", color: T.text1, paddingBottom: "calc(90px + env(safe-area-inset-bottom, 0px))", overflowX: "hidden" }}>
+      <style>{`
+        .ce-inner { width: 100%; padding: 0 16px; }
+        @media (min-width: 768px) { .ce-inner { max-width: 1300px; margin: 0 auto; padding: 0 32px; } }
+        .ce-main-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 1024px) { .ce-main-grid { grid-template-columns: 1.5fr 1fr; align-items: start; } }
+      `}</style>
+      <div className="ce-inner">
 
         {/* Header */}
-        <div style={{ padding: "40px 0 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "6px 14px", borderRadius: 99, background: "#EEEDFE", border: `1px solid ${T.border}`, width: "fit-content", boxShadow: SH.raisedSm }}>
-            <Briefcase size={14} color="#3C3489" />
-            <span style={{ fontSize: 11, fontWeight: 900, color: "#3C3489", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+        <div style={{ padding: "24px 0 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, padding: "5px 12px", borderRadius: 99, background: "#EEEDFE", border: `1px solid ${T.border}`, width: "fit-content", boxShadow: SH.raisedSm }}>
+            <Briefcase size={13} color="#3C3489" />
+            <span style={{ fontSize: 10, fontWeight: 900, color: "#3C3489", textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Field Operations
             </span>
           </div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px", color: T.text1 }}>Field Employee Dashboard</h1>
-          <p style={{ color: T.text3, margin: 0, fontSize: 15, fontWeight: 600 }}>Assigned field resolution workflow & task execution.</p>
+          <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 6px", color: T.text1, lineHeight: 1.2 }}>Field Employee Dashboard</h1>
+          <p style={{ color: T.text3, margin: 0, fontSize: 13, fontWeight: 600 }}>Assigned field resolution workflow & task execution.</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, alignItems: "start" }}>
+        <div className="ce-main-grid">
 
           {/* Task List */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

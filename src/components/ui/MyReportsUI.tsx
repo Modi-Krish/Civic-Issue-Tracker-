@@ -3,102 +3,138 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, Plus, MapPin, Clock, ChevronRight } from 'lucide-react';
+import { Search, Plus, MapPin, Clock, ChevronRight } from "lucide-react";
 
-const STATUS_CONFIG = {
-  REPORTED:              { label: "Reported",       bg: "#1e3a5f", color: "#60a5fa", dot: "#3b82f6" },
-  IN_PROGRESS:           { label: "In Progress",    bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
-  APPROVED:              { label: "Approved",        bg: "#3a2a1a", color: "#FF2E11", dot: "#FF2E11" },
-  DEPARTMENT_ASSIGNED:   { label: "Dept. Assigned", bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  EMPLOYEE_ASSIGNED:     { label: "Emp. Assigned",  bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  SUBMITTED_FOR_APPROVAL:{ label: "Pending",        bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
-  REJECTED:              { label: "Rejected",        bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
-  CLOSED:                { label: "Closed",          bg: "#1f1f1f", color: "#9ca3af", dot: "#6b7280" },
+// ── Design tokens ────────────────────────────────────────────────────────────
+const T = {
+  base:         "#EDEBE4",
+  raised:       "#F5F3EC",
+  border:       "#DDD9CE",
+  text1:        "#2C2C2A",
+  text2:        "#5F5E5A",
+  text3:        "#888780",
+  accent:       "#1D9E75",
+  accentDark:   "#167A5B",
+  accentTint:   "#E1F5EE",
+  accentOnTint: "#085041",
+  shL: "rgba(255,255,255,0.75)",
+  shD: "rgba(0,0,0,0.09)",
+} as const;
+
+const SH = {
+  raised:    `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm:  `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:     `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+  insetSoft: `inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
 };
 
-const TYPE_META: Record<string, { emoji: string, accent: string }> = {
-  "Road Damage":  { emoji: "🚧", accent: "#f59e0b" },
-  "Streetlight":  { emoji: "💡", accent: "#FF2E11" },
-  "Garbage":      { emoji: "🗑️", accent: "#34d399" },
-  "Water":        { emoji: "💧", accent: "#60a5fa" },
-  "Graffiti":     { emoji: "🎨", accent: "#f472b6" },
-  "Park":         { emoji: "🌳", accent: "#4ade80" },
-  default:        { emoji: "📋", accent: "#FF2E11" },
+// ── Status config ─────────────────────────────────────────────────────────────
+const STATUS_CONFIG = {
+  REPORTED:               { label: "Reported",         bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  IN_PROGRESS:            { label: "In Progress",      bg: "#EAF3DE", fg: "#27500A", dot: "#27500A" },
+  APPROVED:               { label: "Approved",         bg: "#E1F5EE", fg: "#085041", dot: "#1D9E75" },
+  DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  EMPLOYEE_ASSIGNED:      { label: "Emp. Assigned",    bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
+  SUBMITTED_FOR_APPROVAL: { label: "Pending",          bg: "#FAEEDA", fg: "#854F0B", dot: "#854F0B" },
+  REJECTED:               { label: "Rejected",         bg: "#FCEBEB", fg: "#791F1F", dot: "#791F1F" },
+  CLOSED:                 { label: "Closed",           bg: "#F0EEE8", fg: "#888780", dot: "#888780" },
+};
+
+// ── Issue type dept-color chips ───────────────────────────────────────────────
+const TYPE_META: Record<string, { emoji: string; bg: string; fg: string }> = {
+  "Road Damage":       { emoji: "🚧", bg: "#E6F1FB", fg: "#0C447C" },
+  "Water Leakage":     { emoji: "💧", bg: "#EAF3DE", fg: "#27500A" },
+  "Electricity Fault": { emoji: "⚡", bg: "#FAEEDA", fg: "#854F0B" },
+  "Sanitation":        { emoji: "🧹", bg: "#FAECE7", fg: "#712B13" },
+  "Streetlight":       { emoji: "💡", bg: "#FAEEDA", fg: "#854F0B" },
+  "Drainage":          { emoji: "🌊", bg: "#EAF3DE", fg: "#27500A" },
+  "Other":             { emoji: "📋", bg: "#EEEDFE", fg: "#3C3489" },
+  default:             { emoji: "📋", bg: "#EEEDFE", fg: "#3C3489" },
 };
 
 const FILTERS = ["All", "REPORTED", "IN_PROGRESS", "APPROVED", "CLOSED"];
 
+// ── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
-  const c = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.REPORTED;
+  const c = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.REPORTED;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      background: c.bg, color: c.color,
-      padding: "3px 9px", borderRadius: 99, fontSize: 10,
-      fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
-      border: `1px solid ${c.dot}35`, whiteSpace: "nowrap", flexShrink: 0,
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: c.bg, color: c.fg,
+      padding: "3px 10px", borderRadius: 99,
+      fontSize: 10, fontWeight: 700,
+      letterSpacing: "0.05em", textTransform: "uppercase",
+      whiteSpace: "nowrap", flexShrink: 0,
+      boxShadow: SH.raisedSm,
     }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.dot }} />
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
       {c.label}
     </span>
   );
 }
 
+// ── Issue Card ────────────────────────────────────────────────────────────────
 function IssueCard({ issue }: { issue: any }) {
   const router = useRouter();
-  const meta = TYPE_META[issue.issue_type] || TYPE_META.default;
-  const date = new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  const loc  = issue.location_label?.split(",")[0] || "Near you";
+  const meta = TYPE_META[issue.issue_type] ?? TYPE_META.default;
+  const date = new Date(
+    issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at
+  ).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const loc = issue.location_label?.split(",")[0] ?? "Near you";
 
   return (
     <div
       onClick={() => router.push(`/issue?id=${issue.id}`)}
       style={{
         borderRadius: 20, overflow: "hidden",
-        border: "0.5px solid rgba(255, 255, 255, 0.08)",
-        background: "rgba(255, 255, 255, 0.02)",
-        cursor: "pointer", transition: "all 0.15s",
+        background: T.raised,
+        boxShadow: SH.raised,
+        cursor: "pointer",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div style={{ height: 2, background: `linear-gradient(90deg, ${meta.accent}bb, transparent 80%)` }} />
+      {/* Dept-color top stripe */}
+      <div style={{ height: 3, background: `linear-gradient(90deg, ${meta.fg}55, transparent 80%)` }} />
 
       <div style={{ padding: "14px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          {/* Emoji chip */}
           <div style={{
             width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            background: `${meta.accent}14`, border: `0.5px solid ${meta.accent}25`,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20,
+            background: meta.bg,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20,
+            boxShadow: SH.raisedSm,
           }}>
             {meta.emoji}
           </div>
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3, color: "white"
+              fontSize: 14.5, fontWeight: 800, letterSpacing: "-0.01em",
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              marginBottom: 3, color: T.text1,
             }}>
               {issue.title}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: meta.fg, textTransform: "uppercase", letterSpacing: "0.08em" }}>
               {issue.issue_type}
             </div>
           </div>
 
-          <ChevronRight size={14} color="rgba(255,255,255,0.2)" />
+          <ChevronRight size={14} color={T.text3} />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" }}>
           <StatusBadge status={issue.status} />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-              <MapPin size={11} color="#FF2E11" />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: T.text3, fontWeight: 500 }}>
+              <MapPin size={11} color={T.accent} />
               <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{loc}</span>
             </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-              <Clock size={11} color="rgba(255,255,255,0.3)" />
+            <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: T.text3, fontWeight: 500 }}>
+              <Clock size={11} color={T.text3} />
               {date}
             </div>
           </div>
@@ -108,6 +144,7 @@ function IssueCard({ issue }: { issue: any }) {
   );
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function MyReportsUI({ initialIssues }: { initialIssues: any[] }) {
   const router = useRouter();
   const [issues] = useState<any[]>(initialIssues);
@@ -120,82 +157,100 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
     return okStatus && okSearch;
   });
 
-  const counts = FILTERS.reduce((acc: any, s: string) => {
+  const counts = FILTERS.reduce((acc: Record<string, number>, s) => {
     acc[s] = s === "All" ? issues.length : issues.filter(i => i.status === s).length;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter',-apple-system,sans-serif", color: "#ffffff" }}>
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -80, left: "15%", width: 380, height: 240, background: "radial-gradient(ellipse, rgba(255, 46, 17, 0.08) 0%, transparent 70%)", borderRadius: "50%" }} />
-      </div>
+    <div style={{
+      minHeight: "100dvh",
+      background: T.base,
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: T.text1,
+    }}>
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
-        <div style={{ 
+        {/* ── Sticky Header ── */}
+        <div style={{
           position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(13, 13, 15, 0.94)", backdropFilter: "blur(20px)",
-          padding: "24px 8px 12px",
-          margin: "0 -8px 16px",
-          borderBottom: "0.5px solid rgba(255, 255, 255, 0.08)",
+          background: T.raised,
+          boxShadow: `0 4px 16px ${T.shD}`,
+          borderBottom: `1px solid ${T.border}`,
+          padding: "24px 0 12px",
+          margin: "0 -16px",
+          paddingLeft: 16, paddingRight: 16,
         }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>My Reports</h1>
-              <p style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.35)", marginTop: 5, fontWeight: 600 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>
+                My Reports
+              </h1>
+              <p style={{ fontSize: 11, color: T.text3, marginTop: 4, fontWeight: 600 }}>
                 {issues.length} total report{issues.length !== 1 ? "s" : ""}
               </p>
             </div>
             <Link href="/report" style={{
-              width: 38, height: 38, borderRadius: 12,
-              background: "linear-gradient(135deg,#FF2E11,#A79277)", border: "none",
+              width: 40, height: 40, borderRadius: 13,
+              background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", boxShadow: "0 4px 14px rgba(255, 46, 17, 0.4)", flexShrink: 0
+              boxShadow: SH.raisedSm, flexShrink: 0, textDecoration: "none",
             }}>
-              <Plus color="white" size={18} strokeWidth={3} />
+              <Plus color="white" size={18} strokeWidth={2.5} />
             </Link>
           </div>
 
-          <div style={{ position: "relative", marginBottom: 14 }}>
-            <Search size={14} color="rgba(255,255,255,0.3)" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          {/* Search bar */}
+          <div style={{ position: "relative", marginBottom: 12 }}>
+            <Search size={14} color={T.text3} style={{
+              position: "absolute", left: 14, top: "50%",
+              transform: "translateY(-50%)", pointerEvents: "none",
+            }} />
             <input
-              type="text" placeholder="Search your reports…" value={search}
+              type="text"
+              placeholder="Search your reports…"
+              value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
-                width: "100%", padding: "12px 14px 12px 38px", borderRadius: 14,
-                border: "0.5px solid rgba(255, 255, 255, 0.12)",
-                background: "rgba(255, 255, 255, 0.04)", color: "white",
-                fontSize: 14, fontWeight: 500, outline: "none", boxSizing: "border-box",
+                width: "100%", padding: "12px 14px 12px 40px",
+                borderRadius: 14, border: `1px solid ${T.border}`,
+                background: T.raised,
+                boxShadow: SH.insetSoft,
+                color: T.text1, fontSize: 14, fontWeight: 500,
+                outline: "none", boxSizing: "border-box",
+                fontFamily: "inherit",
               }}
             />
           </div>
 
+          {/* Filter pills */}
           <div style={{
             display: "flex", gap: 7,
-            overflowX: "auto", paddingBottom: 6,
-            msOverflowStyle: "none", scrollbarWidth: "none",
-            WebkitOverflowScrolling: "touch",
+            overflowX: "auto", paddingBottom: 4,
+            msOverflowStyle: "none" as any, scrollbarWidth: "none" as any,
           }}>
             {FILTERS.map(s => {
               const active = filter === s;
-              const c = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG];
+              const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG];
               return (
                 <button key={s} onClick={() => setFilter(s)} style={{
-                  display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
-                  padding: "7px 14px", borderRadius: 99, fontSize: 11, fontWeight: 700,
-                  cursor: "pointer", transition: "all 0.15s",
-                  border: `0.5px solid ${active ? (c ? c.dot + "55" : "#FF5E4188") : "rgba(255, 255, 255, 0.08)"}`,
-                  background: active ? (c ? c.bg : "rgba(255, 46, 17, 0.15)") : "rgba(255, 255, 255, 0.03)",
-                  color: active ? (c ? c.color : "#FF2E11") : "rgba(255, 255, 255, 0.35)",
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  flexShrink: 0, padding: "7px 14px", borderRadius: 99,
+                  fontSize: 11, fontWeight: 700, cursor: "pointer",
+                  border: "none",
+                  background: active ? (cfg ? cfg.bg : T.accentTint) : T.raised,
+                  color: active ? (cfg ? cfg.fg : T.accentOnTint) : T.text3,
+                  boxShadow: active ? SH.insetSoft : SH.raisedSm,
+                  fontFamily: "inherit",
                   WebkitTapHighlightColor: "transparent",
                 }}>
-                  {s === "All" ? "All" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label}
+                  {s === "All" ? "All" : (STATUS_CONFIG[s as keyof typeof STATUS_CONFIG]?.label ?? s)}
                   <span style={{
                     fontSize: 9, fontWeight: 800, borderRadius: 99, padding: "1px 6px",
-                    background: active ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.06)",
-                    color: active ? "white" : "rgba(255, 255, 255, 0.25)",
+                    background: active ? "rgba(0,0,0,0.1)" : T.base,
+                    color: active ? "inherit" : T.text3,
                   }}>
-                    {counts[s] || 0}
+                    {counts[s] ?? 0}
                   </span>
                 </button>
               );
@@ -203,25 +258,47 @@ export default function MyReportsUI({ initialIssues }: { initialIssues: any[] })
           </div>
         </div>
 
-        {issues.length === 0 ? (
-          <div style={{ padding: "80px 20px", textAlign: "center", borderRadius: 24, border: "1px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", marginTop: 10 }}>
-             <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>📋</div>
-             <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: "white" }}>No reports yet</h3>
-             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", lineHeight: 1.6, maxWidth: 220, margin: "0 auto 24px" }}>Start making your city better by reporting an issue.</p>
-             <button onClick={() => router.push("/report")} style={{ padding: "12px 24px", borderRadius: 12, background: "#FF2E11", border: "none", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>File a Report</button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255, 255, 255, 0.3)", fontSize: 13 }}>
-            No results match your search.
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {filtered.map(issue => <IssueCard key={issue.id} issue={issue} />)}
-          </div>
-        )}
+        {/* ── Content ── */}
+        <div style={{ paddingTop: 16 }}>
+          {issues.length === 0 ? (
+            <div style={{
+              padding: "60px 20px", textAlign: "center",
+              background: T.raised, borderRadius: 24,
+              boxShadow: SH.inset, marginTop: 8,
+            }}>
+              <div style={{ fontSize: 44, marginBottom: 16, opacity: 0.5 }}>📋</div>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: T.text1 }}>No reports yet</h3>
+              <p style={{ fontSize: 13, color: T.text3, lineHeight: 1.6, maxWidth: 220, margin: "0 auto 24px" }}>
+                Start making your city better by reporting an issue.
+              </p>
+              <button
+                onClick={() => router.push("/report")}
+                style={{
+                  padding: "12px 24px", borderRadius: 14,
+                  background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+                  border: "none", color: "white",
+                  fontWeight: 800, fontSize: 14,
+                  cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: SH.raisedSm,
+                }}
+              >
+                File a Report
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{
+              textAlign: "center", padding: "60px 20px",
+              color: T.text3, fontSize: 13,
+            }}>
+              No results match your search.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {filtered.map(issue => <IssueCard key={issue.id} issue={issue} />)}
+            </div>
+          )}
+        </div>
       </div>
-
-      
     </div>
   );
 }

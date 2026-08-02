@@ -4,7 +4,7 @@ import { AuthProvider } from "@/lib/supabase/auth-context";
 import { Viewport } from 'next';
 
 export const viewport: Viewport = {
-  themeColor: '#0d0d0f',
+  themeColor: '#EDEBE4',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,

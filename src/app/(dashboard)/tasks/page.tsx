@@ -3,19 +3,40 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/supabase/auth-context';
 import Link from 'next/link';
-import { Briefcase, MapPin, CheckCircle, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Briefcase, MapPin, CheckCircle, AlertTriangle } from 'lucide-react';
 import type { Issue } from '@/lib/types/database';
 import EmployeeActions from '@/components/employee/EmployeeActions';
 
-const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  REPORTED:               { label: "Reported",         color: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
-  IN_PROGRESS:            { label: "In Progress",      color: "#fbbf24", bg: "rgba(251, 191, 36, 0.1)" },
-  APPROVED:               { label: "Approved",         color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
-  CLOSED:                 { label: "Resolved",         color: "#10b981", bg: "rgba(16, 185, 129, 0.1)" },
-  EMPLOYEE_ASSIGNED:      { label: "Assigned To You",  color: "#a78bfa", bg: "rgba(167, 139, 250, 0.1)" },
-  SUBMITTED_FOR_APPROVAL: { label: "Pending Review",   color: "#a855f7", bg: "rgba(168, 85, 247, 0.1)" },
-  DEPARTMENT_ASSIGNED:    { label: "Dept Assigned",    color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.1)" },
-  REJECTED:               { label: "Needs Revisiting", color: "#ef4444", bg: "rgba(239, 68, 68, 0.1)" },
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:    `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+};
+
+const STATUS_STYLE: Record<string, { label: string; color: string; bg: string; barColor: string }> = {
+  REPORTED:               { label: 'Reported',         color: '#0C447C', bg: '#E6F1FB', barColor: '#0C447C' },
+  IN_PROGRESS:            { label: 'In Progress',      color: '#854F0B', bg: '#FAEEDA', barColor: '#854F0B' },
+  APPROVED:               { label: 'Approved',          color: '#085041', bg: '#E1F5EE', barColor: T.accent },
+  CLOSED:                 { label: 'Resolved',          color: '#085041', bg: '#E1F5EE', barColor: T.accent },
+  EMPLOYEE_ASSIGNED:      { label: 'Assigned To You',  color: '#3C3489', bg: '#EEEDFE', barColor: '#3C3489' },
+  SUBMITTED_FOR_APPROVAL: { label: 'Pending Review',   color: '#712B13', bg: '#FAECE7', barColor: '#712B13' },
+  DEPARTMENT_ASSIGNED:    { label: 'Dept Assigned',    color: '#0C447C', bg: '#E6F1FB', barColor: '#0C447C' },
+  REJECTED:               { label: 'Needs Revisiting', color: '#791F1F', bg: '#FCEBEB', barColor: '#791F1F' },
 };
 
 export default function TasksPage() {
@@ -33,116 +54,147 @@ export default function TasksPage() {
       try {
         const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
-        
-        const q = query(
-          collection(db, 'issues'),
-          where('assigned_employee_id', '==', user!.id),
-          orderBy('created_at', 'desc')
-        );
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setAllTasks(issues as unknown as Issue[]);
+        const q = query(collection(db, 'issues'), where('assigned_employee_id', '==', user!.id), orderBy('created_at', 'desc'));
+        unsubscribe = onSnapshot(q, snapshot => {
+          setAllTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as Issue[]);
           setLoading(false);
-        }, (err) => {
-          console.error("Error listening to tasks:", err);
+        }, err => {
+          console.error('Error listening to tasks:', err);
           setLoading(false);
         });
       } catch (error) {
-        console.error("Error setting up tasks listener:", error);
+        console.error('Error setting up tasks listener:', error);
         setLoading(false);
       }
     }
-    
-    setupRealtime();
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    setupRealtime();
+    return () => { if (unsubscribe) unsubscribe(); };
   }, [user, authLoading]);
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#FF2E11', animation: 'spin 0.8s linear infinite' }} />
-        
+      <div style={{ minHeight: '100dvh', background: T.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: 'spin 0.8s linear infinite' }} />
+        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
       </div>
     );
   }
 
   if (!user) return null;
 
-  const activeTasks = allTasks.filter(i => i.status !== 'CLOSED' && i.status !== 'APPROVED');
+  const activeTasks    = allTasks.filter(i => i.status !== 'CLOSED' && i.status !== 'APPROVED');
   const completedTasks = allTasks.filter(i => i.status === 'CLOSED' || i.status === 'APPROVED');
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter', -apple-system, sans-serif", color: "#ffffff", paddingBottom: 100 }}>
-       {/* ambient */}
-       <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -80, left: "15%", width: 400, height: 300, background: "radial-gradient(ellipse,rgba(167,139,250,0.06) 0%,transparent 70%)", borderRadius: "50%" }} />
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 600, margin: "0 auto", padding: "0 16px" }}>
+    <div style={{
+      minHeight: '100dvh',
+      background: T.base,
+      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,sans-serif",
+      color: T.text1,
+      paddingBottom: 100,
+    }}>
+      <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 16px' }}>
 
         {/* Header */}
-        <div style={{ padding: "32px 0 24px" }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 6px" }}>My Assignments</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0, fontWeight: 600 }}>
-             Operational force status: {activeTasks.length > 0 ? 'ACTIVE' : 'READY'}
+        <div style={{ padding: '32px 0 24px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.04em', margin: '0 0 6px', color: T.text1 }}>
+            My Assignments
+          </h1>
+          <p style={{ fontSize: 13, color: T.text3, margin: 0, fontWeight: 600 }}>
+            Operational force status:{' '}
+            <span style={{ color: activeTasks.length > 0 ? '#854F0B' : T.accentDark, fontWeight: 800 }}>
+              {activeTasks.length > 0 ? 'ACTIVE' : 'READY'}
+            </span>
           </p>
         </div>
 
-        {/* Status Metrics */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 }}>
+        {/* Metric cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 28 }}>
           {[
-            { label: "Active Jobs", value: activeTasks.length, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.08)", icon: AlertTriangle },
-            { label: "Resolutions", value: completedTasks.length, color: "#10b981", bg: "rgba(16, 185, 129, 0.08)", icon: CheckCircle },
-          ].map(s => (
-            <div key={s.label} style={{ borderRadius: 20, padding: "20px 18px", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(255,255,255,0.06)`, display: "flex", alignItems: "center", gap: 14 }}>
-               <div style={{ width: 42, height: 42, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <s.icon size={20} color={s.color} />
-               </div>
+            { label: 'Active Jobs',  value: activeTasks.length,    bg: '#FAEEDA', fg: '#854F0B', Icon: AlertTriangle },
+            { label: 'Resolutions', value: completedTasks.length, bg: T.accentTint, fg: T.accentDark, Icon: CheckCircle },
+          ].map(({ label, value, bg, fg, Icon }) => (
+            <div key={label} style={{
+              borderRadius: 20, padding: '20px 18px',
+              background: T.raised, boxShadow: SH.raised,
+              display: 'flex', alignItems: 'center', gap: 14,
+            }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 13, background: bg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                boxShadow: SH.raisedSm,
+              }}>
+                <Icon size={20} color={fg} />
+              </div>
               <div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: "white", lineHeight: 1, letterSpacing: "-0.04em" }}>{s.value}</div>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginTop: 4 }}>{s.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: T.text1, lineHeight: 1, letterSpacing: '-0.04em' }}>{value}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 4 }}>{label}</div>
               </div>
             </div>
           ))}
         </div>
 
         {allTasks.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 20px", borderRadius: 24, border: "1.5px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-            <div style={{ width: 72, height: 72, borderRadius: 20, background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-               <Briefcase size={32} color="#a78bfa" />
+          <div style={{
+            textAlign: 'center', padding: '64px 20px',
+            background: T.raised, borderRadius: 24, boxShadow: SH.inset,
+          }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: 20,
+              background: T.accentTint, boxShadow: SH.raisedSm,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
+            }}>
+              <Briefcase size={32} color={T.accentDark} />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "white", marginBottom: 8 }}>Queue is empty</div>
-            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", maxWidth: 280, margin: "0 auto" }}>New tasks assigned by your department admin will appear here instantly.</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: T.text1, marginBottom: 8 }}>Queue is empty</div>
+            <div style={{ fontSize: 13, color: T.text3, maxWidth: 280, margin: '0 auto' }}>
+              New tasks assigned by your department admin will appear here instantly.
+            </div>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-             <h2 style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Task Registry</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <h2 style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 4px' }}>
+              Task Registry
+            </h2>
             {allTasks.map((issue: Issue) => {
-              const st = STATUS_STYLE[issue.status] || STATUS_STYLE.REPORTED;
+              const st = STATUS_STYLE[issue.status] ?? STATUS_STYLE.REPORTED;
               return (
-                <div key={issue.id} style={{ borderRadius: 20, border: `1px solid rgba(255,255,255,0.08)`, background: "rgba(255,255,255,0.03)", overflow: "hidden", position: "relative" }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 3, background: st.color }} />
-                  <div style={{ padding: "20px" }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
+                <div key={issue.id} style={{
+                  borderRadius: 20, background: T.raised, boxShadow: SH.raised,
+                  overflow: 'hidden', position: 'relative',
+                }}>
+                  {/* Left bar */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: 4, background: st.barColor, borderRadius: '0 2px 2px 0' }} />
+
+                  <div style={{ padding: '18px 18px 18px 22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <Link href={`/issue?id=${issue.id}`} style={{ fontSize: 15, fontWeight: 800, color: "white", textDecoration: "none", letterSpacing: "-0.01em", display: "block", marginBottom: 6 }}>
+                        <Link href={`/issue?id=${issue.id}`} style={{
+                          fontSize: 15, fontWeight: 800, color: T.text1, textDecoration: 'none',
+                          letterSpacing: '-0.01em', display: 'block', marginBottom: 5,
+                        }}>
                           {issue.title}
                         </Link>
-                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-                          <MapPin size={12} color="#a78bfa" />
-                          {issue.location_label || "Local Assignment"}
+                        <span style={{ fontSize: 12, color: T.text3, display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500 }}>
+                          <MapPin size={12} color={T.accent} />
+                          {issue.location_label || 'Local Assignment'}
                         </span>
                       </div>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: "5px 12px", borderRadius: 10, background: st.bg, color: st.color, border: `1px solid ${st.color}25`, whiteSpace: "nowrap", flexShrink: 0 }}>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: '5px 12px', borderRadius: 10,
+                        background: st.bg, color: st.color, whiteSpace: 'nowrap', flexShrink: 0,
+                        boxShadow: SH.raisedSm,
+                      }}>
                         {st.label?.toUpperCase()}
                       </span>
                     </div>
 
-                    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 14, padding: "14px", border: "1.5px solid rgba(255,255,255,0.05)" }}>
-                       <EmployeeActions issue={issue} />
+                    <div style={{
+                      background: T.base, borderRadius: 14, padding: 14,
+                      boxShadow: SH.inset,
+                    }}>
+                      <EmployeeActions issue={issue} />
                     </div>
                   </div>
                 </div>

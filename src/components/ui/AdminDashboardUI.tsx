@@ -9,15 +9,36 @@ import { supabase } from '@/lib/supabase/client';
 
 import PredictiveAlertsTab from '@/components/admin/PredictiveAlertsTab';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, -3px -3px 7px ${T.shL}`,
+};
+
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; dot: string }> = {
-  REPORTED:              { label: "Reported",         bg: "#1e3a5f", color: "#60a5fa", dot: "#3b82f6" },
-  DEPARTMENT_ASSIGNED:   { label: "Dept. Assigned",   bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  EMPLOYEE_ASSIGNED:     { label: "Emp. Assigned",    bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  IN_PROGRESS:           { label: "In Progress",      bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
-  SUBMITTED_FOR_APPROVAL:{ label: "Pending Approval", bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
-  APPROVED:              { label: "Approved",          bg: "#3a2a1a", color: "#FF2E11", dot: "#FF2E11" },
-  REJECTED:              { label: "Rejected",          bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
-  CLOSED:                { label: "Closed",            bg: "#1f1f1f", color: "#9ca3af", dot: "#6b7280" },
+  REPORTED:              { label: "Reported",         color: "#0C447C", bg: "#E6F1FB", dot: "#0C447C" },
+  DEPARTMENT_ASSIGNED:   { label: "Dept. Assigned",   color: "#3C3489", bg: "#EEEDFE", dot: "#3C3489" },
+  EMPLOYEE_ASSIGNED:     { label: "Emp. Assigned",    color: "#3C3489", bg: "#EEEDFE", dot: "#3C3489" },
+  IN_PROGRESS:           { label: "In Progress",      color: "#27500A", bg: "#EAF3DE", dot: "#27500A" },
+  SUBMITTED_FOR_APPROVAL:{ label: "Pending Approval", color: "#854F0B", bg: "#FAEEDA", dot: "#854F0B" },
+  APPROVED:              { label: "Approved",          color: "#085041", bg: "#E1F5EE", dot: "#085041" },
+  REJECTED:              { label: "Rejected",          color: "#791F1F", bg: "#FCEBEB", dot: "#791F1F" },
+  CLOSED:                { label: "Closed",            color: "#085041", bg: "#E1F5EE", dot: "#085041" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -26,8 +47,8 @@ function StatusBadge({ status }: { status: string }) {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
       background: c.bg, color: c.color, padding: "3px 9px", borderRadius: 99,
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
-      border: `1px solid ${c.dot}35`, whiteSpace: "nowrap", flexShrink: 0,
+      fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase",
+      boxShadow: SH.raisedSm, whiteSpace: "nowrap", flexShrink: 0,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.dot }} />
       {c.label}
@@ -106,61 +127,62 @@ export default function AdminDashboardUI({
   const firstName = fullName.split(" ")[0];
 
   const statCards = [
-    { label: "Total Issues",  value: stats.total,       color: "#60a5fa", bg: "#1e3a5f", icon: <FileText size={18}/> },
-    { label: "Resolved",      value: stats.resolved,    color: "#10b981", bg: "#1a3a2a", icon: <CheckCircle2 size={18}/> },
-    { label: "Departments",   value: stats.departments, color: "#a78bfa", bg: "#2d1f4a", icon: <Building2 size={18}/> },
+    { label: "Total Issues",  value: stats.total,       color: "#0C447C", bg: "#E6F1FB", icon: <FileText size={20}/> },
+    { label: "Resolved",      value: stats.resolved,    color: "#27500A", bg: "#EAF3DE", icon: <CheckCircle2 size={20}/> },
+    { label: "Departments",   value: stats.departments, color: "#3C3489", bg: "#EEEDFE", icon: <Building2 size={20}/> },
   ];
 
   const systemHealth = stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter',-apple-system,sans-serif", color: "#ffffff" }}>
-      {/* Ambient */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(167, 139, 250, 0.12) 0%, transparent 70%)", borderRadius: "50%" }} />
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", padding: "0 16px 100px" }}>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", padding: "0 16px 100px" }}>
 
         {/* Header */}
-        <header style={{ padding: "16px 0 20px" }} className="flex flex-wrap items-center justify-between gap-3">
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: "linear-gradient(135deg, #7c3aed, #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "white", boxShadow: "0 0 20px rgba(139, 92, 246, 0.5)" }} className="shrink-0">
+        <header style={{ padding: "24px 0 20px" }} className="flex flex-wrap items-center justify-between gap-3">
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 16, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 900, color: "white", boxShadow: SH.raisedSm }} className="shrink-0">
               {firstName.charAt(0)}
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2 }}>Hello, {firstName} 👋</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, marginTop: 2 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1.2, color: T.text1 }}>Hello, {firstName} 👋</div>
+              <div style={{ fontSize: 12, color: T.text3, fontWeight: 600, marginTop: 2 }}>
                 {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }} className="w-full sm:w-auto justify-between sm:justify-end">
-            <button onClick={() => router.push("/admin/users")} style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", minHeight: 38 }}>Manage Users</button>
-            <div style={{ fontSize: 11, color: "#a78bfa", fontWeight: 700, background: "rgba(139,92,246,0.12)", padding: "6px 12px", borderRadius: 8, border: "0.5px solid rgba(139,92,246,0.3)", letterSpacing: "0.06em" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }} className="w-full sm:w-auto justify-between sm:justify-end">
+            <button onClick={() => router.push("/admin/users")} style={{ padding: "8px 16px", borderRadius: 12, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontSize: 12, fontWeight: 800, cursor: "pointer", minHeight: 38, boxShadow: SH.raisedSm }}>Manage Users</button>
+            <div style={{ fontSize: 11, color: "#791F1F", fontWeight: 800, background: "#FCEBEB", padding: "6px 12px", borderRadius: 10, letterSpacing: "0.06em", boxShadow: SH.raisedSm }}>
               SUPER ADMIN
             </div>
           </div>
         </header>
 
         {/* Tab Selector (Horizontal Scroll on Mobile) */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 14, overflowX: "auto", WebkitOverflowScrolling: "touch", width: "100%", maxWidth: "100%" }} className="no-scrollbar">
+        <div style={{ display: "flex", gap: 8, marginBottom: 24, borderBottom: `1px solid ${T.border}`, paddingBottom: 16, overflowX: "auto", WebkitOverflowScrolling: "touch", width: "100%", maxWidth: "100%" }} className="no-scrollbar">
           <button
             onClick={() => setActiveTab('PREDICTIVE_ALERTS')}
             style={{
-              padding: "10px 16px", borderRadius: 12,
-              background: activeTab === 'PREDICTIVE_ALERTS' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-              color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
+              padding: "10px 18px", borderRadius: 14,
+              background: activeTab === 'PREDICTIVE_ALERTS' ? T.raised : 'transparent',
+              color: activeTab === 'PREDICTIVE_ALERTS' ? T.accentDark : T.text3,
+              fontSize: 12, fontWeight: 800, border: activeTab === 'PREDICTIVE_ALERTS' ? `1px solid ${T.border}` : "1px solid transparent",
+              boxShadow: activeTab === 'PREDICTIVE_ALERTS' ? SH.raisedSm : 'none',
+              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
             }}>
-            🚨 Predictive Alerts {unreadAlerts > 0 && <span style={{ background: "#ef4444", color: "white", borderRadius: 99, padding: "2px 7px", fontSize: 9, fontWeight: 800 }}>{unreadAlerts} NEW</span>}
+            🚨 Predictive Alerts {unreadAlerts > 0 && <span style={{ background: "#791F1F", color: "white", borderRadius: 99, padding: "2px 7px", fontSize: 10, fontWeight: 900 }}>{unreadAlerts} NEW</span>}
           </button>
 
           <button
             onClick={() => setActiveTab('OVERVIEW')}
             style={{
-              padding: "10px 16px", borderRadius: 12,
-              background: activeTab === 'OVERVIEW' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-              color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
+              padding: "10px 18px", borderRadius: 14,
+              background: activeTab === 'OVERVIEW' ? T.raised : 'transparent',
+              color: activeTab === 'OVERVIEW' ? T.accentDark : T.text3,
+              fontSize: 12, fontWeight: 800, border: activeTab === 'OVERVIEW' ? `1px solid ${T.border}` : "1px solid transparent",
+              boxShadow: activeTab === 'OVERVIEW' ? SH.raisedSm : 'none',
+              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap", flexShrink: 0, minHeight: 44
             }}>
             📊 System Overview
           </button>
@@ -170,25 +192,25 @@ export default function AdminDashboardUI({
           <PredictiveAlertsTab />
         ) : (
           <>
-            <section style={{ marginBottom: 24 }}>
-              <div style={{ borderRadius: 24, overflow: "hidden", border: "1.5px solid rgba(139, 92, 246, 0.25)", background: "linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(167, 146, 119, 0.05) 100%)", padding: 20 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+            <section style={{ marginBottom: 28 }}>
+              <div style={{ borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, padding: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>System Health</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: T.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>System Health</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.25, color: T.text1 }}>
                       {stats.open} issues open across {stats.departments} departments
                     </div>
                   </div>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: "#a78bfa" }}>{systemHealth}%</span>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: T.accent }}>{systemHealth}%</span>
                 </div>
 
                 <div style={{ marginBottom: 8 }}>
-                  <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-                    <div style={{ height: "100%", width: `${systemHealth}%`, borderRadius: 99, background: "linear-gradient(90deg, #7c3aed, #a78bfa)" }} />
+                  <div style={{ height: 10, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
+                    <div style={{ height: "100%", width: `${systemHealth}%`, borderRadius: 99, background: `linear-gradient(90deg, ${T.accent}, ${T.accentDark})` }} />
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
                     {["Reported", "In Progress", "Resolved"].map((s, i) => (
-                      <span key={s} style={{ fontSize: 9, fontWeight: 700, color: i === 0 ? "#a78bfa" : "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
+                      <span key={s} style={{ fontSize: 10, fontWeight: 800, color: i === 0 ? T.accentDark : T.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
                     ))}
                   </div>
                 </div>
@@ -196,57 +218,57 @@ export default function AdminDashboardUI({
             </section>
 
             {/* Stats Grid */}
-            <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+            <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
               {statCards.map(stat => (
-                <div key={stat.label} style={{ borderRadius: 18, padding: "14px 10px", background: "rgba(255,255,255,0.03)", border: `0.5px solid rgba(255,255,255,0.08)`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 10, background: `${stat.bg}50`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8, color: stat.color }}>
+                <div key={stat.label} style={{ borderRadius: 20, padding: "18px 12px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: stat.bg, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, color: stat.color, boxShadow: SH.insetSoft }}>
                     {stat.icon}
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: "white", marginBottom: 4 }}>{stat.value}</div>
-                  <div style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: "rgba(255,255,255,0.3)" }}>{stat.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: T.text1, marginBottom: 6 }}>{stat.value}</div>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em", color: T.text3 }}>{stat.label}</div>
                 </div>
               ))}
             </section>
 
             {/* Department Performance */}
-            <section style={{ marginBottom: 24 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "0 2px" }}>
-                <h2 style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ width: 4, height: 18, background: "#a78bfa", borderRadius: 2, boxShadow: "0 0 10px rgba(167,139,250,0.6)", display: "block" }} />
+            <section style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "0 4px" }}>
+                <h2 style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.02em", color: T.text1 }}>
                   Department Performance
                 </h2>
-                <button onClick={() => router.push("/admin/reports")} style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.08em", background: "none", border: "none", cursor: "pointer" }}>ALL ISSUES →</button>
+                <button onClick={() => router.push("/admin/reports")} style={{ fontSize: 11, fontWeight: 800, color: T.accentDark, textTransform: "uppercase", letterSpacing: "0.08em", background: "none", border: "none", cursor: "pointer" }}>ALL ISSUES →</button>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {deptStats.length === 0 ? (
-                  <div style={{ padding: "20px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 16, border: "0.5px solid rgba(255,255,255,0.06)" }}>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>No departments found.</p>
+                  <div style={{ padding: "30px", textAlign: "center", background: T.raised, borderRadius: 20, boxShadow: SH.insetSoft }}>
+                    <p style={{ fontSize: 13, color: T.text3, fontWeight: 600 }}>No departments found.</p>
                   </div>
                 ) : (
                   deptStats.map(dept => {
                     const rate = dept.total > 0 ? Math.round((dept.resolved / dept.total) * 100) : 0;
-                    const barColor = rate >= 70 ? "#10b981" : rate >= 40 ? "#fbbf24" : "#ef4444";
+                    const barColor = rate >= 70 ? "#085041" : rate >= 40 ? "#854F0B" : "#791F1F";
                     return (
-                      <div key={dept.id} style={{ borderRadius: 18, padding: "14px 16px", border: "0.5px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", cursor: "pointer" }} onClick={() => router.push("/admin/reports")}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: "white" }}>{dept.name}</span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div key={dept.id} style={{ borderRadius: 20, padding: "16px 20px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, cursor: "pointer" }} onClick={() => router.push("/admin/reports")}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                          <span style={{ fontSize: 15, fontWeight: 900, color: T.text1 }}>{dept.name}</span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                             <button
                               onClick={(e) => handleToggleMode(e, dept)}
                               disabled={togglingDept === dept.id}
                               style={{
-                                fontSize: 10, fontWeight: 800, padding: "4px 8px", borderRadius: 6,
-                                background: dept.management_mode === 'TENDER' ? "rgba(139, 92, 246, 0.2)" : "rgba(255, 255, 255, 0.05)",
-                                color: dept.management_mode === 'TENDER' ? "#a78bfa" : "rgba(255, 255, 255, 0.5)",
-                                border: `1px solid ${dept.management_mode === 'TENDER' ? "rgba(139, 92, 246, 0.4)" : "rgba(255, 255, 255, 0.1)"}`,
-                                cursor: "pointer"
+                                fontSize: 10, fontWeight: 800, padding: "5px 10px", borderRadius: 8,
+                                background: dept.management_mode === 'TENDER' ? "#EAF3DE" : T.base,
+                                color: dept.management_mode === 'TENDER' ? "#27500A" : T.text3,
+                                border: `1px solid ${dept.management_mode === 'TENDER' ? "#27500A30" : T.border}`,
+                                cursor: "pointer",
+                                boxShadow: SH.raisedSm
                               }}>
                               {togglingDept === dept.id ? 'Updating...' : dept.management_mode === 'TENDER' ? 'Mode: Tender/Contractor' : 'Mode: Internal Dept'}
                             </button>
-                            <span style={{ fontSize: 13, fontWeight: 900, color: barColor }}>{rate}%</span>
+                            <span style={{ fontSize: 14, fontWeight: 900, color: barColor }}>{rate}%</span>
                           </div>
                         </div>
-                        <div style={{ height: 6, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden" }}>
+                        <div style={{ height: 8, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
                           <div style={{ height: "100%", width: `${rate}%`, borderRadius: 99, background: barColor }} />
                         </div>
                       </div>

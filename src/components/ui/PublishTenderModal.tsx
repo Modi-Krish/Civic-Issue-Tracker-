@@ -3,24 +3,46 @@ import { supabase } from '@/lib/supabase/client';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from "next/navigation";
 
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
 
 const IconClose = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <line x1="18" y1="6" x2="6" y2="18" />
     <line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 
 const IconSend = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <path d="M22 2L11 13" />
     <path d="M22 2L15 22 11 13 2 9l20-7z" />
   </svg>
 );
 
 const IconCheckmark = ({ size = 32 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
@@ -33,11 +55,12 @@ function RadioOption({ id, value, label, checked, onChange }: any) {
       htmlFor={id}
       style={{
         display: "flex", alignItems: "center", gap: 10,
-        background: checked ? "rgba(79,124,248,0.08)" : "#181818",
-        border: `1px solid ${checked ? "#4f7cf8" : "#282828"}`,
-        borderRadius: 10, padding: "12px 16px", cursor: "pointer",
-        fontSize: 13, color: checked ? "#c5d3ff" : "#888", fontWeight: 500,
-        transition: "border-color 0.15s, background 0.15s",
+        background: checked ? T.accentTint : T.raised,
+        border: checked ? "none" : `1px solid ${T.border}`,
+        boxShadow: checked ? SH.insetSoft : SH.raisedSm,
+        borderRadius: 14, padding: "14px 16px", cursor: "pointer",
+        fontSize: 13, color: checked ? T.accentDark : T.text2, fontWeight: 800,
+        transition: "all 0.15s",
       }}
     >
       <input
@@ -46,13 +69,14 @@ function RadioOption({ id, value, label, checked, onChange }: any) {
         style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
       />
       <div style={{
-        width: 16, height: 16, borderRadius: "50%",
-        border: `1.5px solid ${checked ? "#4f7cf8" : "#333"}`,
+        width: 18, height: 18, borderRadius: "50%",
+        border: `2px solid ${checked ? T.accent : T.border}`,
+        background: T.base, boxShadow: SH.insetSoft,
         flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
         transition: "border-color 0.15s",
       }}>
         <div style={{
-          width: 8, height: 8, borderRadius: "50%", background: "#4f7cf8",
+          width: 8, height: 8, borderRadius: "50%", background: T.accent,
           opacity: checked ? 1 : 0, transition: "opacity 0.15s",
         }} />
       </div>
@@ -64,8 +88,8 @@ function RadioOption({ id, value, label, checked, onChange }: any) {
 function FormLabel({ children }: { children: React.ReactNode }) {
   return (
     <label style={{
-      display: "block", fontSize: 12, fontWeight: 600,
-      color: "#aaa", marginBottom: 8, letterSpacing: "0.04em",
+      display: "block", fontSize: 11, fontWeight: 900,
+      color: T.text3, marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase"
     }}>
       {children}
     </label>
@@ -73,12 +97,13 @@ function FormLabel({ children }: { children: React.ReactNode }) {
 }
 
 const inputStyle = (hasError = false) => ({
-  width: "100%", background: "#181818",
-  border: `1px solid ${hasError ? "#f87171" : "#282828"}`,
-  borderRadius: 10, color: "#fff", fontSize: 14,
-  fontFamily: "inherit", padding: "12px 16px",
-  outline: "none", transition: "border-color 0.15s, box-shadow 0.15s",
-  WebkitAppearance: "none" as any, appearance: "none" as any,
+  width: "100%", background: T.raised,
+  border: `1px solid ${hasError ? "#791F1F" : T.border}`,
+  boxShadow: SH.insetSoft,
+  borderRadius: 14, color: T.text1, fontSize: 14, fontWeight: 700,
+  fontFamily: "inherit", padding: "14px 16px",
+  outline: "none", transition: "all 0.15s",
+  boxSizing: "border-box" as any
 });
 
 // ─── Publish Tender Modal ─────────────────────────────────────────────────────
@@ -175,7 +200,8 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
     <div
       onClick={handleOverlayClick}
       style={{
-        position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)",
+        position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(4px)",
         zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center",
         opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? "all" : "none",
         transition: "opacity 0.25s",
@@ -194,24 +220,25 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
         ref={sheetRef}
         className="no-scrollbar"
         style={{
-          background: "#111", borderRadius: "20px 20px 0 0",
-          borderTop: "1px solid #222", width: "100%", maxWidth: 720,
+          background: T.base, borderRadius: "32px 32px 0 0",
+          borderTop: `1px solid ${T.border}`, width: "100%", maxWidth: 720,
           maxHeight: "92vh", overflowY: "auto", paddingBottom: 120,
-          transform: isOpen ? "translateY(0)" : "translateY(40px)",
+          boxShadow: SH.raised,
+          transform: isOpen ? "translateY(0)" : "translateY(100px)",
           transition: "transform 0.28s cubic-bezier(0.25,0.8,0.25,1)",
         }}
       >
         {/* Sheet Header */}
         <div style={{
-          position: "sticky", top: 0, background: "#111",
-          borderBottom: "1px solid #1e1e1e", padding: "20px 28px 18px",
+          position: "sticky", top: 0, background: T.base,
+          borderBottom: `1px solid ${T.border}`, padding: "32px 32px 24px",
           display: "flex", alignItems: "flex-start", justifyContent: "space-between", zIndex: 5,
         }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#fff", marginBottom: 4 }}>
+            <h2 style={{ fontSize: 28, fontWeight: 900, color: T.text1, margin: "0 0 8px", letterSpacing: "-0.04em" }}>
               Publish New Tender
             </h2>
-            <p style={{ fontSize: 13, color: "#555", lineHeight: 1.5, maxWidth: 380 }}>
+            <p style={{ fontSize: 13, color: T.text3, fontWeight: 600, margin: 0, maxWidth: 380 }}>
               Open bidding to private contractors for civic infrastructure management.
             </p>
           </div>
@@ -219,29 +246,29 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
             onClick={onClose}
             aria-label="Close"
             style={{
-              background: "#1e1e1e", border: "1px solid #2a2a2a", borderRadius: 8,
-              color: "#888", width: 34, height: 34, display: "flex",
-              alignItems: "center", justifyContent: "center",
+              background: T.raised, border: `1px solid ${T.border}`, borderRadius: 16,
+              color: T.text3, width: 44, height: 44, display: "flex",
+              alignItems: "center", justifyContent: "center", boxShadow: SH.raisedSm,
               cursor: "pointer", flexShrink: 0, transition: "background 0.15s",
             }}
           >
-            <span style={{ width: 16, height: 16, display: "flex" }}><IconClose /></span>
+            <span style={{ width: 20, height: 20, display: "flex" }}><IconClose /></span>
           </button>
         </div>
 
         {/* Form Body */}
-        <div style={{ padding: "28px 28px 8px" }}>
+        <div style={{ padding: "32px 32px 8px" }}>
 
           {/* Success Banner */}
           {showSuccess && (
             <div style={{
               display: "flex", alignItems: "center", gap: 10,
-              background: "rgba(52,211,153,0.1)", border: "1px solid rgba(52,211,153,0.25)",
-              borderRadius: 10, padding: "14px 18px", color: "#34d399",
-              fontSize: 13, fontWeight: 600, marginBottom: 16,
+              background: "#EAF3DE", border: "1px solid #27500A30", boxShadow: SH.insetSoft,
+              borderRadius: 16, padding: "16px 20px", color: "#27500A",
+              fontSize: 14, fontWeight: 800, marginBottom: 24,
             }}>
-              <span style={{ width: 16, height: 16, display: "flex", flexShrink: 0 }}>
-                <IconCheckmark size={16} />
+              <span style={{ width: 20, height: 20, display: "flex", flexShrink: 0 }}>
+                <IconCheckmark size={20} />
               </span>
               Tender published successfully and opened for bids.
             </div>
@@ -263,7 +290,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
 
           <FormGroup>
             <FormLabel>Tender Type</FormLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
               {TENDER_TYPES.map(({ id, value, label }) => (
                 <RadioOption
                   key={id}
@@ -280,7 +307,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
           <FormGroup>
             <FormLabel>Bid Deadline</FormLabel>
             <input
-              style={{ ...inputStyle(), colorScheme: "dark" } as any}
+              style={{ ...inputStyle() } as any}
               type="date"
               value={form.bidDeadline}
               onChange={set("bidDeadline")}
@@ -290,7 +317,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
           {/* ── Financials & Timeline ── */}
           <SectionTitle>Financials &amp; Timeline</SectionTitle>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
             <FormGroup>
               <FormLabel>Estimated Budget ($)</FormLabel>
               <input
@@ -314,7 +341,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
             <FormGroup>
               <FormLabel>Contract Start Date</FormLabel>
               <input
-                style={{ ...inputStyle(), colorScheme: "dark" } as any}
+                style={{ ...inputStyle() } as any}
                 type="date"
                 value={form.startDate}
                 onChange={set("startDate")}
@@ -323,7 +350,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
             <FormGroup>
               <FormLabel>Contract End Date</FormLabel>
               <input
-                style={{ ...inputStyle(), colorScheme: "dark" } as any}
+                style={{ ...inputStyle() } as any}
                 type="date"
                 value={form.endDate}
                 onChange={set("endDate")}
@@ -337,7 +364,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
           <FormGroup>
             <FormLabel>Description</FormLabel>
             <textarea
-              style={{ ...inputStyle(), resize: "vertical", minHeight: 100, lineHeight: 1.6 } as any}
+              style={{ ...inputStyle(), resize: "vertical", minHeight: 120, lineHeight: 1.6 } as any}
               rows={4}
               placeholder="Provide a brief overview of the tender purpose and requirements…"
               value={form.description}
@@ -348,7 +375,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
           <FormGroup>
             <FormLabel>Scope of Work</FormLabel>
             <textarea
-              style={{ ...inputStyle(), resize: "vertical", minHeight: 120, lineHeight: 1.6 } as any}
+              style={{ ...inputStyle(), resize: "vertical", minHeight: 160, lineHeight: 1.6 } as any}
               rows={5}
               placeholder="Detail the full scope of work, deliverables, and compliance standards expected from contractors…"
               value={form.scopeOfWork}
@@ -361,17 +388,18 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
             onClick={handleSubmit}
             disabled={isSubmitting}
             style={{
-              width: "100%", marginTop: 8,
-              background: "linear-gradient(135deg, #4f7cf8 0%, #7c5af4 100%)",
-              color: "#fff", border: "none", borderRadius: 12,
-              padding: 16, fontSize: 14, fontWeight: 700,
-              letterSpacing: "0.08em", textTransform: "uppercase",
+              width: "100%", marginTop: 16,
+              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+              boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40`,
+              color: "#fff", border: "none", borderRadius: 16,
+              padding: 20, fontSize: 14, fontWeight: 900,
+              letterSpacing: "0.1em", textTransform: "uppercase",
               cursor: isSubmitting ? "wait" : "pointer", display: "flex", alignItems: "center",
-              justifyContent: "center", gap: 8,
+              justifyContent: "center", gap: 10,
               opacity: isSubmitting ? 0.7 : 1
             }}
           >
-            <span style={{ width: 16, height: 16, display: "flex" }}><IconSend /></span>
+            <span style={{ width: 20, height: 20, display: "flex" }}><IconSend /></span>
             {isSubmitting ? "PUBLISHING..." : "Publish Tender"}
           </button>
         </div>
@@ -385,10 +413,10 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 11, fontWeight: 700, letterSpacing: "0.12em",
-      textTransform: "uppercase", color: "#555",
-      marginBottom: 18, marginTop: 8, paddingBottom: 10,
-      borderBottom: "1px solid #1e1e1e",
+      fontSize: 12, fontWeight: 900, letterSpacing: "0.15em",
+      textTransform: "uppercase", color: T.text3,
+      marginBottom: 24, marginTop: 16, paddingBottom: 12,
+      borderBottom: `2px dashed ${T.border}`,
     }}>
       {children}
     </div>
@@ -396,5 +424,5 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function FormGroup({ children }: { children: React.ReactNode }) {
-  return <div style={{ marginBottom: 20 }}>{children}</div>;
+  return <div style={{ marginBottom: 24 }}>{children}</div>;
 }

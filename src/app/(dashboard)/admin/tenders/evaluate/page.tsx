@@ -7,6 +7,26 @@ import { CheckCircle, AlertTriangle, ShieldCheck, DollarSign, Star, FileText, Aw
 import Link from 'next/link';
 import type { Tender, TenderBid, CompanyRating } from '@/lib/types/database';
 
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 function TenderEvaluationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -166,19 +186,19 @@ function TenderEvaluationContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[rgba(255,255,255,0.1)] border-t-[#0ea5e9] animate-spin" />
+      <div style={{ minHeight: "100dvh", background: T.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: "spin 0.8s linear infinite" }} />
       </div>
     );
   }
 
   if (!tender) {
     return (
-      <div className="min-h-screen bg-[#0d0d0f] text-white p-8 font-['Inter'] flex flex-col items-center justify-center">
-        <FileText className="w-12 h-12 text-white/20 mb-4" />
-        <h2 className="text-xl font-bold mb-2">No Published Tenders Available</h2>
-        <p className="text-white/40 text-sm mb-6">Create a tender first before running AI evaluations.</p>
-        <Link href="/department/tenders" className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0ea5e9] to-[#8b5cf6] font-bold text-xs uppercase tracking-wider">
+      <div style={{ minHeight: "100dvh", background: T.base, color: T.text1, padding: 32, fontFamily: "'Inter',-apple-system,sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <FileText size={48} color={T.text3} style={{ marginBottom: 16 }} />
+        <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>No Published Tenders Available</h2>
+        <p style={{ color: T.text3, fontSize: 14, marginBottom: 24, fontWeight: 600 }}>Create a tender first before running AI evaluations.</p>
+        <Link href="/department/tenders" style={{ padding: "12px 24px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", textDecoration: "none", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
           Publish / Manage Tenders
         </Link>
       </div>
@@ -186,122 +206,124 @@ function TenderEvaluationContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0f] text-white p-6 font-['Inter']">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div style={{ minHeight: "100dvh", background: T.base, color: T.text1, padding: "24px 16px", fontFamily: "'Inter',-apple-system,sans-serif" }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
         
         {/* Header */}
         <div>
-          <Link href="/department/tenders" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors mb-4">
-            <ChevronRight className="w-4 h-4 rotate-180" />
+          <Link href="/department/tenders" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text3, fontWeight: 700, textDecoration: "none", marginBottom: 16 }}>
+            <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
             Back to Tenders
           </Link>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-black tracking-tight">Evaluate Bids: {tender.tender_number}</h1>
-                <span className={`text-xs font-extrabold px-3 py-1 rounded-full uppercase border ${
-                  tender.status === 'Awarded' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                }`}>
-                  {tender.status}
-                </span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>Evaluate Bids: {tender.tender_number}</h1>
+                  <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 12px", borderRadius: 99, textTransform: "uppercase", letterSpacing: "0.05em", background: tender.status === 'Awarded' ? "#EEEDFE" : "#EAF3DE", color: tender.status === 'Awarded' ? "#3C3489" : "#27500A", boxShadow: SH.raisedSm }}>
+                    {tender.status}
+                  </span>
+                </div>
+                <p style={{ color: T.text3, fontSize: 14, margin: 0, fontWeight: 600 }}>{tender.title} • Estimated Budget: <strong style={{ color: T.text1 }}>${tender.estimated_budget?.toLocaleString()}</strong></p>
               </div>
-              <p className="text-white/50">{tender.title} • Estimated Budget: ${tender.estimated_budget?.toLocaleString()}</p>
-            </div>
 
-            {/* Dropdown to switch tender */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-white/50">Select Tender:</label>
-              <select
-                value={tender.id}
-                onChange={(e) => router.push(`/admin/tenders/evaluate?tender_id=${e.target.value}`)}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-xs font-bold text-white outline-none"
-              >
-                {allTenders.map(t => (
-                  <option key={t.id} value={t.id} className="bg-[#121215] text-white">
-                    {t.tender_number} - {t.title} ({t.status})
-                  </option>
-                ))}
-              </select>
+              {/* Dropdown to switch tender */}
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <label style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: T.text3 }}>Select Tender:</label>
+                <select
+                  value={tender.id}
+                  onChange={(e) => router.push(`/admin/tenders/evaluate?tender_id=${e.target.value}`)}
+                  style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "10px 16px", fontSize: 12, fontWeight: 800, color: T.text1, outline: "none", boxShadow: SH.insetSoft, cursor: "pointer" }}
+                >
+                  {allTenders.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.tender_number} - {t.title} ({t.status})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>
 
         {toast && (
-          <div className="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-sm">
+          <div style={{ padding: 16, borderRadius: 16, background: "#EAF3DE", border: "1px solid #27500A30", color: "#27500A", fontWeight: 800, fontSize: 14, boxShadow: SH.insetSoft }}>
             {toast}
           </div>
         )}
 
         {/* Weights Info */}
-        <div className="grid grid-cols-5 gap-4">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16 }}>
           {[
-            { label: 'Price', val: '35%', color: '#0ea5e9' },
-            { label: 'Technical', val: '20%', color: '#8b5cf6' },
-            { label: 'Citizen Rating', val: '15%', color: '#10b981' },
-            { label: 'Dept Rating', val: '15%', color: '#f59e0b' },
-            { label: 'Penalties', val: '-15%', color: '#ef4444' },
+            { label: 'Price', val: '35%', color: '#0C447C' },
+            { label: 'Technical', val: '20%', color: '#3C3489' },
+            { label: 'Citizen Rating', val: '15%', color: '#27500A' },
+            { label: 'Dept Rating', val: '15%', color: '#854F0B' },
+            { label: 'Penalties', val: '-15%', color: '#791F1F' },
           ].map(w => (
-            <div key={w.label} className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05]">
-              <div className="text-[10px] uppercase tracking-[0.1em] text-white/30 font-bold mb-1">{w.label}</div>
-              <div className="text-xl font-black" style={{ color: w.color }}>{w.val}</div>
+            <div key={w.label} style={{ padding: 16, borderRadius: 20, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised }}>
+              <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3, fontWeight: 900, marginBottom: 4 }}>{w.label}</div>
+              <div style={{ fontSize: 24, fontWeight: 900, color: w.color, letterSpacing: "-0.02em" }}>{w.val}</div>
             </div>
           ))}
         </div>
 
         {/* Bids List */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-white/80">Submitted Contractor Bids ({bids.length})</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 900, color: T.text1, margin: 0, letterSpacing: "-0.02em" }}>Submitted Contractor Bids ({bids.length})</h2>
 
           {bids.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-white/[0.02] border border-white/[0.05]">
-              <FileText className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40 text-sm font-semibold">No bids submitted yet for tender {tender.tender_number}.</p>
+            <div style={{ padding: 48, textAlign: "center", borderRadius: 24, background: T.base, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+              <FileText size={48} color={T.text3} style={{ margin: "0 auto 12px" }} />
+              <p style={{ color: T.text3, fontSize: 14, fontWeight: 700, margin: 0 }}>No bids submitted yet for tender {tender.tender_number}.</p>
             </div>
           ) : (
             bids.map((bid) => (
               <div 
                 key={bid.id} 
-                className={`p-6 rounded-3xl border transition-all ${
-                  bid.recommended 
-                    ? 'bg-gradient-to-r from-[#0ea5e9]/10 via-white/[0.02] to-purple-500/10 border-[#0ea5e9]/40' 
-                    : 'bg-white/[0.02] border-white/[0.06]'
-                }`}
+                style={{ 
+                  padding: 24, borderRadius: 24, transition: "all 0.2s",
+                  background: bid.recommended ? T.accentTint : T.base, 
+                  border: bid.recommended ? "none" : `1px solid ${T.border}`,
+                  boxShadow: bid.recommended ? SH.raised : SH.insetSoft
+                }}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-black text-white">Company ID: {bid.company_id.slice(0, 8)}</span>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: T.text1 }}>Company ID: {bid.company_id.slice(0, 8)}</span>
                       {bid.recommended && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
-                          <Award className="w-3 h-3" /> Recommended Winner
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: T.accentDark, background: "#E1F5EE", border: "1px solid #1D9E7530", padding: "4px 12px", borderRadius: 99, boxShadow: SH.raisedSm }}>
+                          <Award size={12} /> Recommended Winner
                         </span>
                       )}
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
-                        bid.status === 'Selected' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        bid.status === 'Rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                        'bg-white/5 text-white/50 border-white/10'
-                      }`}>
+                      <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 12px", borderRadius: 99, 
+                        background: bid.status === 'Selected' ? "#EEEDFE" : bid.status === 'Rejected' ? "#FCEBEB" : T.raised,
+                        color: bid.status === 'Selected' ? "#3C3489" : bid.status === 'Rejected' ? "#791F1F" : T.text3,
+                        border: bid.status === 'Selected' ? "none" : bid.status === 'Rejected' ? "none" : `1px solid ${T.border}`,
+                        boxShadow: SH.raisedSm
+                      }}>
                         {bid.status}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-6 text-sm text-white/60 pt-1">
-                      <div>Quoted Price: <strong className="text-emerald-400 font-bold">${bid.bid_amount?.toLocaleString()}</strong></div>
-                      <div>Completion Time: <strong className="text-amber-400 font-bold">{bid.estimated_completion_days} Days</strong></div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 24, fontSize: 14, color: T.text2, marginTop: 4, fontWeight: 700 }}>
+                      <div>Quoted Price: <strong style={{ color: T.accentDark, fontSize: 16 }}>${bid.bid_amount?.toLocaleString()}</strong></div>
+                      <div>Completion Time: <strong style={{ color: "#854F0B", fontSize: 16 }}>{bid.estimated_completion_days} Days</strong></div>
                     </div>
                   </div>
 
-                  <div className="text-right flex flex-col items-end gap-3">
-                    <div className="px-4 py-2 rounded-2xl bg-white/5 border border-white/10 text-center">
-                      <div className="text-[10px] uppercase tracking-wider text-white/40 font-bold">AI Rating Score</div>
-                      <div className="text-2xl font-black text-[#0ea5e9]">{bid.ai_score?.toFixed(1)} / 100</div>
+                  <div style={{ textAlign: "right", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                    <div style={{ padding: "12px 24px", borderRadius: 20, background: T.raised, border: `1px solid ${T.border}`, textAlign: "center", boxShadow: SH.raised }}>
+                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: T.text3, fontWeight: 900 }}>AI Rating Score</div>
+                      <div style={{ fontSize: 24, fontWeight: 900, color: "#0C447C", letterSpacing: "-0.02em" }}>{bid.ai_score?.toFixed(1)} / 100</div>
                     </div>
 
                     {tender.status !== 'Awarded' && (
                       <button
                         onClick={() => handleAwardContract(bid)}
                         disabled={awardingId === bid.id}
-                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs uppercase tracking-wider border border-emerald-400/30 hover:opacity-90 transition-opacity"
+                        style={{ padding: "12px 24px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", border: "none", cursor: "pointer", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}
                       >
                         {awardingId === bid.id ? 'Awarding Contract...' : 'Award Contract'}
                       </button>
@@ -320,7 +342,7 @@ function TenderEvaluationContent() {
 
 export default function TenderEvaluationPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0d0d0f]" />}>
+    <Suspense fallback={<div style={{ minHeight: "100dvh", background: T.base }} />}>
       <TenderEvaluationContent />
     </Suspense>
   );

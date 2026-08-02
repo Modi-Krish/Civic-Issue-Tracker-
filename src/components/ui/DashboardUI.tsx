@@ -2,131 +2,321 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Star, Plus, CheckCircle2, Trophy, ArrowRight, FileText } from 'lucide-react';
+import {
+  MapPin, Star, Plus, CheckCircle2, Trophy,
+  FileText, ChevronRight,
+} from "lucide-react";
 
+// ---------------------------------------------------------------------------
+// Design tokens — neomorphism-lite (same source of truth as auth + landing)
+// ---------------------------------------------------------------------------
+const T = {
+  base:         "#EDEBE4",
+  raised:       "#F5F3EC",
+  border:       "#DDD9CE",
+  text1:        "#2C2C2A",
+  text2:        "#5F5E5A",
+  text3:        "#888780",
+  accent:       "#1D9E75",
+  accentDark:   "#167A5B",
+  accentTint:   "#E1F5EE",
+  accentOnTint: "#085041",
+  shL: "rgba(255,255,255,0.75)",
+  shD: "rgba(0,0,0,0.09)",
+} as const;
+
+const SH = {
+  raised:    `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm:  `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:     `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+  insetSoft: `inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
+// ---------------------------------------------------------------------------
+// Status config — using design-brief dept palette
+// ---------------------------------------------------------------------------
 const STATUS_CONFIG = {
-  REPORTED:              { label: "Reported",         bg: "#1e3a5f", color: "#60a5fa", dot: "#3b82f6" },
-  DEPARTMENT_ASSIGNED:   { label: "Dept. Assigned",   bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  EMPLOYEE_ASSIGNED:     { label: "Emp. Assigned",    bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  IN_PROGRESS:           { label: "In Progress",      bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
-  SUBMITTED_FOR_APPROVAL:{ label: "Pending Approval", bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
-  APPROVED:              { label: "Approved",          bg: "#3a2a1a", color: "#FF2E11", dot: "#FF2E11" },
-  REJECTED:              { label: "Rejected",          bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
-  CLOSED:                { label: "Closed",            bg: "#1f1f1f", color: "#9ca3af", dot: "#6b7280" },
+  REPORTED:               { label: "Reported",         bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  EMPLOYEE_ASSIGNED:      { label: "Emp. Assigned",    bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
+  IN_PROGRESS:            { label: "In Progress",      bg: "#EAF3DE", fg: "#27500A", dot: "#27500A" },
+  SUBMITTED_FOR_APPROVAL: { label: "Pending Approval", bg: "#FAEEDA", fg: "#854F0B", dot: "#854F0B" },
+  APPROVED:               { label: "Approved",         bg: "#E1F5EE", fg: "#085041", dot: "#1D9E75" },
+  REJECTED:               { label: "Rejected",         bg: "#FCEBEB", fg: "#791F1F", dot: "#791F1F" },
+  CLOSED:                 { label: "Closed",           bg: "#F0EEE8", fg: "#888780", dot: "#888780" },
 };
 
-const PROGRESS_MAP = {
+const PROGRESS_MAP: Record<string, number> = {
   REPORTED: 15, DEPARTMENT_ASSIGNED: 30, EMPLOYEE_ASSIGNED: 45,
-  IN_PROGRESS: 60, SUBMITTED_FOR_APPROVAL: 80, APPROVED: 100, REJECTED: 100, CLOSED: 100,
+  IN_PROGRESS: 60, SUBMITTED_FOR_APPROVAL: 80,
+  APPROVED: 100, REJECTED: 100, CLOSED: 100,
 };
 
+// ---------------------------------------------------------------------------
+// Status Badge
+// ---------------------------------------------------------------------------
 function StatusBadge({ status }: { status: string }) {
-  const c = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.REPORTED;
+  const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.REPORTED;
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4,
-      background: c.bg, color: c.color, padding: "3px 9px", borderRadius: 99,
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
-      border: `1px solid ${c.dot}35`, whiteSpace: "nowrap", flexShrink: 0,
+      display: "inline-flex", alignItems: "center", gap: 5,
+      background: cfg.bg, color: cfg.fg,
+      padding: "3px 10px", borderRadius: 99,
+      fontSize: 10, fontWeight: 700,
+      letterSpacing: "0.05em", textTransform: "uppercase",
+      whiteSpace: "nowrap", flexShrink: 0,
+      boxShadow: SH.raisedSm,
     }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.dot }} />
-      {c.label}
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
     </span>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Progress Tracker
+// ---------------------------------------------------------------------------
 function ProgressTracker({ status }: { status: string }) {
-  const pct = PROGRESS_MAP[status as keyof typeof PROGRESS_MAP] || 5;
+  const pct = PROGRESS_MAP[status] ?? 15;
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em", display: "flex", alignItems: "center", gap: 5 }}>
-          <Star style={{ width: 12, height: 12, color: "#FF2E11", fill: "#FF2E11" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, color: T.text3,
+          textTransform: "uppercase", letterSpacing: "0.1em",
+          display: "flex", alignItems: "center", gap: 5,
+        }}>
+          <Star size={11} color={T.accent} fill={T.accent} />
           Live Status
         </span>
-        <span style={{ fontSize: 12, fontWeight: 800, color: "#FF2E11" }}>{pct}%</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: T.accent }}>{pct}%</span>
       </div>
-      <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: "linear-gradient(90deg, #FF2E11, #A79277)" }} />
+
+      {/* Inset track */}
+      <div style={{
+        height: 10, borderRadius: 99,
+        background: T.raised,
+        boxShadow: SH.insetSoft,
+        overflow: "hidden",
+      }}>
+        <div style={{
+          height: "100%", width: `${pct}%`, borderRadius: 99,
+          background: `linear-gradient(90deg, ${T.accent}, ${T.accentDark})`,
+          transition: "width 0.6s ease",
+        }} />
       </div>
+
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
         {["Reported", "Assigned", "Resolved"].map((s, i) => (
-          <span key={s} style={{ fontSize: 9, fontWeight: 700, color: i === 0 ? "#FF5E41" : "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
+          <span key={s} style={{
+            fontSize: 9, fontWeight: 700,
+            color: i === 0 ? T.accent : T.text3,
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>{s}</span>
         ))}
       </div>
     </div>
   );
 }
 
-interface DashboardUIProps {
-  user: any;
-  profile: any;
-  initialStats: { reported: number; resolved: number; points: number };
-  initialNearby: any[];
-  initialRecent: any[];
-  initialActive: any;
+// ---------------------------------------------------------------------------
+// Section header helper
+// ---------------------------------------------------------------------------
+function SectionHeader({
+  title, accent, action, onAction,
+}: {
+  title: string;
+  accent: string;
+  action?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center",
+      justifyContent: "space-between", marginBottom: 14, padding: "0 2px",
+    }}>
+      <h2 style={{
+        fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em",
+        display: "flex", alignItems: "center", gap: 9,
+        margin: 0, color: T.text1,
+      }}>
+        <span style={{ width: 4, height: 20, background: accent, borderRadius: 2, display: "block" }} />
+        {title}
+      </h2>
+      {action && (
+        <button onClick={onAction} style={{
+          fontSize: 11, fontWeight: 700,
+          color: accent === T.accent ? T.accent : T.text3,
+          textTransform: "uppercase", letterSpacing: "0.08em",
+          background: "none", border: "none",
+          cursor: "pointer", fontFamily: "inherit",
+        }}>
+          {action}
+        </button>
+      )}
+    </div>
+  );
 }
 
-export default function DashboardUI({ user, profile, initialStats, initialNearby, initialRecent, initialActive }: DashboardUIProps) {
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+interface DashboardUIProps {
+  user: { email?: string; user_metadata?: { full_name?: string }; uid?: string };
+  profile: { full_name?: string; role?: string } | null;
+  initialStats: { reported: number; resolved: number; points: number };
+  initialNearby: Array<{ id: string; title: string; status: string; location_label?: string }>;
+  initialRecent: Array<{ id: string; title: string; status: string; created_at: string }>;
+  initialActive: { id: string; title: string; status: string } | null;
+}
+
+export default function DashboardUI({
+  user, profile,
+  initialStats, initialNearby, initialRecent, initialActive,
+}: DashboardUIProps) {
   const router = useRouter();
-  const [statsData] = useState(initialStats);
+  const [statsData]    = useState(initialStats);
   const [nearbyIssues] = useState(initialNearby);
   const [recentIssues] = useState(initialRecent);
-  const [activeIssue] = useState(initialActive);
+  const [activeIssue]  = useState(initialActive);
 
-  const fullName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || "Citizen";
+  const fullName  = profile?.full_name ?? user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Citizen";
   const firstName = fullName.split(" ")[0];
+  const initial   = firstName.charAt(0).toUpperCase();
+  const roleLabel = (profile?.role ?? "citizen").replace(/_/g, " ");
 
   const stats = [
-    { label: "Reported", value: statsData.reported, color: "#60a5fa", bg: "#1e3a5f", icon: <FileText size={18}/> },
-    { label: "Resolved", value: statsData.resolved, color: "#10b981", bg: "#1a3a2a", icon: <CheckCircle2 size={18}/> },
-    { label: "Points", value: statsData.points, color: "#fbbf24", bg: "#3a2a0a", icon: <Trophy size={18}/> },
+    { label: "Reported", value: statsData.reported, bg: "#E6F1FB", fg: "#0C447C", Icon: FileText },
+    { label: "Resolved", value: statsData.resolved, bg: "#EAF3DE", fg: "#27500A", Icon: CheckCircle2 },
+    { label: "Points",   value: statsData.points,   bg: "#FAEEDA", fg: "#854F0B", Icon: Trophy },
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter',-apple-system,sans-serif", color: "#ffffff" }}>
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -120, left: "50%", transform: "translateX(-50%)", width: 600, height: 400, background: "radial-gradient(ellipse, rgba(255, 46, 17, 0.1) 0%, transparent 70%)", borderRadius: "50%" }} />
-      </div>
+    <div style={{
+      minHeight: "100dvh",
+      background: T.base,
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      color: T.text1,
+      overflowX: "hidden",
+    }}>
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
-        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 4px 28px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 46, height: 46, borderRadius: 14, background: "linear-gradient(135deg, #FF2E11, #A79277)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "white", boxShadow: "0 0 20px rgba(255, 46, 17, 0.4)" }}>
-              {firstName.charAt(0)}
+        {/* ─── Header ──────────────────────────────────────────────────── */}
+        <header style={{
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between",
+          padding: "24px 4px 28px",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            {/* Avatar chip */}
+            <div style={{
+              width: 48, height: 48, borderRadius: 15,
+              background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 19, fontWeight: 800, color: "#fff",
+              boxShadow: SH.raised,
+              flexShrink: 0,
+            }}>
+              {initial}
             </div>
             <div>
-              <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2 }}>Hello, {firstName} 👋</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 500, marginTop: 2 }}>
+              <div style={{
+                fontSize: 19, fontWeight: 800,
+                letterSpacing: "-0.03em", lineHeight: 1.2, color: T.text1,
+              }}>
+                Hello, {firstName} 👋
+              </div>
+              <div style={{ fontSize: 11, color: T.text3, fontWeight: 500, marginTop: 2 }}>
                 {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" })}
               </div>
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600, background: "rgba(255,255,255,0.05)", padding: "6px 12px", borderRadius: 8, border: "0.5px solid rgba(255,255,255,0.08)" }}>
-            CITIZEN
+
+          {/* Role badge */}
+          <div style={{
+            fontSize: 10, fontWeight: 700, textTransform: "capitalize",
+            letterSpacing: "0.04em", color: T.accentOnTint,
+            background: T.accentTint,
+            padding: "6px 12px", borderRadius: 10,
+            boxShadow: SH.raisedSm,
+          }}>
+            {roleLabel}
           </div>
         </header>
 
-        <section style={{ marginBottom: 28 }}>
+        {/* ─── Active Issue / CTA Hero ─────────────────────────────────── */}
+        <section style={{ marginBottom: 24 }}>
           {activeIssue ? (
-            <div style={{ borderRadius: 24, overflow: "hidden", border: "1.5px solid rgba(255, 46, 17, 0.25)", background: "linear-gradient(135deg, rgba(255, 46, 17, 0.1) 0%, rgba(167, 146, 119, 0.05) 100%)", padding: 22 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            /* ── Active tracker card ── */
+            <div style={{
+              borderRadius: 24, padding: 24,
+              background: T.raised, boxShadow: SH.raised,
+            }}>
+              <div style={{
+                display: "flex", justifyContent: "space-between",
+                alignItems: "flex-start", marginBottom: 20,
+              }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: "#FF5E41", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Active Tracker</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em", lineHeight: 1.25 }}>{activeIssue.title}</div>
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, color: T.accent,
+                    textTransform: "uppercase", letterSpacing: "0.1em",
+                    marginBottom: 6, display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <span style={{
+                      width: 6, height: 6, borderRadius: "50%", background: T.accent,
+                      animation: "pulseGreen 2s ease-in-out infinite",
+                    }} />
+                    Active Tracker
+                  </div>
+                  <div style={{
+                    fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em",
+                    lineHeight: 1.25, color: T.text1, maxWidth: 200,
+                  }}>
+                    {activeIssue.title}
+                  </div>
                 </div>
                 <StatusBadge status={activeIssue.status} />
               </div>
               <ProgressTracker status={activeIssue.status} />
             </div>
           ) : (
-            <div style={{ borderRadius: 24, padding: "28px 24px", background: "linear-gradient(135deg, #FF2E11 0%, #A79277 100%)", boxShadow: "0 20px 60px rgba(255, 46, 17, 0.4)", position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", bottom: -40, right: -40, width: 180, height: 180, borderRadius: "50%", background: "rgba(255, 255, 255, 0.1)", pointerEvents: "none" }} />
+            /* ── CTA hero (no active issue) ── */
+            <div style={{
+              borderRadius: 24, padding: "30px 26px",
+              background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+              boxShadow: `8px 8px 20px rgba(29,158,117,0.28), -4px -4px 12px rgba(255,255,255,0.55)`,
+              position: "relative", overflow: "hidden",
+            }}>
+              <div style={{
+                position: "absolute", bottom: -40, right: -40,
+                width: 180, height: 180, borderRadius: "50%",
+                background: "rgba(255,255,255,0.09)", pointerEvents: "none",
+              }} />
               <div style={{ position: "relative", zIndex: 1 }}>
-                <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1.2, marginBottom: 10, color: "white" }}>Your city<br />is in your hands.</div>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", marginBottom: 20, maxWidth: 200, lineHeight: 1.5 }}>Report local issues to build a better neighborhood.</p>
-                <button onClick={() => router.push("/report")} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", borderRadius: 12, background: "white", color: "#FF2E11", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer" }}>
-                  <Plus size={14} />
+                <div style={{
+                  fontSize: 24, fontWeight: 900, letterSpacing: "-0.03em",
+                  lineHeight: 1.2, marginBottom: 10, color: "#fff",
+                }}>
+                  Your city<br />is in your hands.
+                </div>
+                <p style={{
+                  fontSize: 13, color: "rgba(255,255,255,0.82)",
+                  marginBottom: 22, maxWidth: 210, lineHeight: 1.55,
+                }}>
+                  Report local issues to build a better neighborhood.
+                </p>
+                <button
+                  onClick={() => router.push("/report")}
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: 7,
+                    padding: "11px 22px", borderRadius: 14,
+                    background: "#fff", color: T.accentDark,
+                    fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+                    border: "none", cursor: "pointer",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                  }}
+                >
+                  <Plus size={15} strokeWidth={2.5} />
                   Report Issue
                 </button>
               </div>
@@ -134,49 +324,110 @@ export default function DashboardUI({ user, profile, initialStats, initialNearby
           )}
         </section>
 
-        <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 28 }}>
-          {stats.map(stat => (
-            <div key={stat.label} style={{ borderRadius: 20, padding: "16px 12px", background: "rgba(255,255,255,0.03)", border: `0.5px solid rgba(255,255,255,0.08)`, display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: `${stat.bg}50`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, color: stat.color }}>
-                {stat.icon}
+        {/* ─── Stats Row ───────────────────────────────────────────────── */}
+        <section style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 12, marginBottom: 28,
+        }}>
+          {stats.map(stat => {
+            const Icon = stat.Icon;
+            return (
+              <div key={stat.label} style={{
+                borderRadius: 20, padding: "18px 10px",
+                background: T.raised, boxShadow: SH.raised,
+                display: "flex", flexDirection: "column",
+                alignItems: "center", textAlign: "center",
+              }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: stat.bg,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 10, color: stat.fg,
+                  boxShadow: SH.raisedSm,
+                }}>
+                  <Icon size={17} strokeWidth={1.8} />
+                </div>
+                <div style={{
+                  fontSize: 26, fontWeight: 900,
+                  letterSpacing: "-0.04em", lineHeight: 1,
+                  color: T.text1, marginBottom: 4,
+                }}>
+                  {stat.value}
+                </div>
+                <div style={{
+                  fontSize: 9, fontWeight: 800,
+                  textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3,
+                }}>
+                  {stat.label}
+                </div>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", lineHeight: 1, color: "white", marginBottom: 4 }}>{stat.value}</div>
-              <div style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.3)" }}>{stat.label}</div>
-            </div>
-          ))}
+            );
+          })}
         </section>
 
+        {/* ─── Nearby Problems ─────────────────────────────────────────── */}
         <section style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "0 2px" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 4, height: 20, background: "#FF2E11", borderRadius: 2, boxShadow: "0 0 10px #FF2E11", display: "block" }} />
-              Nearby Problems
-            </h2>
-            <button onClick={() => router.push("/map")} style={{ fontSize: 11, fontWeight: 700, color: "#FF5E41", textTransform: "uppercase", letterSpacing: "0.08em", background: "none", border: "none", cursor: "pointer" }}>OPEN MAP →</button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <SectionHeader
+            title="Nearby Problems"
+            accent={T.accent}
+            action="Open Map →"
+            onAction={() => router.push("/map")}
+          />
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {nearbyIssues.length === 0 ? (
-              <div style={{ padding: "24px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 16, border: "0.5px solid rgba(255,255,255,0.06)" }}>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Everything looks quiet around here.</p>
+              <div style={{
+                padding: "28px 20px", textAlign: "center",
+                background: T.raised, borderRadius: 18,
+                boxShadow: SH.insetSoft,
+              }}>
+                <p style={{ fontSize: 13, color: T.text3, margin: 0 }}>
+                  Everything looks quiet around here.
+                </p>
               </div>
             ) : (
               nearbyIssues.map(item => (
-                <div key={item.id} onClick={() => router.push(`/issue?id=${item.id}`)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 18, border: "0.5px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.025)", cursor: "pointer" }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 12, flexShrink: 0, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                    📍
+                <div
+                  key={item.id}
+                  onClick={() => router.push(`/issue?id=${item.id}`)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 14,
+                    padding: "14px 16px", borderRadius: 18,
+                    background: T.raised, boxShadow: SH.raised,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{
+                    width: 44, height: 44, borderRadius: 14,
+                    background: T.accentTint,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: T.accent, flexShrink: 0,
+                    boxShadow: SH.raisedSm,
+                  }}>
+                    <MapPin size={20} strokeWidth={1.8} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", gap: 3 }}>
-                        <MapPin size={10} color="#FF5E41" />
-                        {item.location_label?.split(',')[0] || "Near you"}
-                      </span>
+                    <div style={{
+                      fontSize: 13.5, fontWeight: 700, color: T.text1,
+                      marginBottom: 4,
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {item.title}
+                    </div>
+                    <div style={{
+                      fontSize: 11, fontWeight: 500, color: T.text3,
+                      display: "flex", alignItems: "center", gap: 4,
+                    }}>
+                      <MapPin size={10} color={T.text3} />
+                      {item.location_label?.split(",")[0] ?? "Near you"}
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+                  <div style={{
+                    display: "flex", flexDirection: "column",
+                    alignItems: "flex-end", gap: 8, flexShrink: 0,
+                  }}>
                     <StatusBadge status={item.status} />
-                    <ArrowRight size={10} color="#FF5E41" />
+                    <ChevronRight size={14} color={T.text3} />
                   </div>
                 </div>
               ))
@@ -184,29 +435,86 @@ export default function DashboardUI({ user, profile, initialStats, initialNearby
           </div>
         </section>
 
+        {/* ─── Your History ────────────────────────────────────────────── */}
         <section>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, padding: "0 2px" }}>
-            <h2 style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 4, height: 20, background: "#fbbf24", borderRadius: 2, boxShadow: "0 0 10px rgba(251,191,36,0.5)", display: "block" }} />
-              Your History
-            </h2>
-            <button onClick={() => router.push("/my-reports")} style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em", background: "none", border: "none", cursor: "pointer" }}>VIEW ALL</button>
-          </div>
+          <SectionHeader
+            title="Your History"
+            accent="#854F0B"
+            action="View All"
+            onAction={() => router.push("/my-reports")}
+          />
+
           {recentIssues.length === 0 ? (
-            <div style={{ padding: "40px 20px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 20, border: "1px dashed rgba(255,255,255,0.1)" }}>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Help your city by reporting an issue!</p>
+            <div style={{
+              padding: "40px 20px", textAlign: "center",
+              background: T.raised, borderRadius: 20,
+              boxShadow: SH.inset,
+            }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: 14,
+                background: T.accentTint,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                margin: "0 auto 14px", color: T.accent,
+                boxShadow: SH.raisedSm,
+              }}>
+                <FileText size={22} strokeWidth={1.8} />
+              </div>
+              <p style={{ fontSize: 13, color: T.text3, margin: "0 0 16px" }}>
+                Help your city by reporting an issue!
+              </p>
+              <button
+                onClick={() => router.push("/report")}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  padding: "10px 20px", borderRadius: 12,
+                  background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
+                  color: "#fff", fontSize: 13, fontWeight: 700,
+                  border: "none", cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: SH.raisedSm,
+                }}
+              >
+                <Plus size={14} />
+                Report now
+              </button>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {recentIssues.map(issue => (
-                <div key={issue.id} onClick={() => router.push(`/issue?id=${issue.id}`)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 16, border: "0.5px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", cursor: "pointer" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255, 46, 17, 0.1)", border: "0.5px solid rgba(255, 46, 17, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#FF5E41" }}>
-                      <FileText size={16} />
+                <div
+                  key={issue.id}
+                  onClick={() => router.push(`/issue?id=${issue.id}`)}
+                  style={{
+                    display: "flex", alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "14px 16px", borderRadius: 18,
+                    background: T.raised, boxShadow: SH.raised,
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 12,
+                      background: T.accentTint,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: T.accent, flexShrink: 0,
+                      boxShadow: SH.raisedSm,
+                    }}>
+                      <FileText size={17} strokeWidth={1.8} />
                     </div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 2, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{issue.title}</div>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</div>
+                      <div style={{
+                        fontSize: 13.5, fontWeight: 700, color: T.text1,
+                        marginBottom: 3, maxWidth: 180,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {issue.title}
+                      </div>
+                      <div style={{
+                        fontSize: 10, fontWeight: 600, color: T.text3,
+                        textTransform: "uppercase", letterSpacing: "0.06em",
+                      }}>
+                        {new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </div>
                     </div>
                   </div>
                   <StatusBadge status={issue.status} />
@@ -217,7 +525,12 @@ export default function DashboardUI({ user, profile, initialStats, initialNearby
         </section>
       </div>
 
-      
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulseGreen {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.55; transform: scale(0.82); }
+        }
+      ` }} />
     </div>
   );
 }

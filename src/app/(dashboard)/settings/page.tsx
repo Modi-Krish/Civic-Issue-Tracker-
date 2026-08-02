@@ -5,13 +5,13 @@ import { useAuth } from '@/lib/supabase/auth-context';
 import SettingsUI from '@/components/ui/SettingsUI';
 
 const ROLE_CONFIG: Record<string, { label: string; emoji: string; color: string; bg: string }> = {
-  citizen:            { label: "Citizen",          emoji: "🏙️", color: "#60a5fa", bg: "#1e3a5f" },
-  department_admin:   { label: "Dept. Admin",      emoji: "🏛️", color: "#FF2E11", bg: "#3a1a1a" },
-  employee:           { label: "Field Employee",   emoji: "🔧", color: "#10b981", bg: "#1a3a2a" },
-  government_officer: { label: "Gov. Officer",     emoji: "⚖️", color: "#A79277", bg: "#2d241d" },
-  company_admin:      { label: "Company Admin",    emoji: "💼", color: "#fbbf24", bg: "#332700" },
-  company_employee:   { label: "Corp. Employee",   emoji: "👷", color: "#10b981", bg: "#00331a" },
-  super_admin:        { label: "Super Admin",      emoji: "👑", color: "#FF2E11", bg: "#3a0000" },
+  citizen:            { label: "Citizen",          emoji: "🏙️", color: "#0C447C", bg: "#E6F1FB" },
+  department_admin:   { label: "Dept. Admin",      emoji: "🏛️", color: "#27500A", bg: "#EAF3DE" },
+  employee:           { label: "Field Employee",   emoji: "🔧", color: "#085041", bg: "#E1F5EE" },
+  government_officer: { label: "Gov. Officer",     emoji: "⚖️", color: "#854F0B", bg: "#FAEEDA" },
+  company_admin:      { label: "Company Admin",    emoji: "💼", color: "#712B13", bg: "#FAECE7" },
+  company_employee:   { label: "Corp. Employee",   emoji: "👷", color: "#085041", bg: "#E1F5EE" },
+  super_admin:        { label: "Super Admin",      emoji: "👑", color: "#791F1F", bg: "#FCEBEB" },
 };
 
 export default function SettingsPage() {

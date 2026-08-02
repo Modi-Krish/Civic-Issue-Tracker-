@@ -6,14 +6,36 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import { subscribeToNotifications, markNotificationRead, markAllNotificationsRead } from "@/services/firestore";
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       "#EDEBE4",
+  raised:     "#F5F3EC",
+  border:     "#DDD9CE",
+  text1:      "#2C2C2A",
+  text2:      "#5F5E5A",
+  text3:      "#888780",
+  accent:     "#1D9E75",
+  accentDark: "#167A5B",
+  accentTint: "#E1F5EE",
+  shL: "rgba(255,255,255,0.75)",
+  shD: "rgba(0,0,0,0.09)",
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:    `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+};
+
+// ── Type config (dept-color palette) ─────────────────────────────────────────
 const TYPE_CONFIG = {
-  status_updated:  { emoji: "🔄", accent: "#60a5fa", bg: "#1e3a5f" },
-  issue_assigned:  { emoji: "👤", accent: "#67e8f9", bg: "#1a2e3a" },
-  reward_credited: { emoji: "🎉", accent: "#f59e0b", bg: "#3a2a0a" },
-  repair_approved: { emoji: "✅", accent: "#34d399", bg: "#1a3a2a" },
-  issue_reported:  { emoji: "📋", accent: "#FF2E11", bg: "#3a2a1a" },
-  repair_rejected: { emoji: "❌", accent: "#f87171", bg: "#3a1a1a" },
-  default:         { emoji: "📌", accent: "#FF2E11", bg: "#3a2a1a" },
+  status_updated:  { emoji: "🔄", bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  issue_assigned:  { emoji: "👤", bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
+  reward_credited: { emoji: "🎉", bg: "#FAEEDA", fg: "#854F0B", dot: "#854F0B" },
+  repair_approved: { emoji: "✅", bg: "#E1F5EE", fg: "#085041", dot: "#1D9E75" },
+  issue_reported:  { emoji: "📋", bg: "#EAF3DE", fg: "#27500A", dot: "#27500A" },
+  repair_rejected: { emoji: "❌", bg: "#FCEBEB", fg: "#791F1F", dot: "#791F1F" },
+  default:         { emoji: "📌", bg: "#F0EEE8", fg: "#5F5E5A", dot: "#888780" },
 };
 
 function timeAgo(iso: string) {
@@ -25,48 +47,79 @@ function timeAgo(iso: string) {
   return Math.floor(diff / 86400) + "d ago";
 }
 
+// ── Notification Card ─────────────────────────────────────────────────────────
 function NotifCard({ notif, onMarkRead }: any) {
-  const cfg = TYPE_CONFIG[notif.type as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.default;
-  const [pressed, setPressed] = useState(false);
-
-  // Firestore timestamps might be objects, so convert if necessary
+  const cfg = TYPE_CONFIG[notif.type as keyof typeof TYPE_CONFIG] ?? TYPE_CONFIG.default;
   const createdAt = notif.created_at?.toDate ? notif.created_at.toDate().toISOString() : notif.created_at;
+  const isRead = notif.is_read;
 
   return (
-    <div
-      onMouseEnter={() => setPressed(true)} onMouseLeave={() => setPressed(false)}
-      onTouchStart={() => setPressed(true)} onTouchEnd={() => setPressed(false)}
-      style={{ borderRadius:18, overflow:"hidden", cursor:"pointer", transition:"background 0.15s, border-color 0.15s", WebkitTapHighlightColor:"transparent",
-        border:`0.5px solid ${notif.is_read ? "rgba(255,255,255,0.07)" : cfg.accent + "40"}`,
-        background: notif.is_read ? (pressed?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.02)") : (pressed?`${cfg.bg}cc`:`${cfg.bg}88`),
-      }}
-    >
-      {!notif.is_read && <div style={{ height:2.5, background:`linear-gradient(90deg,${cfg.accent}cc,transparent 70%)` }} />}
-      <div style={{ padding:"13px 14px", display:"flex", gap:12, alignItems:"flex-start" }}>
-        <div style={{ width:42, height:42, borderRadius:13, flexShrink:0, background:`${cfg.accent}14`, border:`0.5px solid ${cfg.accent}28`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, position:"relative" }}>
+    <div style={{
+      borderRadius: 20, overflow: "hidden",
+      background: isRead ? T.raised : cfg.bg,
+      boxShadow: isRead ? SH.raisedSm : SH.raised,
+      border: isRead ? `1px solid ${T.border}` : `1.5px solid ${cfg.dot}35`,
+      cursor: "pointer",
+      WebkitTapHighlightColor: "transparent",
+    }}>
+      {/* Unread stripe */}
+      {!isRead && <div style={{ height: 3, background: `linear-gradient(90deg, ${cfg.dot}99, transparent 70%)` }} />}
+
+      <div style={{ padding: "13px 14px", display: "flex", gap: 12, alignItems: "flex-start" }}>
+        {/* Emoji chip */}
+        <div style={{
+          width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+          background: T.raised, boxShadow: SH.raisedSm,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 20, position: "relative",
+        }}>
           {cfg.emoji}
-          {!notif.is_read && <div style={{ position:"absolute", top:-2, right:-2, width:9, height:9, borderRadius:"50%", background:cfg.accent, border:"2px solid #0d0d0f", boxShadow:`0 0 6px ${cfg.accent}99` }} />}
+          {!isRead && (
+            <div style={{
+              position: "absolute", top: -2, right: -2,
+              width: 9, height: 9, borderRadius: "50%",
+              background: cfg.dot, border: `2px solid ${T.base}`,
+            }} />
+          )}
         </div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8, marginBottom:4 }}>
-            <span style={{ fontSize:13, fontWeight:notif.is_read?600:700, color:notif.is_read?"rgba(255,255,255,0.7)":"#fff", letterSpacing:"-0.01em", lineHeight:1.3 }}>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 13, fontWeight: isRead ? 600 : 800, color: T.text1, lineHeight: 1.3 }}>
               {notif.title}
             </span>
-            <span style={{ fontSize:10, color:"rgba(255,255,255,0.28)", fontWeight:500, whiteSpace:"nowrap", flexShrink:0, paddingTop:1 }}>
+            <span style={{ fontSize: 10, color: T.text3, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0, paddingTop: 1 }}>
               {timeAgo(createdAt)}
             </span>
           </div>
-          <p style={{ fontSize:12, color:"rgba(255,255,255,0.45)", lineHeight:1.55, margin:"0 0 8px 0" }}>{notif.body}</p>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+
+          <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, margin: "0 0 8px 0" }}>{notif.body}</p>
+
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {notif.issue_id ? (
-              <span style={{ fontSize:11, fontWeight:700, color:cfg.accent, display:"flex", alignItems:"center", gap:4 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: T.accent, display: "flex", alignItems: "center", gap: 4 }}>
                 View issue
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M5.5 2L8 5l-2.5 3" stroke={cfg.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5h6M5.5 2L8 5l-2.5 3" stroke={T.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
               </span>
             ) : <div />}
-            {!notif.is_read && (
-              <button onClick={(e) => { e.stopPropagation(); onMarkRead(notif.id); }} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.4)", background:"rgba(255,255,255,0.06)", border:"0.5px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"4px 8px", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 6l2.5 3L10 3" stroke="rgba(255,255,255,0.5)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {!isRead && (
+              <button
+                onClick={e => { e.stopPropagation(); onMarkRead(notif.id); }}
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  fontSize: 10, fontWeight: 700, color: T.text3,
+                  background: T.raised, border: `1px solid ${T.border}`,
+                  borderRadius: 8, padding: "4px 10px", cursor: "pointer",
+                  boxShadow: SH.raisedSm,
+                  WebkitTapHighlightColor: "transparent",
+                  fontFamily: "inherit",
+                }}
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 6l2.5 3L10 3" stroke={T.accent} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
                 Mark read
               </button>
             )}
@@ -77,31 +130,38 @@ function NotifCard({ notif, onMarkRead }: any) {
   );
 }
 
+// ── Empty state ───────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"center", padding:"60px 20px", textAlign:"center", borderRadius:22, border:"1px dashed rgba(255,255,255,0.09)", background:"rgba(255,255,255,0.015)", marginTop:8 }}>
-      <div style={{ width:68, height:68, borderRadius:20, marginBottom:18, background:"rgba(255, 46, 17, 0.1)", border:"1px solid rgba(255, 46, 17, 0.2)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:30 }}>🔔</div>
-      <div style={{ fontSize:17, fontWeight:800, letterSpacing:"-0.02em", marginBottom:8 }}>No notifications.</div>
-      <div style={{ fontSize:13, color:"rgba(255,255,255,0.38)", lineHeight:1.65, maxWidth:220 }}>
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center",
+      padding: "60px 20px", textAlign: "center",
+      background: T.raised, borderRadius: 24, boxShadow: SH.inset, marginTop: 8,
+    }}>
+      <div style={{
+        width: 68, height: 68, borderRadius: 20, marginBottom: 18,
+        background: T.accentTint, boxShadow: SH.raisedSm,
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28,
+      }}>🔔</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: T.text1, marginBottom: 8 }}>No notifications.</div>
+      <div style={{ fontSize: 13, color: T.text3, lineHeight: 1.65, maxWidth: 220 }}>
         You'll be notified when there are updates.
       </div>
     </div>
   );
 }
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function NotificationsPage() {
   const router = useRouter();
-  
   const [notifs, setNotifs] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Wait for Firebase auth to initialize
     const unsubscribeAuth = auth.onAuthStateChanged(user => {
       if (user) {
-        // Subscribe to Firestore notifications collection
-        const unsubscribeNotifs = subscribeToNotifications(user.uid, (data) => {
+        const unsubscribeNotifs = subscribeToNotifications(user.uid, data => {
           setNotifs(data);
           setLoading(false);
         });
@@ -116,106 +176,118 @@ export default function NotificationsPage() {
   const unreadCount = notifs.filter(n => !n.is_read).length;
   const displayed = filter === "unread" ? notifs.filter(n => !n.is_read) : notifs;
 
-  async function markRead(id: string) { 
-    // Optimistic UI update
-    setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n)); 
-    // Fire & forget to Firestore
+  async function markRead(id: string) {
+    setNotifs(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
     await markNotificationRead(id);
   }
-  
-  async function markAllRead() { 
-    // Optimistic UI update
-    setNotifs(prev => prev.map(n => ({ ...n, is_read: true }))); 
-    // Fire & forget to Firestore
-    if (auth.currentUser) {
-      await markAllNotificationsRead(auth.currentUser.uid, notifs);
-    }
+
+  async function markAllRead() {
+    setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+    if (auth.currentUser) await markAllNotificationsRead(auth.currentUser.uid, notifs);
   }
 
   return (
-    <div style={{ minHeight:"100vh", background:"#0d0d0f", fontFamily:"'Inter',-apple-system,sans-serif", color:"#fff" }}>
-      <div style={{ position:"fixed", inset:0, pointerEvents: "none", overflow:"hidden", zIndex:0 }}>
-        <div style={{ position:"absolute", top:-60, left:"20%", width:420, height:260, background:"radial-gradient(ellipse, rgba(255, 46, 17, 0.1) 0%, transparent 70%)", borderRadius:"50%" }} />
-      </div>
-
-      {/* TOP BAR */}
-      <div style={{ position:"sticky", top:0, zIndex:50, background:"rgba(13,13,15,0.94)", backdropFilter:"blur(20px)", borderBottom:"0.5px solid rgba(255,255,255,0.07)" }}>
-        <div style={{ maxWidth:480, margin:"0 auto", padding:"12px 16px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-            <div style={{ width:28, height:28, borderRadius:8, background:"linear-gradient(135deg, #FF2E11, #A79277)", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 0 10px rgba(255, 46, 17, 0.45)" }}>
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="white"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="white" strokeWidth="1.5" strokeLinecap="round"/></svg>
-            </div>
-            <span style={{ fontSize:14, fontWeight:700, letterSpacing:"-0.02em" }}>CivicTracker</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ width:32, height:32, borderRadius:10, background:"linear-gradient(135deg, #FF2E11, #A79277)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:800 }}>A</div>
-          </div>
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div style={{ position:"relative", zIndex:1, maxWidth:480, margin:"0 auto", padding:"0 16px 100px" }}>
-
-        {/* Page header */}
-        <div style={{ padding:"20px 0 18px" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:14, cursor:"pointer" }}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L4 7l5 5" stroke="rgba(255,255,255,0.32)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.32)" }}>Dashboard</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between" }}>
+    <div style={{
+      minHeight: "100dvh",
+      background: T.base,
+      fontFamily: "'Inter',-apple-system,BlinkMacSystemFont,sans-serif",
+      color: T.text1,
+    }}>
+      {/* Sticky top bar */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: T.raised,
+        borderBottom: `1px solid ${T.border}`,
+        boxShadow: `0 4px 16px ${T.shD}`,
+        padding: "16px",
+      }}>
+        <div style={{ maxWidth: 480, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: unreadCount > 0 ? 12 : 0 }}>
             <div>
-              <h1 style={{ fontSize:24, fontWeight:900, letterSpacing:"-0.04em", margin:0 }}>Notifications</h1>
+              <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>
+                Notifications
+              </h1>
               {unreadCount > 0 && (
-                <p style={{ fontSize:12, color:"rgba(255,255,255,0.38)", marginTop:5, fontWeight:500, display:"flex", alignItems:"center", gap:5 }}>
-                  <span style={{ width:6, height:6, borderRadius:"50%", background: "#A79277", display:"inline-block", boxShadow: "0 0 6px #A79277" }} />
+                <p style={{ fontSize: 12, color: T.text3, marginTop: 4, fontWeight: 500, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.accent, display: "inline-block" }} />
                   {unreadCount} unread
                 </p>
               )}
             </div>
             {unreadCount > 0 && (
-              <button onClick={markAllRead} style={{ display:"flex", alignItems:"center", gap:5, marginTop:4, padding:"7px 13px", borderRadius:10, fontSize:11, fontWeight:700, background: "rgba(255, 46, 17, 0.12)", border: "0.5px solid rgba(255, 46, 17, 0.25)", color: "#FF2E11", cursor:"pointer", WebkitTapHighlightColor:"transparent" }}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 3L10 3" stroke="#FF2E11" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <button
+                onClick={markAllRead}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "8px 14px", borderRadius: 12,
+                  fontSize: 11, fontWeight: 700,
+                  background: T.accentTint, border: "none",
+                  color: T.accentDark, cursor: "pointer",
+                  boxShadow: SH.raisedSm, fontFamily: "inherit",
+                  WebkitTapHighlightColor: "transparent",
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l2.5 3L10 3" stroke={T.accentDark} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
                 Mark all read
               </button>
             )}
           </div>
-        </div>
 
-        {/* Filter tabs */}
-        {notifs.length > 0 && (
-          <div style={{ display:"flex", gap:7, marginBottom:16 }}>
-            {[["all","All",notifs.length],["unread","Unread",unreadCount]].map(([val,label,count]) => {
-              const active = filter === val;
-              return (
-                <button key={val as string} onClick={() => setFilter(val as string)} style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"6px 14px", borderRadius:99, fontSize:11, fontWeight:700, cursor:"pointer", transition:"all 0.15s", WebkitTapHighlightColor:"transparent",
-                  border:`0.5px solid ${active?"rgba(167, 146, 119, 0.5)":"rgba(255,255,255,0.1)"}`,
-                  background: active ? "rgba(255, 46, 17, 0.15)" : "transparent",
-                  color: active ? "#FF2E11" : "rgba(255,255,255,0.38)",
-                }}>
-                  {label as string}
-                  <span style={{ fontSize:9, fontWeight:800, borderRadius:99, padding:"1px 5px", background:active?"rgba(255,255,255,0.18)":"rgba(255,255,255,0.08)", color:active?"white":"rgba(255,255,255,0.28)" }}>{count as number}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Cards */}
-        {loading ? (
-          <div style={{ textAlign:"center", padding:"48px 16px", color:"rgba(255,255,255,0.26)", fontSize:14 }}>Loading...</div>
-        ) : notifs.length === 0 ? <EmptyState /> :
-          displayed.length === 0 ? (
-            <div style={{ textAlign:"center", padding:"48px 16px", color:"rgba(255,255,255,0.26)", fontSize:14 }}>No unread notifications.</div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
-              {displayed.map(n => <NotifCard key={n.id} notif={n} onMarkRead={markRead} />)}
+          {/* Filter tabs */}
+          {notifs.length > 0 && (
+            <div style={{ display: "flex", gap: 7 }}>
+              {[["all", "All", notifs.length], ["unread", "Unread", unreadCount]].map(([val, label, count]) => {
+                const active = filter === val;
+                return (
+                  <button
+                    key={val as string}
+                    onClick={() => setFilter(val as string)}
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      padding: "7px 14px", borderRadius: 99,
+                      fontSize: 11, fontWeight: 700, cursor: "pointer",
+                      border: "none",
+                      background: active ? T.accentTint : T.base,
+                      color: active ? T.accentDark : T.text3,
+                      boxShadow: active ? SH.inset : SH.raisedSm,
+                      fontFamily: "inherit",
+                      WebkitTapHighlightColor: "transparent",
+                    }}
+                  >
+                    {label as string}
+                    <span style={{
+                      fontSize: 9, fontWeight: 800, borderRadius: 99, padding: "1px 6px",
+                      background: active ? "rgba(0,0,0,0.12)" : T.raised,
+                      color: active ? "inherit" : T.text3,
+                    }}>
+                      {count as number}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          )
-        }
+          )}
+        </div>
       </div>
 
-
-      
+      {/* Content */}
+      <div style={{ maxWidth: 480, margin: "0 auto", padding: "16px 16px 100px" }}>
+        {loading ? (
+          <div style={{ textAlign: "center", padding: "48px 16px", color: T.text3, fontSize: 14 }}>Loading…</div>
+        ) : notifs.length === 0 ? (
+          <EmptyState />
+        ) : displayed.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 16px", color: T.text3, fontSize: 14 }}>
+            No unread notifications.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {displayed.map(n => <NotifCard key={n.id} notif={n} onMarkRead={markRead} />)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

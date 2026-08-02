@@ -7,6 +7,28 @@ import { Briefcase, Building, Star, CheckCircle, TrendingUp, ArrowRight, ShieldC
 import type { Tender, TenderBid } from '@/lib/types/database';
 import Link from 'next/link';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:    `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 export default function CompanyAdminDashboard() {
   const { user, profile, loading: authLoading } = useAuth();
 
@@ -405,20 +427,21 @@ export default function CompanyAdminDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: "#0ea5e9", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ minHeight: "100dvh", background: T.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: "spin 0.8s linear infinite" }} />
+        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
       </div>
     );
   }
 
   const pageStyle: React.CSSProperties = {
-    minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter', sans-serif",
-    color: "#ffffff", padding: "32px 24px", maxWidth: 1200, margin: "0 auto"
+    minHeight: "100dvh", background: T.base, fontFamily: "'Inter', sans-serif",
+    color: T.text1, padding: "32px 24px", maxWidth: "100%", margin: "0 auto"
   };
 
   const statCardStyle = {
     padding: 24, borderRadius: 24,
-    background: "rgba(255,255,255,0.02)", border: "1.5px solid rgba(255,255,255,0.05)",
+    background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised,
     display: "flex", alignItems: "center", gap: 20
   };
 
@@ -427,18 +450,18 @@ export default function CompanyAdminDashboard() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
         <div>
-          <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px" }}>Company Operations</h1>
-          <p style={{ color: "rgba(255,255,255,0.5)", margin: 0, fontSize: 14 }}>Manage government tender bids, awarded contracts, and field personnel.</p>
+          <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px", color: T.text1 }}>Company Operations</h1>
+          <p style={{ color: T.text3, margin: 0, fontSize: 14, fontWeight: 600 }}>Manage government tender bids, awarded contracts, and field personnel.</p>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/company-admin/contracts" style={{ padding: "12px 20px", borderRadius: 12, background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#10b981", fontSize: 13, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <Link href="/company-admin/contracts" style={{ padding: "12px 20px", borderRadius: 14, background: T.raised, border: `1px solid ${T.border}`, color: T.accentDark, fontSize: 13, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: SH.raisedSm }}>
             <ShieldCheck size={16} /> My Contracts ({myContractsList.length})
           </Link>
         </div>
       </div>
 
       {toast && (
-        <div style={{ padding: 16, borderRadius: 16, background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.3)", color: "#10b981", fontWeight: 700, fontSize: 14, marginBottom: 24 }}>
+        <div style={{ padding: 16, borderRadius: 16, background: "#EAF3DE", border: "1px solid #27500A30", color: "#27500A", fontWeight: 800, fontSize: 14, marginBottom: 24, boxShadow: SH.insetSoft }}>
           {toast}
         </div>
       )}
@@ -446,101 +469,85 @@ export default function CompanyAdminDashboard() {
       {/* Stats row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 32 }}>
         <div style={statCardStyle}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(251, 191, 36, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fbbf24" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#FAEEDA", display: "flex", alignItems: "center", justifyContent: "center", color: "#854F0B", boxShadow: SH.insetSoft }}>
             <Star size={24} />
           </div>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Company Rating</p>
-            <h3 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>{stats.rating}</h3>
+            <p style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Company Rating</p>
+            <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>{stats.rating}</h3>
           </div>
         </div>
 
         <div style={statCardStyle}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(16, 185, 129, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EAF3DE", display: "flex", alignItems: "center", justifyContent: "center", color: "#27500A", boxShadow: SH.insetSoft }}>
             <ShieldCheck size={24} />
           </div>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Active Contracts</p>
-            <h3 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>{myContractsList.length}</h3>
+            <p style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Active Contracts</p>
+            <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>{myContractsList.length}</h3>
           </div>
         </div>
 
         <div style={statCardStyle}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(14, 165, 233, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0ea5e9" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#E6F1FB", display: "flex", alignItems: "center", justifyContent: "center", color: "#0C447C", boxShadow: SH.insetSoft }}>
             <Briefcase size={24} />
           </div>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Open Tenders</p>
-            <h3 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>{tenders.filter(t => t.status === 'Published' || (t.status as string) === 'OPEN').length}</h3>
+            <p style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Open Tenders</p>
+            <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>{tenders.filter(t => t.status === 'Published' || (t.status as string) === 'OPEN').length}</h3>
           </div>
         </div>
 
         <div style={statCardStyle}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(167, 139, 250, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a78bfa" }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "#EEEDFE", display: "flex", alignItems: "center", justifyContent: "center", color: "#3C3489", boxShadow: SH.insetSoft }}>
             <Award size={24} />
           </div>
           <div>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Awarded Contracts</p>
-            <h3 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>{myContractsList.length}</h3>
+            <p style={{ fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 4px" }}>Awarded Contracts</p>
+            <h3 style={{ fontSize: 28, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>{myContractsList.length}</h3>
           </div>
         </div>
       </div>
 
       {/* Tabs Header */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16, overflowX: "auto" }}>
-        <button
-          onClick={() => setActiveTab('WORK_ORDERS')}
-          style={{
-            padding: "10px 20px", borderRadius: 12,
-            background: activeTab === 'WORK_ORDERS' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-            color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", whiteSpace: "nowrap"
-          }}>
-          🚨 Work Orders / Issues ({companyIssues.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('TENDERS')}
-          style={{
-            padding: "10px 20px", borderRadius: 12,
-            background: activeTab === 'TENDERS' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-            color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", whiteSpace: "nowrap"
-          }}>
-          🏛️ Open Tenders
-        </button>
-        <button
-          onClick={() => setActiveTab('AWARDED')}
-          style={{
-            padding: "10px 20px", borderRadius: 12,
-            background: activeTab === 'AWARDED' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-            color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer"
-          }}>
-          🏆 Awarded Tenders & Contracts ({myContractsList.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('EMPLOYEES')}
-          style={{
-            padding: "10px 20px", borderRadius: 12,
-            background: activeTab === 'EMPLOYEES' ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-            color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer"
-          }}>
-          👷 Employee Management ({employees.length})
-        </button>
+      <div style={{ display: "flex", gap: 12, marginBottom: 28, borderBottom: `1px solid ${T.border}`, paddingBottom: 16, overflowX: "auto" }}>
+        {[
+          { key: 'WORK_ORDERS', label: `🚨 Work Orders (${companyIssues.length})` },
+          { key: 'TENDERS', label: `🏛️ Open Tenders` },
+          { key: 'AWARDED', label: `🏆 Awarded (${myContractsList.length})` },
+          { key: 'EMPLOYEES', label: `👷 Employees (${employees.length})` },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            style={{
+              padding: "10px 20px", borderRadius: 14,
+              background: activeTab === tab.key ? T.raised : 'transparent',
+              color: activeTab === tab.key ? T.accentDark : T.text3,
+              fontSize: 13, fontWeight: 800, border: activeTab === tab.key ? `1px solid ${T.border}` : "1px solid transparent",
+              boxShadow: activeTab === tab.key ? SH.raisedSm : 'none',
+              cursor: "pointer", whiteSpace: "nowrap"
+            }}>
+            {tab.label}
+          </button>
+        ))}
       </div>
 
       {/* TAB 0: Work Orders & Issues */}
       {activeTab === 'WORK_ORDERS' && (
-        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1.5px solid rgba(255,255,255,0.05)", padding: 32 }}>
+        <div style={{ background: T.raised, borderRadius: 24, border: `1px solid ${T.border}`, padding: 32, boxShadow: SH.raised }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Company Work Orders & Issues</h2>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>Manage civic issues routed under your company contracts. Assign field engineers and review completed work.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>Company Work Orders & Issues</h2>
+              <p style={{ fontSize: 13, color: T.text3, margin: "4px 0 0", fontWeight: 600 }}>Manage civic issues routed under your company contracts. Assign field engineers and review completed work.</p>
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {companyIssues.length === 0 ? (
-              <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <AlertCircle size={36} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No work orders routed to your company yet.</p>
+              <div style={{ padding: 40, textAlign: "center", background: T.base, borderRadius: 20, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <AlertCircle size={36} color={T.text3} style={{ marginBottom: 12 }} />
+                <p style={{ fontSize: 14, color: T.text3, margin: 0, fontWeight: 600 }}>No work orders routed to your company yet.</p>
               </div>
             ) : (
               companyIssues.map(issue => {
@@ -560,27 +567,27 @@ export default function CompanyAdminDashboard() {
                 const afterUrl = resolveImg(issue.after_image, issue.after_image_path);
 
                 return (
-                  <div key={issue.id} style={{ padding: 24, borderRadius: 20, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div key={issue.id} style={{ padding: 24, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, display: "flex", flexDirection: "column", gap: 16, boxShadow: SH.insetSoft }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                          <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: "rgba(14, 165, 233, 0.15)", color: "#0ea5e9" }}>
+                          <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 99, background: "#EEEDFE", color: "#3C3489", boxShadow: SH.raisedSm }}>
                             {issue.issue_type || "Civic Issue"}
                           </span>
-                          <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.7)" }}>
+                          <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 99, background: T.raised, border: `1px solid ${T.border}`, color: T.text2, boxShadow: SH.raisedSm }}>
                             Status: {issue.status}
                           </span>
                           {issue.rating && (
-                            <span style={{ fontSize: 11, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: issue.rating < 2.5 ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)", color: issue.rating < 2.5 ? "#ef4444" : "#10b981" }}>
+                            <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 99, background: issue.rating < 2.5 ? "#FCEBEB" : "#EAF3DE", color: issue.rating < 2.5 ? "#791F1F" : "#27500A", boxShadow: SH.raisedSm }}>
                               Rating: {issue.rating}/5 ⭐
                             </span>
                           )}
                         </div>
-                        <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>{issue.title}</h3>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0 }}>{issue.description}</p>
+                        <h3 style={{ fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: T.text1 }}>{issue.title}</h3>
+                        <p style={{ fontSize: 13, color: T.text2, margin: 0, fontWeight: 500 }}>{issue.description}</p>
                       </div>
 
-                      <Link href={`/issue?id=${issue.id}`} style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", color: "white", fontSize: 12, fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <Link href={`/issue?id=${issue.id}`} style={{ padding: "10px 16px", borderRadius: 12, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontSize: 12, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: SH.raisedSm }}>
                         View Details <ExternalLink size={14} />
                       </Link>
                     </div>
@@ -589,26 +596,26 @@ export default function CompanyAdminDashboard() {
                     <div style={{ display: "flex", gap: 16, overflowX: "auto" }}>
                       {beforeUrl && (
                         <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>BEFORE PHOTO</div>
-                          <img src={beforeUrl} alt="Before" style={{ width: 120, height: 90, borderRadius: 12, objectFit: "cover", border: "1px solid rgba(255,255,255,0.1)" }} />
+                          <div style={{ fontSize: 10, fontWeight: 800, color: T.text3, marginBottom: 6 }}>BEFORE PHOTO</div>
+                          <img src={beforeUrl} alt="Before" style={{ width: 120, height: 90, borderRadius: 14, objectFit: "cover", border: `1px solid ${T.border}`, boxShadow: SH.raisedSm }} />
                         </div>
                       )}
                       {afterUrl && (
                         <div>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: "#10b981", marginBottom: 4 }}>RESOLUTION PROOF</div>
-                          <img src={afterUrl} alt="After" style={{ width: 120, height: 90, borderRadius: 12, objectFit: "cover", border: "1px solid rgba(16, 185, 129, 0.3)" }} />
+                          <div style={{ fontSize: 10, fontWeight: 800, color: "#27500A", marginBottom: 6 }}>RESOLUTION PROOF</div>
+                          <img src={afterUrl} alt="After" style={{ width: 120, height: 90, borderRadius: 14, objectFit: "cover", border: "2px solid #EAF3DE", boxShadow: SH.raisedSm }} />
                         </div>
                       )}
                     </div>
 
                     {/* ACTION PANEL */}
-                    <div style={{ paddingTop: 16, borderTop: "1px dashed rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                    <div style={{ paddingTop: 16, borderTop: `1px dashed ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
                       {isUnassigned && (
                         <div style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", maxWidth: 500 }}>
                           <select
                             value={selectedEmployees[issue.id] || ''}
                             onChange={(e) => setSelectedEmployees(prev => ({ ...prev, [issue.id]: e.target.value }))}
-                            style={{ flex: 1, padding: "10px 14px", borderRadius: 10, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.15)", color: "white", fontSize: 13 }}>
+                            style={{ flex: 1, padding: "12px 14px", borderRadius: 12, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontSize: 13, fontWeight: 600, boxShadow: SH.insetSoft, outline: 'none' }}>
                             <option value="">-- Select Field Engineer / Employee --</option>
                             {employees.map(emp => (
                               <option key={emp.id} value={emp.profile_id || emp.profileId || emp.id}>
@@ -620,14 +627,14 @@ export default function CompanyAdminDashboard() {
                           <button
                             onClick={() => handleAssignEmployeeToIssue(issue.id)}
                             disabled={actionLoading === issue.id}
-                            style={{ padding: "10px 18px", borderRadius: 10, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+                            style={{ padding: "12px 20px", borderRadius: 12, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 12, fontWeight: 900, border: "none", cursor: "pointer", whiteSpace: "nowrap", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                             {actionLoading === issue.id ? "Assigning..." : "Assign Employee"}
                           </button>
                         </div>
                       )}
 
                       {isAssigned && (
-                        <div style={{ fontSize: 12, color: "#a78bfa", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ fontSize: 13, color: "#3C3489", fontWeight: 800, display: "flex", alignItems: "center", gap: 8, background: "#EEEDFE", padding: "8px 16px", borderRadius: 12, boxShadow: SH.raisedSm }}>
                           <UserCheck size={16} /> Assigned Engineer: {issue.assigned_employee_name || 'Corporate Employee'}
                         </div>
                       )}
@@ -637,14 +644,14 @@ export default function CompanyAdminDashboard() {
                           <button
                             onClick={() => handleApproveWorkOrder(issue.id)}
                             disabled={actionLoading === issue.id}
-                            style={{ padding: "10px 20px", borderRadius: 10, background: "#10b981", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            style={{ padding: "12px 20px", borderRadius: 12, background: "#E1F5EE", border: "1px solid #08504130", color: "#085041", fontSize: 12, fontWeight: 900, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: SH.raisedSm }}>
                             <CheckCircle2 size={16} /> Approve & Send for Citizen Review
                           </button>
 
                           <button
                             onClick={() => handleRejectWorkOrder(issue.id)}
                             disabled={actionLoading === issue.id}
-                            style={{ padding: "10px 16px", borderRadius: 10, background: "rgba(239, 68, 68, 0.2)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#ef4444", fontSize: 12, fontWeight: 800, cursor: "pointer" }}>
+                            style={{ padding: "12px 20px", borderRadius: 12, background: "#FCEBEB", border: "1px solid #791F1F30", color: "#791F1F", fontSize: 12, fontWeight: 900, cursor: "pointer", boxShadow: SH.raisedSm }}>
                             Reject (Rework)
                           </button>
                         </div>
@@ -660,18 +667,18 @@ export default function CompanyAdminDashboard() {
 
       {/* TAB 1: Open Tenders */}
       {activeTab === 'TENDERS' && (
-        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1.5px solid rgba(255,255,255,0.05)", padding: 32 }}>
+        <div style={{ background: T.raised, borderRadius: 24, border: `1px solid ${T.border}`, padding: 32, boxShadow: SH.raised }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Open Government Tenders</h2>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>Active tender notices. Each company may submit exactly ONE bid per tender.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>Open Government Tenders</h2>
+              <p style={{ fontSize: 13, color: T.text3, margin: "4px 0 0", fontWeight: 600 }}>Active tender notices. Each company may submit exactly ONE bid per tender.</p>
             </div>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {tenders.filter(t => t.status === 'Published' || (t.status as string) === 'OPEN').length === 0 ? (
-              <div style={{ padding: 32, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", margin: 0 }}>No open published tenders available at the moment.</p>
+              <div style={{ padding: 40, textAlign: "center", background: T.base, borderRadius: 20, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <p style={{ fontSize: 14, color: T.text3, margin: 0, fontWeight: 600 }}>No open published tenders available at the moment.</p>
               </div>
             ) : (
               tenders.filter(t => t.status === 'Published' || (t.status as string) === 'OPEN').map(t => {
@@ -679,45 +686,46 @@ export default function CompanyAdminDashboard() {
                 const isDeadlinePassed = t.bid_submission_deadline ? new Date() > new Date(t.bid_submission_deadline) : false;
 
                 return (
-                  <div key={t.id} style={{ padding: 24, borderRadius: 20, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div key={t.id} style={{ padding: 24, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: SH.insetSoft }}>
                     <div style={{ maxWidth: "70%" }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: "#0ea5e9", background: "rgba(14,165,233,0.1)", padding: "2px 8px", borderRadius: 99 }}>{t.tender_number}</span>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", background: "rgba(167,139,250,0.1)", padding: "2px 8px", borderRadius: 99 }}>{t.tender_type}</span>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: "#0C447C", background: "#E6F1FB", padding: "4px 10px", borderRadius: 99, boxShadow: SH.raisedSm }}>{t.tender_number}</span>
+                        <span style={{ fontSize: 10, fontWeight: 900, color: "#3C3489", background: "#EEEDFE", padding: "4px 10px", borderRadius: 99, boxShadow: SH.raisedSm }}>{t.tender_type}</span>
                         {existingBid && (
-                          <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.15)", padding: "2px 8px", borderRadius: 99 }}>
+                          <span style={{ fontSize: 10, fontWeight: 900, color: "#27500A", background: "#EAF3DE", padding: "4px 10px", borderRadius: 99, boxShadow: SH.raisedSm }}>
                             ✓ Bid Submitted (${existingBid.bid_amount?.toLocaleString()})
                           </span>
                         )}
                         {isDeadlinePassed && (
-                          <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", background: "rgba(239,68,68,0.15)", padding: "2px 8px", borderRadius: 99 }}>
+                          <span style={{ fontSize: 10, fontWeight: 900, color: "#791F1F", background: "#FCEBEB", padding: "4px 10px", borderRadius: 99, boxShadow: SH.raisedSm }}>
                             🔒 Deadline Passed
                           </span>
                         )}
                       </div>
-                      <h4 style={{ fontSize: 17, fontWeight: 800, margin: "0 0 6px" }}>{t.title}</h4>
-                      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>{t.description}</p>
-                      <div style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>
-                        <span>Est. Budget: <strong style={{ color: "#10b981" }}>${t.estimated_budget?.toLocaleString()}</strong></span>
-                        <span>EMD: <strong style={{ color: "white" }}>${t.emd_amount?.toLocaleString()}</strong></span>
-                        <span>Deadline: <strong style={{ color: isDeadlinePassed ? "#ef4444" : "#fbbf24" }}>{t.bid_submission_deadline ? new Date(t.bid_submission_deadline).toLocaleDateString() : 'N/A'}</strong></span>
+                      <h4 style={{ fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: T.text1 }}>{t.title}</h4>
+                      <p style={{ fontSize: 13, color: T.text2, margin: "0 0 16px", fontWeight: 500 }}>{t.description}</p>
+                      <div style={{ display: "flex", gap: 24, fontSize: 12, color: T.text3, fontWeight: 700 }}>
+                        <span>Est. Budget: <strong style={{ color: "#085041" }}>${t.estimated_budget?.toLocaleString()}</strong></span>
+                        <span>EMD: <strong style={{ color: T.text1 }}>${t.emd_amount?.toLocaleString()}</strong></span>
+                        <span>Deadline: <strong style={{ color: isDeadlinePassed ? "#791F1F" : "#854F0B" }}>{t.bid_submission_deadline ? new Date(t.bid_submission_deadline).toLocaleDateString() : 'N/A'}</strong></span>
                       </div>
                     </div>
 
                     <button 
                       onClick={() => handleOpenBidModal(t)}
                       style={{
-                        padding: "12px 20px", borderRadius: 12,
+                        padding: "14px 24px", borderRadius: 14,
                         background: isDeadlinePassed
-                          ? "rgba(255,255,255,0.05)"
+                          ? T.raised
                           : existingBid
-                          ? "linear-gradient(135deg, #10b981, #059669)"
-                          : "linear-gradient(135deg, #0ea5e9, #8b5cf6)",
-                        color: isDeadlinePassed ? "rgba(255,255,255,0.4)" : "white",
-                        fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.08em",
-                        display: "inline-flex", alignItems: "center", gap: 6
+                          ? "#E1F5EE"
+                          : `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+                        color: isDeadlinePassed ? T.text3 : existingBid ? "#085041" : "white",
+                        fontSize: 12, fontWeight: 900, border: isDeadlinePassed || existingBid ? `1px solid ${isDeadlinePassed ? T.border : '#08504130'}` : "none", cursor: "pointer", textTransform: "uppercase", letterSpacing: "0.05em",
+                        display: "inline-flex", alignItems: "center", gap: 8,
+                        boxShadow: isDeadlinePassed ? SH.insetSoft : SH.raisedSm
                       }}>
-                      {isDeadlinePassed ? <Lock size={14} /> : existingBid ? <Edit3 size={14} /> : null}
+                      {isDeadlinePassed ? <Lock size={16} /> : existingBid ? <Edit3 size={16} /> : null}
                       {isDeadlinePassed ? "View Bid" : existingBid ? "Edit Bid" : "Submit Bid"}
                     </button>
                   </div>
@@ -730,23 +738,23 @@ export default function CompanyAdminDashboard() {
 
       {/* TAB 2: Awarded Tenders & Contracts */}
       {activeTab === 'AWARDED' && (
-        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1.5px solid rgba(255,255,255,0.05)", padding: 32 }}>
+        <div style={{ background: T.raised, borderRadius: 24, border: `1px solid ${T.border}`, padding: 32, boxShadow: SH.raised }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Awarded Tenders & Active Contracts</h2>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>Government contracts won by your company.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>Awarded Tenders & Active Contracts</h2>
+              <p style={{ fontSize: 13, color: T.text3, margin: "4px 0 0", fontWeight: 600 }}>Government contracts won by your company.</p>
             </div>
-            <Link href="/company-admin/contracts" style={{ padding: "10px 18px", borderRadius: 12, background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", fontSize: 12, fontWeight: 800, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-              View Contracts Page <ExternalLink size={14} />
+            <Link href="/company-admin/contracts" style={{ padding: "12px 20px", borderRadius: 14, background: "#E1F5EE", border: "1px solid #08504130", color: "#085041", fontSize: 13, fontWeight: 900, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: SH.raisedSm }}>
+              View Contracts Page <ExternalLink size={16} />
             </Link>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {myContractsList.length === 0 ? (
-              <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 20, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <Award size={40} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-                <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 4px" }}>No awarded contracts yet</h3>
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>Submit bids on open tenders to win government contracts.</p>
+              <div style={{ padding: 40, textAlign: "center", background: T.base, borderRadius: 20, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <Award size={48} color={T.text3} style={{ marginBottom: 12 }} />
+                <h3 style={{ fontSize: 18, fontWeight: 900, margin: "0 0 6px", color: T.text1 }}>No awarded contracts yet</h3>
+                <p style={{ fontSize: 14, color: T.text3, margin: 0, fontWeight: 500 }}>Submit bids on open tenders to win government contracts.</p>
               </div>
             ) : (
               myContractsList.map(c => {
@@ -755,27 +763,27 @@ export default function CompanyAdminDashboard() {
                 const tenderNum = c.tenders?.tender_number || `CNT-${c.id.slice(0, 8)}`;
 
                 return (
-                  <div key={c.id} style={{ padding: 24, borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(16, 185, 129, 0.2)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div key={c.id} style={{ padding: 24, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: SH.insetSoft }}>
                     <div>
-                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(16,185,129,0.15)", color: "#10b981", textTransform: "uppercase" }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 12px", borderRadius: 99, background: "#EAF3DE", color: "#27500A", textTransform: "uppercase", boxShadow: SH.raisedSm }}>
                           🏆 Contract Won ({c.status || 'Active'})
                         </span>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>
+                        <span style={{ fontSize: 11, color: T.text3, fontWeight: 800 }}>
                           {tenderNum}
                         </span>
                       </div>
-                      <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>{tenderTitle}</h3>
-                      <p style={{ fontSize: 13, color: "#0ea5e9", margin: "0 0 12px", fontWeight: 700 }}>{deptName}</p>
+                      <h3 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 6px", color: T.text1, letterSpacing: '-0.02em' }}>{tenderTitle}</h3>
+                      <p style={{ fontSize: 14, color: T.accentDark, margin: "0 0 16px", fontWeight: 800 }}>{deptName}</p>
                       
-                      <div style={{ display: "flex", gap: 20, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
-                        <span>Start: <strong style={{ color: "white" }}>{c.start_date ? new Date(c.start_date).toLocaleDateString() : 'N/A'}</strong></span>
-                        <span>End: <strong style={{ color: "white" }}>{c.end_date ? new Date(c.end_date).toLocaleDateString() : 'N/A'}</strong></span>
-                        <span>SLA: <strong style={{ color: "#fbbf24" }}>{c.sla_tier || 'Standard'}</strong></span>
+                      <div style={{ display: "flex", gap: 24, fontSize: 12, color: T.text3, fontWeight: 700 }}>
+                        <span>Start: <strong style={{ color: T.text1 }}>{c.start_date ? new Date(c.start_date).toLocaleDateString() : 'N/A'}</strong></span>
+                        <span>End: <strong style={{ color: T.text1 }}>{c.end_date ? new Date(c.end_date).toLocaleDateString() : 'N/A'}</strong></span>
+                        <span>SLA: <strong style={{ color: "#854F0B" }}>{c.sla_tier || 'Standard'}</strong></span>
                       </div>
                     </div>
 
-                    <Link href="/company-admin/contracts" style={{ padding: "12px 20px", borderRadius: 12, background: "linear-gradient(135deg, #10b981, #059669)", color: "white", fontSize: 12, fontWeight: 800, textDecoration: "none" }}>
+                    <Link href="/company-admin/contracts" style={{ padding: "14px 24px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 13, fontWeight: 900, textDecoration: "none", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                       Manage Contract
                     </Link>
                   </div>
@@ -788,47 +796,47 @@ export default function CompanyAdminDashboard() {
 
       {/* TAB 3: Employee Management */}
       {activeTab === 'EMPLOYEES' && (
-        <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1.5px solid rgba(255,255,255,0.05)", padding: 32 }}>
+        <div style={{ background: T.raised, borderRadius: 24, border: `1px solid ${T.border}`, padding: 32, boxShadow: SH.raised }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
             <div>
-              <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Company Personnel & Field Engineers</h2>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>Manage employees belonging to your company.</p>
+              <h2 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>Company Personnel & Field Engineers</h2>
+              <p style={{ fontSize: 13, color: T.text3, margin: "4px 0 0", fontWeight: 600 }}>Manage employees belonging to your company.</p>
             </div>
             <button
               onClick={() => {
                 setEmpForm({ id: '', fullName: '', email: '', phone: '', designation: 'Field Engineer', status: 'ACTIVE' });
                 setShowEmployeeModal(true);
               }}
-              style={{ padding: "12px 20px", borderRadius: 12, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 8 }}>
+              style={{ padding: "12px 20px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 13, fontWeight: 900, border: "none", cursor: "pointer", textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 8, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
               <UserPlus size={16} /> Add Employee
             </button>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {employees.length === 0 ? (
-              <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                <Users size={36} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No company employees added yet. Click "Add Employee" above.</p>
+              <div style={{ padding: 40, textAlign: "center", background: T.base, borderRadius: 20, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <Users size={48} color={T.text3} style={{ marginBottom: 12 }} />
+                <p style={{ fontSize: 14, color: T.text3, margin: 0, fontWeight: 600 }}>No company employees added yet. Click "Add Employee" above.</p>
               </div>
             ) : (
               employees.map(emp => (
-                <div key={emp.id} style={{ padding: 20, borderRadius: 16, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div key={emp.id} style={{ padding: 20, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", boxShadow: SH.insetSoft }}>
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                      <h4 style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>{emp.profiles?.full_name || emp.full_name || 'Company Employee'}</h4>
-                      <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 99, background: emp.availability === 'ACTIVE' ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", color: emp.availability === 'ACTIVE' ? "#10b981" : "#ef4444" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+                      <h4 style={{ fontSize: 18, fontWeight: 900, margin: 0, color: T.text1 }}>{emp.profiles?.full_name || emp.full_name || 'Company Employee'}</h4>
+                      <span style={{ fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 99, background: emp.availability === 'ACTIVE' ? "#EAF3DE" : "#FCEBEB", color: emp.availability === 'ACTIVE' ? "#27500A" : "#791F1F", boxShadow: SH.raisedSm }}>
                         {emp.availability || 'ACTIVE'}
                       </span>
                     </div>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0 }}>
-                      Designation: <strong style={{ color: "white" }}>{emp.designation || 'Field Engineer'}</strong> • ID: <span style={{ fontFamily: "monospace" }}>{emp.id.slice(0, 8)}</span>
+                    <p style={{ fontSize: 13, color: T.text2, margin: 0, fontWeight: 600 }}>
+                      Designation: <strong style={{ color: T.text1 }}>{emp.designation || 'Field Engineer'}</strong> • ID: <span style={{ fontFamily: "monospace" }}>{emp.id.slice(0, 8)}</span>
                     </p>
                   </div>
 
-                  <div style={{ display: "flex", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 12 }}>
                     <button
                       onClick={() => toggleEmployeeStatus(emp)}
-                      style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: emp.availability === 'ACTIVE' ? "#ef4444" : "#10b981", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ padding: "10px 16px", borderRadius: 12, background: T.raised, border: `1px solid ${T.border}`, color: emp.availability === 'ACTIVE' ? "#791F1F" : "#085041", fontSize: 12, fontWeight: 800, cursor: "pointer", boxShadow: SH.raisedSm }}>
                       {emp.availability === 'ACTIVE' ? 'Disable' : 'Enable'}
                     </button>
                     <button
@@ -843,7 +851,7 @@ export default function CompanyAdminDashboard() {
                         });
                         setShowEmployeeModal(true);
                       }}
-                      style={{ padding: "8px 14px", borderRadius: 10, background: "rgba(14, 165, 233, 0.15)", border: "1px solid rgba(14, 165, 233, 0.3)", color: "#0ea5e9", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                      style={{ padding: "10px 16px", borderRadius: 12, background: "#E6F1FB", border: "1px solid #0C447C30", color: "#0C447C", fontSize: 12, fontWeight: 800, cursor: "pointer", boxShadow: SH.raisedSm }}>
                       Edit
                     </button>
                   </div>
@@ -856,73 +864,73 @@ export default function CompanyAdminDashboard() {
 
       {/* Modal: Bid Submission / Edit */}
       {selectedTender && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#121215", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, width: "100%", maxWidth: 540, padding: 28 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(44,44,42,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 28, width: "100%", maxWidth: 540, padding: 32, boxShadow: SH.raised }}>
             
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
               <div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>
                   {myBidsMap[selectedTender.id] ? "Edit Submitted Bid" : "Submit Contractor Bid"}
                 </h3>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "4px 0 0" }}>{selectedTender.title} ({selectedTender.tender_number})</p>
+                <p style={{ fontSize: 13, color: T.text3, margin: "4px 0 0", fontWeight: 600 }}>{selectedTender.title} ({selectedTender.tender_number})</p>
               </div>
-              <button onClick={() => setSelectedTender(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>
-                <X size={20} />
+              <button onClick={() => setSelectedTender(null)} style={{ background: "none", border: "none", color: T.text3, cursor: "pointer", padding: 4 }}>
+                <X size={24} />
               </button>
             </div>
 
             {selectedTender.bid_submission_deadline && new Date() > new Date(selectedTender.bid_submission_deadline) ? (
-              <div style={{ padding: 20, borderRadius: 16, background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444", fontSize: 13, fontWeight: 700 }}>
+              <div style={{ padding: 24, borderRadius: 16, background: "#FCEBEB", border: "1px solid #791F1F30", color: "#791F1F", fontSize: 14, fontWeight: 800, boxShadow: SH.insetSoft }}>
                 🔒 The bid submission deadline for this tender has passed. This bid is now read-only.
                 {myBidsMap[selectedTender.id] && (
-                  <div style={{ marginTop: 12, color: "white", fontSize: 12 }}>
-                    Your Quoted Price: <strong>${myBidsMap[selectedTender.id].bid_amount?.toLocaleString()}</strong><br />
-                    Est. Days: <strong>{myBidsMap[selectedTender.id].estimated_completion_days} Days</strong>
+                  <div style={{ marginTop: 16, color: T.text1, fontSize: 13, fontWeight: 700, padding: 16, background: T.raised, borderRadius: 12, border: `1px solid ${T.border}` }}>
+                    Your Quoted Price: <strong style={{ fontSize: 15, color: "#085041" }}>${myBidsMap[selectedTender.id].bid_amount?.toLocaleString()}</strong><br />
+                    Est. Days: <strong style={{ fontSize: 15 }}>{myBidsMap[selectedTender.id].estimated_completion_days} Days</strong>
                   </div>
                 )}
               </div>
             ) : (
-              <form onSubmit={handleBidSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <form onSubmit={handleBidSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Your Proposed Bid Amount ($)</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Your Proposed Bid Amount ($)</label>
                   <input 
                     required
                     type="number"
                     value={bidForm.amount}
                     onChange={(e) => setBidForm({...bidForm, amount: e.target.value})}
-                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px 16px", color: "white", fontSize: 14, outline: "none" }}
+                    style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: "none", fontWeight: 600, boxShadow: SH.insetSoft }}
                     placeholder="e.g. 450000"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Est. Completion Time (Days)</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Est. Completion Time (Days)</label>
                   <input 
                     required
                     type="number"
                     value={bidForm.days}
                     onChange={(e) => setBidForm({...bidForm, days: e.target.value})}
-                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px 16px", color: "white", fontSize: 14, outline: "none" }}
+                    style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: "none", fontWeight: 600, boxShadow: SH.insetSoft }}
                     placeholder="e.g. 30"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Technical Proposal URL (Optional)</label>
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Technical Proposal URL (Optional)</label>
                   <input 
                     type="url"
                     value={bidForm.techDoc}
                     onChange={(e) => setBidForm({...bidForm, techDoc: e.target.value})}
-                    style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "12px 16px", color: "white", fontSize: 14, outline: "none" }}
+                    style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: "none", fontWeight: 600, boxShadow: SH.insetSoft }}
                     placeholder="https://..."
                   />
                 </div>
 
-                <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-                  <button type="button" onClick={() => setSelectedTender(null)} style={{ flex: 1, padding: 14, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
+                  <button type="button" onClick={() => setSelectedTender(null)} style={{ flex: 1, padding: 14, borderRadius: 14, background: T.base, border: `1px solid ${T.border}`, color: T.text1, fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: SH.raisedSm }}>
                     Cancel
                   </button>
-                  <button type="submit" disabled={submitting} style={{ flex: 2, padding: 14, borderRadius: 12, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", textTransform: "uppercase" }}>
+                  <button type="submit" disabled={submitting} style={{ flex: 2, padding: 14, borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 13, fontWeight: 900, border: "none", cursor: "pointer", textTransform: "uppercase", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                     {submitting ? 'Processing...' : myBidsMap[selectedTender.id] ? 'Update Bid' : 'Confirm Bid Submission'}
                   </button>
                 </div>
@@ -935,38 +943,38 @@ export default function CompanyAdminDashboard() {
 
       {/* Modal: Employee Create / Edit */}
       {showEmployeeModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#121215", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, width: "100%", maxWidth: 500, padding: 28 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(44,44,42,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 28, width: "100%", maxWidth: 500, padding: 32, boxShadow: SH.raised }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 900, margin: 0, color: T.text1, letterSpacing: '-0.02em' }}>
                 {empForm.id ? "Edit Employee" : "Create Company Employee"}
               </h3>
-              <button onClick={() => setShowEmployeeModal(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer" }}>
-                <X size={20} />
+              <button onClick={() => setShowEmployeeModal(false)} style={{ background: "none", border: "none", color: T.text3, cursor: "pointer", padding: 4 }}>
+                <X size={24} />
               </button>
             </div>
 
-            <form onSubmit={handleEmployeeSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <form onSubmit={handleEmployeeSubmit} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Full Name</label>
-                <input required type="text" value={empForm.fullName} onChange={(e) => setEmpForm({...empForm, fullName: e.target.value})} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "white", fontSize: 14 }} placeholder="John Doe" />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Full Name</label>
+                <input required type="text" value={empForm.fullName} onChange={(e) => setEmpForm({...empForm, fullName: e.target.value})} style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: 'none', fontWeight: 600, boxShadow: SH.insetSoft }} placeholder="John Doe" />
               </div>
 
               {!empForm.id && (
                 <div>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Email</label>
-                  <input required type="email" value={empForm.email} onChange={(e) => setEmpForm({...empForm, email: e.target.value})} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "white", fontSize: 14 }} placeholder="john@company.com" />
+                  <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Email</label>
+                  <input required type="email" value={empForm.email} onChange={(e) => setEmpForm({...empForm, email: e.target.value})} style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: 'none', fontWeight: 600, boxShadow: SH.insetSoft }} placeholder="john@company.com" />
                 </div>
               )}
 
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 6 }}>Designation</label>
-                <input required type="text" value={empForm.designation} onChange={(e) => setEmpForm({...empForm, designation: e.target.value})} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "10px 14px", color: "white", fontSize: 14 }} placeholder="Senior Field Engineer" />
+                <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 8, letterSpacing: '0.05em' }}>Designation</label>
+                <input required type="text" value={empForm.designation} onChange={(e) => setEmpForm({...empForm, designation: e.target.value})} style={{ width: "100%", background: T.base, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 15, outline: 'none', fontWeight: 600, boxShadow: SH.insetSoft }} placeholder="Senior Field Engineer" />
               </div>
 
-              <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-                <button type="button" onClick={() => setShowEmployeeModal(false)} style={{ flex: 1, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
-                <button type="submit" disabled={empSubmitting} style={{ flex: 2, padding: 12, borderRadius: 12, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer" }}>
+              <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
+                <button type="button" onClick={() => setShowEmployeeModal(false)} style={{ flex: 1, padding: 14, borderRadius: 14, background: T.base, border: `1px solid ${T.border}`, color: T.text1, fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: SH.raisedSm }}>Cancel</button>
+                <button type="submit" disabled={empSubmitting} style={{ flex: 2, padding: 14, borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 13, fontWeight: 900, border: "none", cursor: "pointer", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                   {empSubmitting ? 'Saving...' : 'Save Employee'}
                 </button>
               </div>

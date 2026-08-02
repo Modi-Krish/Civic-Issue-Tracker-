@@ -6,17 +6,38 @@ import { CheckCircle2, Clock, MapPin, Camera, Briefcase, ExternalLink, Navigatio
 import Link from 'next/link';
 import { sendSystemNotification } from '@/lib/client-actions/notifications';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-  REPORTED: { label: "Reported", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.1)" },
-  EMPLOYEE_ASSIGNED: { label: "Assigned To You", color: "#a78bfa", bg: "rgba(167, 139, 250, 0.15)" },
-  COMPANY_EMPLOYEE_ASSIGNED: { label: "Assigned To You", color: "#a78bfa", bg: "rgba(167, 139, 250, 0.15)" },
-  EMPLOYEE_ACCEPTED: { label: "Accepted", color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.15)" },
-  TRAVELLING: { label: "Travelling to Site", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
-  IN_PROGRESS: { label: "Work In Progress", color: "#fbbf24", bg: "rgba(251, 191, 36, 0.15)" },
-  SUBMITTED_FOR_APPROVAL: { label: "Pending Admin Review", color: "#a855f7", bg: "rgba(168, 85, 247, 0.15)" },
-  COMMUNITY_REVIEW: { label: "In Community Review", color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.15)" },
-  REJECTED: { label: "Needs Rework", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
-  CLOSED: { label: "Resolved", color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
+  REPORTED: { label: "Reported", color: "#0C447C", bg: "#E6F1FB" },
+  EMPLOYEE_ASSIGNED: { label: "Assigned To You", color: "#3C3489", bg: "#EEEDFE" },
+  COMPANY_EMPLOYEE_ASSIGNED: { label: "Assigned To You", color: "#3C3489", bg: "#EEEDFE" },
+  EMPLOYEE_ACCEPTED: { label: "Accepted", color: "#0C447C", bg: "#E6F1FB" },
+  TRAVELLING: { label: "Travelling to Site", color: "#854F0B", bg: "#FAEEDA" },
+  IN_PROGRESS: { label: "Work In Progress", color: "#27500A", bg: "#EAF3DE" },
+  SUBMITTED_FOR_APPROVAL: { label: "Pending Admin Review", color: "#854F0B", bg: "#FAEEDA" },
+  COMMUNITY_REVIEW: { label: "In Community Review", color: "#854F0B", bg: "#FAEEDA" },
+  REJECTED: { label: "Needs Rework", color: "#791F1F", bg: "#FCEBEB" },
+  CLOSED: { label: "Resolved", color: "#085041", bg: "#E1F5EE" },
 };
 
 export default function CompanyEmployeeDashboard() {
@@ -115,25 +136,19 @@ export default function CompanyEmployeeDashboard() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter', -apple-system, sans-serif", color: "#ffffff", paddingBottom: 100 }}>
-      {/* Ambient Backdrops */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -80, left: "10%", width: 400, height: 300, background: "radial-gradient(ellipse,rgba(59,130,246,0.06) 0%,transparent 70%)", borderRadius: "50%" }} />
-        <div style={{ position: "absolute", bottom: -80, right: "10%", width: 500, height: 400, background: "radial-gradient(ellipse,rgba(16,185,129,0.03) 0%,transparent 70%)", borderRadius: "50%" }} />
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1000, margin: "0 auto", padding: "0 24px" }}>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', sans-serif", color: T.text1, paddingBottom: 80, overflowX: "hidden" }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: "100%", margin: "0 auto", padding: "0 24px" }}>
 
         {/* Header */}
         <div style={{ padding: "40px 0 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "6px 14px", borderRadius: 99, background: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.2)", width: "fit-content" }}>
-            <Briefcase size={14} color="#3b82f6" />
-            <span style={{ fontSize: 11, fontWeight: 800, color: "#3b82f6", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "6px 14px", borderRadius: 99, background: "#EEEDFE", border: `1px solid ${T.border}`, width: "fit-content", boxShadow: SH.raisedSm }}>
+            <Briefcase size={14} color="#3C3489" />
+            <span style={{ fontSize: 11, fontWeight: 900, color: "#3C3489", textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Field Operations
             </span>
           </div>
-          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px" }}>Field Employee Dashboard</h1>
-          <p style={{ color: "rgba(255,255,255,0.4)", margin: 0, fontSize: 15, fontWeight: 500 }}>Assigned field resolution workflow & task execution.</p>
+          <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 8px", color: T.text1 }}>Field Employee Dashboard</h1>
+          <p style={{ color: T.text3, margin: 0, fontSize: 15, fontWeight: 600 }}>Assigned field resolution workflow & task execution.</p>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 24, alignItems: "start" }}>
@@ -141,41 +156,41 @@ export default function CompanyEmployeeDashboard() {
           {/* Task List */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <h2 style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>MY ASSIGNED JOBS</h2>
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)", fontWeight: 600 }}>{tasks.length} TOTAL</span>
+              <h2 style={{ fontSize: 13, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>MY ASSIGNED JOBS</h2>
+              <span style={{ fontSize: 12, color: T.text3, fontWeight: 800 }}>{tasks.length} TOTAL</span>
             </div>
 
             {loading ? (
-              <div style={{ textAlign: "center", padding: "60px 20px", background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#3b82f6', animation: 'spin 0.8s linear infinite', margin: "0 auto 16px" }} />
-                <div style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Syncing assignments...</div>
+              <div style={{ textAlign: "center", padding: "60px 20px", background: T.raised, borderRadius: 24, border: `1px solid ${T.border}`, boxShadow: SH.raised }}>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: 'spin 0.8s linear infinite', margin: "0 auto 16px" }} />
+                <div style={{ fontSize: 14, color: T.text3, fontWeight: 700 }}>Syncing assignments...</div>
               </div>
             ) : tasks.length === 0 ? (
-              <div style={{ padding: "60px 20px", textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 24, border: "1.5px dashed rgba(255,255,255,0.08)" }}>
-                <div style={{ width: 64, height: 64, borderRadius: 20, background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-                  <Briefcase size={28} color="#3b82f6" />
+              <div style={{ padding: "60px 20px", textAlign: "center", background: T.raised, borderRadius: 24, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", boxShadow: SH.raisedSm }}>
+                  <Briefcase size={28} color={T.accent} />
                 </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 8px" }}>No assigned tasks</h3>
-                <p style={{ fontSize: 14, color: "rgba(255,255,255,0.4)", margin: 0, maxWidth: 300, marginInline: "auto" }}>Tasks assigned by your Company Admin will appear here.</p>
+                <h3 style={{ fontSize: 18, fontWeight: 900, margin: "0 0 8px", color: T.text1 }}>No assigned tasks</h3>
+                <p style={{ fontSize: 14, color: T.text3, margin: 0, maxWidth: 300, marginInline: "auto", fontWeight: 500 }}>Tasks assigned by your Company Admin will appear here.</p>
               </div>
             ) : (
               tasks.map(task => {
                 const st = STATUS_STYLE[task.status] || STATUS_STYLE.REPORTED;
                 return (
-                  <div key={task.id} style={{ padding: 24, borderRadius: 24, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.08)", position: "relative", overflow: "hidden" }}>
+                  <div key={task.id} style={{ padding: 24, borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, position: "relative", overflow: "hidden", boxShadow: SH.raised }}>
                     <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 4, background: st.color }} />
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
-                        <Link href={`/issue?id=${task.id}`} style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 8, color: "white", textDecoration: "none" }}>
+                        <Link href={`/issue?id=${task.id}`} style={{ fontSize: 18, fontWeight: 900, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 8, color: T.text1, textDecoration: "none", letterSpacing: '-0.02em' }}>
                           {task.title}
-                          <ExternalLink size={14} color="rgba(255,255,255,0.3)" />
+                          <ExternalLink size={14} color={T.text3} />
                         </Link>
-                        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0, display: "flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
-                          <MapPin size={14} color="#3b82f6" /> {task.location_label || `${task.location_lat}, ${task.location_lng}`}
+                        <p style={{ fontSize: 13, color: T.text2, margin: 0, display: "flex", alignItems: "center", gap: 6, fontWeight: 600 }}>
+                          <MapPin size={14} color={T.accent} /> {task.location_label || `${task.location_lat}, ${task.location_lng}`}
                         </p>
                       </div>
-                      <span style={{ padding: "6px 12px", borderRadius: 10, background: st.bg, color: st.color, fontSize: 11, fontWeight: 800, border: `1px solid ${st.color}25`, whiteSpace: "nowrap" }}>
+                      <span style={{ padding: "6px 12px", borderRadius: 10, background: st.bg, color: st.color, fontSize: 10, fontWeight: 900, border: `1px solid ${st.color}25`, whiteSpace: "nowrap", boxShadow: SH.raisedSm }}>
                         {st.label.toUpperCase()}
                       </span>
                     </div>
@@ -188,7 +203,7 @@ export default function CompanyEmployeeDashboard() {
                         <button
                           onClick={() => updateTaskStatus(task.id, 'EMPLOYEE_ACCEPTED')}
                           disabled={updating}
-                          style={{ flex: 1, padding: "12px 18px", borderRadius: 12, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          style={{ flex: 1, padding: "12px 18px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                           <CheckCircle2 size={16} /> Accept Issue
                         </button>
                       )}
@@ -198,7 +213,7 @@ export default function CompanyEmployeeDashboard() {
                         <button
                           onClick={() => updateTaskStatus(task.id, 'TRAVELLING')}
                           disabled={updating}
-                          style={{ flex: 1, padding: "12px 18px", borderRadius: 12, background: "linear-gradient(135deg, #f59e0b, #d97706)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          style={{ flex: 1, padding: "12px 18px", borderRadius: 14, background: "linear-gradient(135deg, #854F0B, #712B13)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: SH.raisedSm }}>
                           <Navigation size={16} /> Start Travel to Site
                         </button>
                       )}
@@ -208,7 +223,7 @@ export default function CompanyEmployeeDashboard() {
                         <button
                           onClick={() => setActiveTask({ ...task, mode: 'BEFORE_PHOTOS' })}
                           disabled={updating}
-                          style={{ flex: 1, padding: "12px 18px", borderRadius: 12, background: "linear-gradient(135deg, #10b981, #059669)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                          style={{ flex: 1, padding: "12px 18px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                           <Camera size={16} /> Upload Before Photos & Start Work
                         </button>
                       )}
@@ -218,19 +233,19 @@ export default function CompanyEmployeeDashboard() {
                         <>
                           <button
                             onClick={() => setActiveTask({ ...task, mode: 'PROGRESS' })}
-                            style={{ flex: 1, padding: "12px 18px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                            <ImageIcon size={16} /> Add Progress Photo
+                            style={{ flex: 1, padding: "12px 18px", borderRadius: 14, background: T.base, border: `1px solid ${T.border}`, color: T.text1, fontSize: 12, fontWeight: 800, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: SH.raisedSm }}>
+                            <ImageIcon size={16} color={T.accent} /> Add Progress Photo
                           </button>
                           <button
                             onClick={() => setActiveTask({ ...task, mode: 'AFTER_PHOTOS' })}
-                            style={{ flex: 1, padding: "12px 18px", borderRadius: 12, background: "linear-gradient(135deg, #10b981, #059669)", color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                            style={{ flex: 1, padding: "12px 18px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 12, fontWeight: 800, border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                             <CheckCircle2 size={16} /> Complete Work & Submit
                           </button>
                         </>
                       )}
 
                       {task.status === 'SUBMITTED_FOR_APPROVAL' && (
-                        <div style={{ width: "100%", padding: 12, borderRadius: 12, background: "rgba(168, 85, 247, 0.1)", border: "1px solid rgba(168, 85, 247, 0.3)", color: "#a855f7", fontSize: 12, fontWeight: 700, textAlign: "center" }}>
+                        <div style={{ width: "100%", padding: 14, borderRadius: 14, background: "#FAEEDA", border: "1px solid #854F0B30", color: "#854F0B", fontSize: 12, fontWeight: 800, textAlign: "center", boxShadow: SH.insetSoft }}>
                           ⏳ Submitted for Company Admin Review
                         </div>
                       )}
@@ -242,23 +257,23 @@ export default function CompanyEmployeeDashboard() {
           </div>
 
           {/* Sidebar Info */}
-          <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 28, border: "1.5px solid rgba(255,255,255,0.05)", padding: 24 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 800, margin: "0 0 16px", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>WORKFLOW STEPS</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#0ea5e9", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>1</span>
+          <div style={{ background: T.raised, borderRadius: 28, border: `1px solid ${T.border}`, padding: 28, boxShadow: SH.raised }}>
+            <h2 style={{ fontSize: 13, fontWeight: 900, margin: "0 0 16px", color: T.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>WORKFLOW STEPS</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16, fontSize: 13, color: T.text2, fontWeight: 600 }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#E6F1FB", color: "#0C447C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, boxShadow: SH.raisedSm }}>1</span>
                 <span>Accept Assigned Issue</span>
               </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#f59e0b", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>2</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#FAEEDA", color: "#854F0B", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, boxShadow: SH.raisedSm }}>2</span>
                 <span>Travel to Site</span>
               </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#3b82f6", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>3</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#E6F1FB", color: "#0C447C", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, boxShadow: SH.raisedSm }}>3</span>
                 <span>Upload Before Photos & Start</span>
               </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={{ width: 24, height: 24, borderRadius: "50%", background: "#10b981", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>4</span>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#E1F5EE", color: "#085041", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, boxShadow: SH.raisedSm }}>4</span>
                 <span>Upload After Photos & Complete</span>
               </div>
             </div>
@@ -269,37 +284,28 @@ export default function CompanyEmployeeDashboard() {
 
       {/* Modal for Photo Uploads */}
       {activeTask && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div style={{ background: "#121215", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 28 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 6px" }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(44,44,42,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: 28, width: "100%", maxWidth: 480, padding: 32, boxShadow: SH.raised }}>
+            <h3 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 6px", color: T.text1, letterSpacing: '-0.02em' }}>
               {activeTask.mode === 'BEFORE_PHOTOS' ? 'Upload Before Photos & Start Work' : activeTask.mode === 'PROGRESS' ? 'Upload Progress Update' : 'Upload After Photos & Complete Work'}
             </h3>
-            <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: "0 0 20px" }}>{activeTask.title}</p>
+            <p style={{ fontSize: 13, color: T.text3, margin: "0 0 24px", fontWeight: 600 }}>{activeTask.title}</p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.6)", textTransform: "uppercase", marginBottom: 8 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginBottom: 10, letterSpacing: '0.05em' }}>
                   Upload Photo File
                 </label>
 
                 <label style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  padding: "24px",
-                  borderRadius: 16,
-                  border: "2px dashed rgba(16, 185, 129, 0.4)",
-                  background: "rgba(16, 185, 129, 0.05)",
-                  cursor: "pointer",
-                  textAlign: "center"
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10,
+                  padding: "32px", borderRadius: 20, border: `2px dashed ${T.accent}80`, background: T.base, cursor: "pointer", textAlign: "center", boxShadow: SH.insetSoft
                 }}>
-                  <Camera size={32} color="#10b981" />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "white" }}>
+                  <Camera size={36} color={T.accent} />
+                  <span style={{ fontSize: 14, fontWeight: 900, color: T.text1 }}>
                     {selectedFile ? selectedFile.name : "Click here to choose image file"}
                   </span>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Select photo from device / camera</span>
+                  <span style={{ fontSize: 12, color: T.text3, fontWeight: 600 }}>Select photo from device / camera</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -309,19 +315,19 @@ export default function CompanyEmployeeDashboard() {
                 </label>
 
                 {(filePreview || (activeTask.mode === 'BEFORE_PHOTOS' ? photoInput.beforeUrl : activeTask.mode === 'PROGRESS' ? photoInput.progressUrl : photoInput.afterUrl)) && (
-                  <div style={{ marginTop: 12, textAlign: "center" }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.4)", marginBottom: 4 }}>SELECTED PHOTO PREVIEW</div>
+                  <div style={{ marginTop: 16, textAlign: "center" }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: T.text3, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SELECTED PHOTO PREVIEW</div>
                     <img 
                       src={filePreview || (activeTask.mode === 'BEFORE_PHOTOS' ? photoInput.beforeUrl : activeTask.mode === 'PROGRESS' ? photoInput.progressUrl : photoInput.afterUrl)} 
                       alt="Preview" 
-                      style={{ width: "100%", maxHeight: 180, borderRadius: 12, objectFit: "cover", border: "1px solid rgba(255,255,255,0.15)" }} 
+                      style={{ width: "100%", maxHeight: 200, borderRadius: 16, objectFit: "cover", border: `1px solid ${T.border}`, boxShadow: SH.raisedSm }} 
                     />
                   </div>
                 )}
               </div>
 
-              <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-                <button type="button" onClick={() => { setActiveTask(null); setSelectedFile(null); setFilePreview(null); }} style={{ flex: 1, padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Cancel</button>
+              <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+                <button type="button" onClick={() => { setActiveTask(null); setSelectedFile(null); setFilePreview(null); }} style={{ flex: 1, padding: 14, borderRadius: 14, background: T.base, border: `1px solid ${T.border}`, color: T.text1, fontSize: 13, fontWeight: 800, cursor: "pointer", boxShadow: SH.raisedSm }}>Cancel</button>
                 <button
                   type="button"
                   disabled={updating || (!filePreview && !(activeTask.mode === 'BEFORE_PHOTOS' ? photoInput.beforeUrl : activeTask.mode === 'PROGRESS' ? photoInput.progressUrl : photoInput.afterUrl))}
@@ -337,7 +343,7 @@ export default function CompanyEmployeeDashboard() {
                     setSelectedFile(null);
                     setFilePreview(null);
                   }}
-                  style={{ flex: 2, padding: 12, borderRadius: 12, background: "linear-gradient(135deg, #10b981, #059669)", color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", opacity: (!filePreview && !(activeTask.mode === 'BEFORE_PHOTOS' ? photoInput.beforeUrl : activeTask.mode === 'PROGRESS' ? photoInput.progressUrl : photoInput.afterUrl)) ? 0.5 : 1 }}>
+                  style={{ flex: 2, padding: 14, borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 13, fontWeight: 800, border: "none", cursor: "pointer", opacity: (!filePreview && !(activeTask.mode === 'BEFORE_PHOTOS' ? photoInput.beforeUrl : activeTask.mode === 'PROGRESS' ? photoInput.progressUrl : photoInput.afterUrl)) ? 0.5 : 1, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                   {updating ? 'Uploading...' : 'Confirm Step'}
                 </button>
               </div>

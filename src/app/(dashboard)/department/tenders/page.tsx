@@ -7,6 +7,26 @@ import Link from 'next/link';
 import { FileText, ArrowLeft, Edit2, Calendar, DollarSign, CheckCircle, Clock, AlertTriangle, ShieldCheck, XCircle } from 'lucide-react';
 import type { Tender } from '@/lib/types/database';
 
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 export default function ManageTendersPage() {
   const { profile, loading: authLoading } = useAuth();
   const [tenders, setTenders] = useState<Tender[]>([]);
@@ -72,107 +92,111 @@ export default function ManageTendersPage() {
     }
   };
 
-  if (authLoading || loading) return <div className="min-h-screen bg-[#0d0d0f]" />;
+  if (authLoading || loading) {
+    return (
+      <div style={{ minHeight: "100dvh", background: T.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 44, height: 44, borderRadius: "50%", border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: "spin 0.8s linear infinite" }} />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0d0d0f] text-white p-6 font-['Inter'] pb-24">
-      {/* CSS to hide scrollbars */}
+    <div style={{ minHeight: "100dvh", background: T.base, color: T.text1, padding: "24px 16px 100px", fontFamily: "'Inter',-apple-system,sans-serif" }}>
       <style>{`
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div style={{ maxWidth: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
         
         {/* Header */}
         <div>
-          <Link href="/department" className="inline-flex items-center gap-2 text-sm text-white/40 hover:text-white transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" />
+          <Link href="/department" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text3, fontWeight: 700, textDecoration: "none", marginBottom: 16 }}>
+            <ArrowLeft size={16} />
             Back to Operational Queue
           </Link>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-[#0ea5e9]/20 to-[#8b5cf6]/20 text-[#0ea5e9]">
-                <FileText className="w-7 h-7" />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div style={{ width: 56, height: 56, borderRadius: 16, background: T.raised, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accentDark, boxShadow: SH.raisedSm }}>
+                <FileText size={28} />
               </div>
               <div>
-                <h1 className="text-3xl font-black tracking-tight">Tender Management Portal</h1>
-                <p className="text-white/40 text-sm mt-1">Review, monitor, and edit all published department tenders.</p>
+                <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 4px", color: T.text1 }}>Tender Management Portal</h1>
+                <p style={{ color: T.text3, fontSize: 13, margin: 0, fontWeight: 600 }}>Review, monitor, and edit all published department tenders.</p>
               </div>
             </div>
           </div>
         </div>
 
         {toast && (
-          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-sm">
+          <div style={{ padding: 16, borderRadius: 16, background: "#EAF3DE", border: "1px solid #27500A30", color: "#27500A", fontWeight: 800, fontSize: 14, boxShadow: SH.insetSoft }}>
             {toast}
           </div>
         )}
 
         {/* Tenders List */}
-        <div className="space-y-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {tenders.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-white/[0.02] border border-white/[0.05]">
-              <FileText className="w-12 h-12 text-white/20 mx-auto mb-3" />
-              <p className="text-white/40 text-sm font-semibold">No tenders have been published yet.</p>
+            <div style={{ padding: 48, textAlign: "center", borderRadius: 24, background: T.base, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+              <FileText size={48} color={T.text3} style={{ margin: "0 auto 12px" }} />
+              <p style={{ color: T.text3, fontSize: 14, fontWeight: 700, margin: 0 }}>No tenders have been published yet.</p>
             </div>
           ) : (
             tenders.map((t) => (
-              <div key={t.id} className="p-6 rounded-3xl bg-white/[0.02] border border-white/[0.06] hover:border-white/10 transition-all space-y-4">
-                <div className="flex items-start justify-between">
+              <div key={t.id} style={{ padding: 24, borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-black uppercase tracking-wider text-[#0ea5e9] bg-[#0ea5e9]/10 px-3 py-1 rounded-full border border-[#0ea5e9]/20">
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", color: "#0C447C", background: "#E6F1FB", border: "1px solid #0C447C30", padding: "4px 12px", borderRadius: 99, boxShadow: SH.raisedSm }}>
                         {t.tender_number}
                       </span>
-                      <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
-                        t.status === 'Published' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                        t.status === 'Closed' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                        t.status === 'Awarded' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                        'bg-white/5 text-white/50 border-white/10'
-                      }`}>
+                      <span style={{ fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.08em", padding: "4px 12px", borderRadius: 99, 
+                        background: t.status === 'Published' ? "#EAF3DE" : t.status === 'Closed' ? "#FAEEDA" : t.status === 'Awarded' ? "#EEEDFE" : T.raised,
+                        color: t.status === 'Published' ? "#27500A" : t.status === 'Closed' ? "#854F0B" : t.status === 'Awarded' ? "#3C3489" : T.text3,
+                        border: t.status === 'Published' ? "none" : t.status === 'Closed' ? "none" : t.status === 'Awarded' ? "none" : `1px solid ${T.border}`,
+                        boxShadow: SH.raisedSm
+                      }}>
                         {t.status}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-white">{t.title}</h3>
-                    <p className="text-white/50 text-sm mt-1 line-clamp-2">{t.description}</p>
+                    <h3 style={{ fontSize: 20, fontWeight: 900, color: T.text1, margin: "0 0 8px" }}>{t.title}</h3>
+                    <p style={{ color: T.text3, fontSize: 14, margin: 0, fontWeight: 600, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{t.description}</p>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <Link
                       href={`/admin/tenders/evaluate?tender_id=${t.id}`}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0ea5e9]/10 border border-[#0ea5e9]/20 hover:bg-[#0ea5e9]/20 text-xs font-bold uppercase tracking-wider text-[#0ea5e9] transition-colors"
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 14, background: "#E6F1FB", border: "1px solid #0C447C30", fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.05em", color: "#0C447C", textDecoration: "none", boxShadow: SH.raisedSm }}
                     >
                       Evaluate Bids
                     </Link>
                     <button 
                       onClick={() => setEditingTender(t)}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-bold uppercase tracking-wider text-white transition-colors"
+                      style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 14, background: T.raised, border: `1px solid ${T.border}`, fontSize: 12, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.05em", color: T.text1, cursor: "pointer", boxShadow: SH.raisedSm }}
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <Edit2 size={16} />
                       Edit Tender
                     </button>
                   </div>
                 </div>
 
-
                 {/* Details grid */}
-                <div className="grid grid-cols-4 gap-4 pt-4 border-t border-white/[0.04] text-xs">
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16, paddingTop: 20, borderTop: `1px solid ${T.border}` }}>
                   <div>
-                    <span className="text-white/40 uppercase tracking-widest block mb-1">Tender Type</span>
-                    <span className="font-semibold text-white/90">{t.tender_type}</span>
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3, fontWeight: 900, display: "block", marginBottom: 4 }}>Tender Type</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: T.text1 }}>{t.tender_type}</span>
                   </div>
                   <div>
-                    <span className="text-white/40 uppercase tracking-widest block mb-1">Est. Budget</span>
-                    <span className="font-bold text-emerald-400">${t.estimated_budget?.toLocaleString()}</span>
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3, fontWeight: 900, display: "block", marginBottom: 4 }}>Est. Budget</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: T.accentDark }}>${t.estimated_budget?.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="text-white/40 uppercase tracking-widest block mb-1">EMD Deposit</span>
-                    <span className="font-semibold text-white/90">${t.emd_amount?.toLocaleString()}</span>
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3, fontWeight: 900, display: "block", marginBottom: 4 }}>EMD Deposit</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: T.text1 }}>${t.emd_amount?.toLocaleString()}</span>
                   </div>
                   <div>
-                    <span className="text-white/40 uppercase tracking-widest block mb-1">Bid Deadline</span>
-                    <span className="font-semibold text-amber-400">
+                    <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: T.text3, fontWeight: 900, display: "block", marginBottom: 4 }}>Bid Deadline</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: "#854F0B" }}>
                       {t.bid_submission_deadline ? new Date(t.bid_submission_deadline).toLocaleDateString() : 'N/A'}
                     </span>
                   </div>
@@ -185,36 +209,36 @@ export default function ManageTendersPage() {
 
       {/* Edit Modal */}
       {editingTender && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-[#121215] border border-white/10 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar p-6 space-y-6">
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
+          <div style={{ background: T.base, border: `1px solid ${T.border}`, borderRadius: 24, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", padding: 32, boxShadow: SH.raised }} className="no-scrollbar">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.border}`, paddingBottom: 24, marginBottom: 24 }}>
               <div>
-                <h2 className="text-xl font-bold">Edit Tender ({editingTender.tender_number})</h2>
-                <p className="text-xs text-white/40 mt-1">Modify tender terms, budget, or update workflow status.</p>
+                <h2 style={{ fontSize: 24, fontWeight: 900, color: T.text1, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Edit Tender ({editingTender.tender_number})</h2>
+                <p style={{ fontSize: 13, color: T.text3, margin: 0, fontWeight: 600 }}>Modify tender terms, budget, or update workflow status.</p>
               </div>
-              <button onClick={() => setEditingTender(null)} className="text-white/40 hover:text-white text-lg">✕</button>
+              <button onClick={() => setEditingTender(null)} style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: "50%", width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", color: T.text3, cursor: "pointer", boxShadow: SH.raisedSm, fontSize: 16, fontWeight: 900 }}>✕</button>
             </div>
 
-            <form onSubmit={handleUpdate} className="space-y-4 text-xs">
+            <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
               
               <div>
-                <label className="block font-bold text-white/70 mb-1">Title</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Title</label>
                 <input 
                   type="text" 
                   value={editingTender.title} 
                   onChange={(e) => setEditingTender({...editingTender, title: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white" 
+                  style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box" }} 
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label className="block font-bold text-white/70 mb-1">Status</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Status</label>
                   <select 
                     value={editingTender.status} 
                     onChange={(e) => setEditingTender({...editingTender, status: e.target.value as any})}
-                    className="w-full bg-[#1c1c22] border border-white/10 rounded-xl px-4 py-2.5 text-white"
+                    style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box", cursor: "pointer" }}
                   >
                     <option value="Published">Published</option>
                     <option value="Evaluation">Evaluation</option>
@@ -225,11 +249,11 @@ export default function ManageTendersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-white/70 mb-1">Tender Type</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Tender Type</label>
                   <select 
                     value={editingTender.tender_type} 
                     onChange={(e) => setEditingTender({...editingTender, tender_type: e.target.value as any})}
-                    className="w-full bg-[#1c1c22] border border-white/10 rounded-xl px-4 py-2.5 text-white"
+                    style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box", cursor: "pointer" }}
                   >
                     <option value="Open Tender">Open Tender</option>
                     <option value="Limited Tender">Limited Tender</option>
@@ -239,59 +263,59 @@ export default function ManageTendersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
                 <div>
-                  <label className="block font-bold text-white/70 mb-1">Estimated Budget ($)</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Estimated Budget ($)</label>
                   <input 
                     type="number" 
                     value={editingTender.estimated_budget} 
                     onChange={(e) => setEditingTender({...editingTender, estimated_budget: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white" 
+                    style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box" }} 
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-white/70 mb-1">EMD Deposit ($)</label>
+                  <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>EMD Deposit ($)</label>
                   <input 
                     type="number" 
                     value={editingTender.emd_amount} 
                     onChange={(e) => setEditingTender({...editingTender, emd_amount: parseFloat(e.target.value) || 0})}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white" 
+                    style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box" }} 
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-bold text-white/70 mb-1">Description</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Description</label>
                 <textarea 
                   rows={3} 
                   value={editingTender.description || ''} 
                   onChange={(e) => setEditingTender({...editingTender, description: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white" 
+                  style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box", resize: "vertical" }} 
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-white/70 mb-1">Scope of Work</label>
+                <label style={{ display: "block", fontSize: 12, fontWeight: 900, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Scope of Work</label>
                 <textarea 
                   rows={4} 
                   value={editingTender.scope_of_work || ''} 
                   onChange={(e) => setEditingTender({...editingTender, scope_of_work: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white" 
+                  style={{ width: "100%", background: T.raised, border: `1px solid ${T.border}`, borderRadius: 14, padding: "14px 16px", color: T.text1, fontSize: 14, fontWeight: 700, outline: "none", boxShadow: SH.insetSoft, boxSizing: "border-box", resize: "vertical" }} 
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, paddingTop: 24, borderTop: `1px solid ${T.border}`, marginTop: 8 }}>
                 <button 
                   type="button" 
                   onClick={() => setEditingTender(null)}
-                  className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold"
+                  style={{ padding: "12px 24px", borderRadius: 14, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", cursor: "pointer", boxShadow: SH.raisedSm }}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
                   disabled={isUpdating}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0ea5e9] to-[#8b5cf6] text-white font-bold uppercase tracking-wider disabled:opacity-50"
+                  style={{ padding: "12px 24px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.05em", border: "none", cursor: "pointer", boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40`, opacity: isUpdating ? 0.5 : 1 }}
                 >
                   {isUpdating ? 'Saving...' : 'Save Changes'}
                 </button>

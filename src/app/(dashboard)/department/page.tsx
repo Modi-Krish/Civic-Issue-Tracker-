@@ -9,6 +9,28 @@ import type { Issue } from '@/lib/types/database';
 import DepartmentActions from '@/components/department/DepartmentActions';
 import PublishTenderModal from '@/components/ui/PublishTenderModal';
 
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  inset:    `inset 5px 5px 10px ${T.shD}, inset -5px -5px 10px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 export default function DepartmentPage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [dept, setDept] = useState<any>(null);
@@ -164,19 +186,20 @@ export default function DepartmentPage() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#FF2E11', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ minHeight: '100dvh', background: T.base, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: 'spin 0.8s linear infinite' }} />
+        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin { to { transform: rotate(360deg); } }' }} />
       </div>
     );
   }
 
   if (!profile?.department_id) {
     return (
-      <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: "100dvh", background: T.base, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center", padding: 40 }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🏛️</div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>NO DEPARTMENT ASSIGNED</p>
-          <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 8 }}>Contact system administrator to link your account.</p>
+          <p style={{ fontSize: 13, color: T.text3, fontWeight: 800 }}>NO DEPARTMENT ASSIGNED</p>
+          <p style={{ fontSize: 11, color: T.text2, marginTop: 8 }}>Contact system administrator to link your account.</p>
         </div>
       </div>
     );
@@ -194,55 +217,50 @@ export default function DepartmentPage() {
     : '4.7';
 
   const STATUS_STYLE: Record<string, { label: string; color: string; bg: string }> = {
-    REPORTED:               { label: "Reported",         color: "#3b82f6", bg: "rgba(59, 130, 246, 0.15)" },
-    DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   color: "#0ea5e9", bg: "rgba(14, 165, 233, 0.15)" },
-    COMPANY_ASSIGNED:       { label: "Contractor Assigned", color: "#a78bfa", bg: "rgba(167, 139, 250, 0.15)" },
-    EMPLOYEE_ASSIGNED:      { label: "Staff Assigned",   color: "#a78bfa", bg: "rgba(167, 139, 250, 0.15)" },
-    IN_PROGRESS:            { label: "Working",          color: "#fbbf24", bg: "rgba(251, 191, 36, 0.15)" },
-    SUBMITTED_FOR_APPROVAL: { label: "Needs Approval",   color: "#a855f7", bg: "rgba(168, 85, 247, 0.18)" },
-    COMMUNITY_REVIEW:       { label: "Community Review", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.15)" },
-    COMMUNITY_REJECTED:     { label: "Rejected (Comm)",  color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
-    VERIFIED:               { label: "Verified",         color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
-    APPROVED:               { label: "Approved",         color: "#10b981", bg: "rgba(16, 185, 129, 0.15)" },
-    REJECTED:               { label: "Rejected",         color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)" },
-    CLOSED:                 { label: "Resolved",         color: "rgba(255, 255, 255, 0.5)", bg: "rgba(255, 255, 255, 0.05)" },
+    REPORTED:               { label: "Reported",         color: "#0C447C", bg: "#E6F1FB" },
+    DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   color: "#3C3489", bg: "#EEEDFE" },
+    COMPANY_ASSIGNED:       { label: "Contractor Assigned", color: "#3C3489", bg: "#EEEDFE" },
+    EMPLOYEE_ASSIGNED:      { label: "Staff Assigned",   color: "#3C3489", bg: "#EEEDFE" },
+    IN_PROGRESS:            { label: "Working",          color: "#27500A", bg: "#EAF3DE" },
+    SUBMITTED_FOR_APPROVAL: { label: "Needs Approval",   color: "#854F0B", bg: "#FAEEDA" },
+    COMMUNITY_REVIEW:       { label: "Community Review", color: "#854F0B", bg: "#FAEEDA" },
+    COMMUNITY_REJECTED:     { label: "Rejected (Comm)",  color: "#791F1F", bg: "#FCEBEB" },
+    VERIFIED:               { label: "Verified",         color: "#085041", bg: "#E1F5EE" },
+    APPROVED:               { label: "Approved",         color: "#085041", bg: "#E1F5EE" },
+    REJECTED:               { label: "Rejected",         color: "#791F1F", bg: "#FCEBEB" },
+    CLOSED:                 { label: "Resolved",         color: "#085041", bg: "#E1F5EE" },
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter', -apple-system, sans-serif", color: "#ffffff", paddingBottom: 60 }}>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter', -apple-system, sans-serif", color: T.text1, paddingBottom: 60 }}>
       
-      {/* Ambient background */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -100, left: "10%", width: 500, height: 350, background: "radial-gradient(ellipse,rgba(167,139,250,0.05) 0%,transparent 70%)", borderRadius: "50%" }} />
-      </div>
-
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 1100, margin: "0 auto", padding: "0 24px" }}>
+      <div style={{ maxWidth: "100%", margin: "0 auto", padding: "0 24px" }}>
 
         {errorToast && (
-          <div style={{ padding: "14px", borderRadius: 14, background: "rgba(239, 68, 68, 0.1)", border: "1.5px solid rgba(239, 68, 68, 0.3)", fontSize: 13, color: "#ef4444", fontWeight: 700, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ padding: "14px", borderRadius: 14, background: "#FCEBEB", border: "1.5px solid #791F1F", fontSize: 13, color: "#791F1F", fontWeight: 700, marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>⚠️ {errorToast}</span>
-            <button onClick={() => setErrorToast(null)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 16 }}>×</button>
+            <button onClick={() => setErrorToast(null)} style={{ background: "none", border: "none", color: "#791F1F", cursor: "pointer", fontSize: 16 }}>×</button>
           </div>
         )}
 
         {/* Header */}
         <div style={{ padding: "32px 0 24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "4px 12px", borderRadius: 99, background: "rgba(167, 139, 250, 0.1)", border: "1px solid rgba(167, 139, 250, 0.2)", width: "fit-content" }}>
-              <Building2 size={12} color="#a78bfa" />
-              <span style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, padding: "4px 12px", borderRadius: 99, background: "#EEEDFE", border: `1px solid ${T.border}`, width: "fit-content", boxShadow: SH.raisedSm }}>
+              <Building2 size={12} color="#3C3489" />
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#3C3489", textTransform: "uppercase", letterSpacing: "0.1em" }}>
                 {dept?.name || 'Department'} Division
               </span>
             </div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>Department Governance</h1>
+            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>Department Governance</h1>
           </div>
 
           {dept?.management_mode === 'TENDER' && (
             <div style={{ display: "flex", gap: 10 }}>
-              <Link href="/department/tenders" style={{ padding: "10px 18px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 12, fontWeight: 800, textTransform: "uppercase", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <FileText size={14} /> Tenders Portal
+              <Link href="/department/tenders" style={{ padding: "10px 18px", borderRadius: 14, background: T.raised, border: `1px solid ${T.border}`, color: T.text1, fontSize: 12, fontWeight: 800, textTransform: "uppercase", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: SH.raisedSm }}>
+                <FileText size={14} color={T.accent} /> Tenders Portal
               </Link>
-              <button onClick={() => setIsModalOpen(true)} style={{ padding: "10px 18px", borderRadius: 12, background: "linear-gradient(135deg, #0ea5e9, #8b5cf6)", color: "white", fontSize: 12, fontWeight: 800, textTransform: "uppercase", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}>
+              <button onClick={() => setIsModalOpen(true)} style={{ padding: "10px 18px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`, color: "white", fontSize: 12, fontWeight: 800, textTransform: "uppercase", border: "none", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: `${SH.raisedSm}, 0 4px 12px ${T.accent}40` }}>
                 <FileText size={14} /> Publish Tender
               </button>
             </div>
@@ -250,7 +268,7 @@ export default function DepartmentPage() {
         </div>
 
         {/* Navigation Tabs */}
-        <div style={{ display: "flex", gap: 12, marginBottom: 28, borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: 16 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 28, borderBottom: `1px solid ${T.border}`, paddingBottom: 16 }}>
           {[
             { key: 'QUEUE', label: 'Operational Queue', icon: Activity },
             { key: 'ANALYTICS', label: 'Outsourced Contractor Analytics', icon: PieChart },
@@ -263,10 +281,11 @@ export default function DepartmentPage() {
                 key={tab.key}
                 onClick={() => setViewTab(tab.key as any)}
                 style={{
-                  padding: "10px 20px", borderRadius: 12,
-                  background: isSelected ? "linear-gradient(135deg, #0ea5e9, #8b5cf6)" : "rgba(255,255,255,0.03)",
-                  color: isSelected ? "white" : "rgba(255,255,255,0.6)",
-                  fontSize: 12, fontWeight: 800, border: isSelected ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  padding: "10px 20px", borderRadius: 14,
+                  background: isSelected ? T.raised : 'transparent',
+                  color: isSelected ? T.accentDark : T.text3,
+                  fontSize: 12, fontWeight: 800, border: isSelected ? `1px solid ${T.border}` : "1px solid transparent",
+                  boxShadow: isSelected ? SH.raisedSm : 'none',
                   cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 8
                 }}>
                 <Icon size={14} />
@@ -280,20 +299,20 @@ export default function DepartmentPage() {
         {viewTab === 'QUEUE' && (
           <div>
             {/* Quick Stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 28 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 28 }}>
               {[
-                { icon: AlertTriangle, label: "To Assign",    value: pendingAssignment.length, color: "#fbbf24", bg: "rgba(251, 191, 36, 0.08)" },
-                { icon: Clock,          label: "In Progress",  value: inProgress.length,        color: "#a78bfa", bg: "rgba(167, 139, 250, 0.08)" },
-                { icon: CheckCircle,    label: "To Approve",   value: pendingApproval.length,   color: "#3b82f6", bg: "rgba(59, 130, 246, 0.08)" },
-                { icon: Users,          label: "Resolved",     value: closedIssues.length,      color: "#10b981", bg: "rgba(16, 185, 129, 0.08)" },
+                { icon: AlertTriangle, label: "To Assign",    value: pendingAssignment.length, color: "#854F0B", bg: "#FAEEDA" },
+                { icon: Clock,          label: "In Progress",  value: inProgress.length,        color: "#27500A", bg: "#EAF3DE" },
+                { icon: CheckCircle,    label: "To Approve",   value: pendingApproval.length,   color: "#0C447C", bg: "#E6F1FB" },
+                { icon: Users,          label: "Resolved",     value: closedIssues.length,      color: "#085041", bg: "#E1F5EE" },
               ].map(({ icon: Icon, label, value, color, bg }) => (
-                <div key={label} style={{ borderRadius: 20, padding: "20px 16px", background: "rgba(255,255,255,0.02)", border: `1px solid rgba(255,255,255,0.06)`, display: "flex", alignItems: "center", gap: 14 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Icon size={18} color={color} />
+                <div key={label} style={{ borderRadius: 20, padding: "20px 16px", background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: SH.raisedSm }}>
+                    <Icon size={20} color={color} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 24, fontWeight: 900, color: "white", lineHeight: 1 }}>{value}</div>
-                    <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.35)", textTransform: "uppercase", marginTop: 4 }}>{label}</div>
+                    <div style={{ fontSize: 28, fontWeight: 900, color: T.text1, lineHeight: 1, letterSpacing: '-0.04em' }}>{value}</div>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: T.text3, textTransform: "uppercase", marginTop: 4, letterSpacing: '0.05em' }}>{label}</div>
                   </div>
                 </div>
               ))}
@@ -301,41 +320,41 @@ export default function DepartmentPage() {
 
             {/* Incidents Queue */}
             <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h2 style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>ACTIVE INCIDENTS QUEUE</h2>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontWeight: 600 }}>{allIssues.length} TOTAL</span>
+              <h2 style={{ fontSize: 12, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.1em" }}>ACTIVE INCIDENTS QUEUE</h2>
+              <span style={{ fontSize: 11, color: T.text3, fontWeight: 800 }}>{allIssues.length} TOTAL</span>
             </div>
 
             {allIssues.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "80px 20px", borderRadius: 24, border: "1.5px dashed rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-                <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>✔️</div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "white", marginBottom: 8 }}>Clear Queue</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", maxWidth: 280, margin: "0 auto" }}>No pending reports require departmental action.</div>
+              <div style={{ textAlign: "center", padding: "80px 20px", borderRadius: 24, border: `2px dashed ${T.border}`, background: T.raised, boxShadow: SH.insetSoft }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>✔️</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: T.text1, marginBottom: 8 }}>Clear Queue</div>
+                <div style={{ fontSize: 13, color: T.text3, maxWidth: 280, margin: "0 auto" }}>No pending reports require departmental action.</div>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {allIssues.map((issue: Issue) => {
                   const st = STATUS_STYLE[issue.status] || STATUS_STYLE.REPORTED;
                   return (
-                    <div key={issue.id} style={{ borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", overflow: "hidden", position: "relative" }}>
-                      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 3, background: st.color }} />
+                    <div key={issue.id} style={{ borderRadius: 22, border: `1px solid ${T.border}`, background: T.raised, boxShadow: SH.raised, overflow: "hidden", position: "relative" }}>
+                      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 4, background: st.color }} />
                       
-                      <div style={{ padding: "18px" }}>
+                      <div style={{ padding: "20px 20px 20px 24px" }}>
                         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <Link href={`/issue?id=${issue.id}`} style={{ fontSize: 15, fontWeight: 800, color: "white", textDecoration: "none", display: "block", marginBottom: 4 }}>
+                            <Link href={`/issue?id=${issue.id}`} style={{ fontSize: 16, fontWeight: 800, color: T.text1, textDecoration: "none", display: "block", marginBottom: 6, letterSpacing: '-0.02em' }}>
                               {issue.title}
                             </Link>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.25)" }}>ID #{issue.id.slice(0, 8).toUpperCase()}</span>
-                              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{issue.issue_type}</span>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: T.text2 }}>ID #{issue.id.slice(0, 8).toUpperCase()}</span>
+                              <span style={{ fontSize: 11, color: T.text3, fontWeight: 600 }}>{issue.issue_type}</span>
                             </div>
                           </div>
-                          <span style={{ fontSize: 10, fontWeight: 800, padding: "5px 12px", borderRadius: 10, background: st.bg, color: st.color, border: `1px solid ${st.color}25`, whiteSpace: "nowrap" }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, padding: "5px 12px", borderRadius: 10, background: st.bg, color: st.color, border: `1px solid ${st.color}25`, whiteSpace: "nowrap", boxShadow: SH.raisedSm }}>
                             {st.label?.toUpperCase()}
                           </span>
                         </div>
 
-                        <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: 14, padding: "12px", border: "1.5px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ background: T.base, borderRadius: 16, padding: "16px", boxShadow: SH.insetSoft }}>
                           <DepartmentActions issue={issue} employees={employees} />
                         </div>
                       </div>
@@ -350,47 +369,47 @@ export default function DepartmentPage() {
         {/* TAB 2: OUTSOURCED CONTRACTOR ANALYTICS */}
         {viewTab === 'ANALYTICS' && (
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-            <div style={{ padding: 24, borderRadius: 24, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-              <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 16px", color: "white" }}>Current Active Contractors</h2>
+            <div style={{ padding: 24, borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised }}>
+              <h2 style={{ fontSize: 18, fontWeight: 800, margin: "0 0 16px", color: T.text1, letterSpacing: '-0.02em' }}>Current Active Contractors</h2>
 
               {activeContractsList.length === 0 ? (
-                <div style={{ padding: 32, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No active contracts for this department. Mode is running in fallback department mode.</p>
+                <div style={{ padding: 32, textAlign: "center", background: T.base, borderRadius: 16, boxShadow: SH.insetSoft }}>
+                  <p style={{ fontSize: 13, color: T.text3, margin: 0, fontWeight: 600 }}>No active contracts for this department. Mode is running in fallback department mode.</p>
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20 }}>
                   {activeContractsList.map(c => {
                     const ratingData = companyRatingsMap[c.company_id] || { technical_score: 92, citizen_score: 4.8, penalty_points: 0, completed_issues: 14, average_delay_hours: 4.2 };
                     return (
-                      <div key={c.id} style={{ padding: 20, borderRadius: 20, background: "rgba(255,255,255,0.025)", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
+                      <div key={c.id} style={{ padding: 20, borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, boxShadow: SH.insetSoft }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                          <span style={{ fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 99, background: "rgba(16,185,129,0.15)", color: "#10b981", textTransform: "uppercase" }}>
+                          <span style={{ fontSize: 10, fontWeight: 800, padding: "4px 10px", borderRadius: 99, background: "#E1F5EE", color: "#085041", textTransform: "uppercase", boxShadow: SH.raisedSm }}>
                             Active Contractor
                           </span>
-                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>
+                          <span style={{ fontSize: 11, color: T.text3, fontWeight: 700 }}>
                             SLA: {c.sla_tier || 'Standard'}
                           </span>
                         </div>
 
-                        <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 4px" }}>Contract #{c.id.slice(0, 8)}</h3>
-                        <p style={{ fontSize: 12, color: "#0ea5e9", margin: "0 0 16px", fontWeight: 700 }}>{c.tenders?.title || 'Maintenance Contract'}</p>
+                        <h3 style={{ fontSize: 16, fontWeight: 800, margin: "0 0 4px", color: T.text1 }}>Contract #{c.id.slice(0, 8)}</h3>
+                        <p style={{ fontSize: 12, color: T.accent, margin: "0 0 16px", fontWeight: 700 }}>{c.tenders?.title || 'Maintenance Contract'}</p>
 
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, fontSize: 12, color: T.text2 }}>
                           <div>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Citizen Rating</p>
-                            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#fbbf24" }}>★ {ratingData.citizen_score || '4.8'}</p>
+                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: T.text3, fontWeight: 700 }}>Citizen Rating</p>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#854F0B" }}>★ {ratingData.citizen_score || '4.8'}</p>
                           </div>
                           <div>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Avg Resolution</p>
-                            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "#10b981" }}>{ratingData.average_delay_hours || '4.2'} hrs</p>
+                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: T.text3, fontWeight: 700 }}>Avg Resolution</p>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: "#27500A" }}>{ratingData.average_delay_hours || '4.2'} hrs</p>
                           </div>
                           <div>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Completed Issues</p>
-                            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: "white" }}>{ratingData.completed_issues || 14}</p>
+                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: T.text3, fontWeight: 700 }}>Completed Issues</p>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: T.text1 }}>{ratingData.completed_issues || 14}</p>
                           </div>
                           <div>
-                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: "rgba(255,255,255,0.3)" }}>Penalty Points</p>
-                            <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: ratingData.penalty_points > 0 ? "#ef4444" : "#10b981" }}>{ratingData.penalty_points || 0} Pts</p>
+                            <p style={{ margin: "0 0 2px", fontSize: 10, textTransform: "uppercase", color: T.text3, fontWeight: 700 }}>Penalty Points</p>
+                            <p style={{ margin: 0, fontSize: 16, fontWeight: 900, color: ratingData.penalty_points > 0 ? "#791F1F" : "#27500A" }}>{ratingData.penalty_points || 0} Pts</p>
                           </div>
                         </div>
                       </div>
@@ -406,35 +425,35 @@ export default function DepartmentPage() {
         {viewTab === 'REVIEWS' && (
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {/* Header score */}
-            <div style={{ padding: 24, borderRadius: 24, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ padding: 24, borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 800, margin: "0 0 4px" }}>Citizen Satisfaction Overview</h2>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0 }}>Community rating and feedback for work completed in your department area.</p>
+                <h2 style={{ fontSize: 20, fontWeight: 900, margin: "0 0 4px", color: T.text1, letterSpacing: '-0.02em' }}>Citizen Satisfaction Overview</h2>
+                <p style={{ fontSize: 12, color: T.text3, margin: 0, fontWeight: 600 }}>Community rating and feedback for work completed in your department area.</p>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 36, fontWeight: 900, color: "#fbbf24", lineHeight: 1 }}>★ {avgCitizenRating}</div>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", margin: "4px 0 0", fontWeight: 700 }}>{citizenReviews.length} Total Ratings</p>
+                <div style={{ fontSize: 36, fontWeight: 900, color: "#854F0B", lineHeight: 1 }}>★ {avgCitizenRating}</div>
+                <p style={{ fontSize: 11, color: T.text3, margin: "4px 0 0", fontWeight: 800 }}>{citizenReviews.length} Total Ratings</p>
               </div>
             </div>
 
             {/* Reviews List */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {citizenReviews.length === 0 ? (
-                <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.01)", borderRadius: 20, border: "1px dashed rgba(255,255,255,0.08)" }}>
-                  <Star size={36} color="rgba(255,255,255,0.2)" style={{ marginBottom: 12 }} />
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", margin: 0 }}>No citizen reviews submitted yet for this department.</p>
+                <div style={{ padding: 40, textAlign: "center", background: T.raised, borderRadius: 20, boxShadow: SH.insetSoft }}>
+                  <Star size={36} color={T.text3} style={{ marginBottom: 12 }} />
+                  <p style={{ fontSize: 13, color: T.text3, margin: 0, fontWeight: 600 }}>No citizen reviews submitted yet for this department.</p>
                 </div>
               ) : (
                 citizenReviews.map(r => (
-                  <div key={r.id} style={{ padding: 18, borderRadius: 18, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>★ {r.rating} / 5</span>
-                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Issue #{r.issue_id?.slice(0, 8)}</span>
+                  <div key={r.id} style={{ padding: 20, borderRadius: 20, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span style={{ fontSize: 14, fontWeight: 900, color: "#854F0B", background: '#FAEEDA', padding: '4px 10px', borderRadius: 99, boxShadow: SH.raisedSm }}>★ {r.rating} / 5</span>
+                        <span style={{ fontSize: 11, color: T.text3, fontWeight: 800 }}>Issue #{r.issue_id?.slice(0, 8)}</span>
                       </div>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{new Date(r.created_at).toLocaleDateString()}</span>
+                      <span style={{ fontSize: 11, color: T.text3, fontWeight: 700 }}>{new Date(r.created_at).toLocaleDateString()}</span>
                     </div>
-                    <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", margin: 0 }}>{r.comment || 'Verified by citizen.'}</p>
+                    <p style={{ fontSize: 14, color: T.text2, margin: 0, fontWeight: 500 }}>{r.comment || 'Verified by citizen.'}</p>
                   </div>
                 ))
               )}

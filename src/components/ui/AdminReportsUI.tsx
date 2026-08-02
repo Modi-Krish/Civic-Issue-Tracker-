@@ -4,15 +4,35 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Building2, MapPin, Clock, ChevronRight } from 'lucide-react';
 
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:   `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm: `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft:`inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
+};
+
 const STATUS_CONFIG: Record<string, { label: string; bg: string; color: string; dot: string }> = {
-  REPORTED:               { label: "Reported",         bg: "#1e3a5f", color: "#60a5fa", dot: "#3b82f6" },
-  DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  EMPLOYEE_ASSIGNED:      { label: "Emp. Assigned",    bg: "#1a2e3a", color: "#67e8f9", dot: "#06b6d4" },
-  IN_PROGRESS:            { label: "In Progress",      bg: "#1a3a2a", color: "#34d399", dot: "#10b981" },
-  SUBMITTED_FOR_APPROVAL: { label: "Pending",          bg: "#3a2a0a", color: "#fbbf24", dot: "#f59e0b" },
-  APPROVED:               { label: "Approved",          bg: "#3a2a1a", color: "#FF2E11", dot: "#FF2E11" },
-  REJECTED:               { label: "Rejected",          bg: "#3a1a1a", color: "#f87171", dot: "#ef4444" },
-  CLOSED:                 { label: "Closed",            bg: "#1f1f1f", color: "#9ca3af", dot: "#6b7280" },
+  REPORTED:              { label: "Reported",         color: "#0C447C", bg: "#E6F1FB", dot: "#0C447C" },
+  DEPARTMENT_ASSIGNED:   { label: "Dept. Assigned",   color: "#3C3489", bg: "#EEEDFE", dot: "#3C3489" },
+  EMPLOYEE_ASSIGNED:     { label: "Emp. Assigned",    color: "#3C3489", bg: "#EEEDFE", dot: "#3C3489" },
+  IN_PROGRESS:           { label: "In Progress",      color: "#27500A", bg: "#EAF3DE", dot: "#27500A" },
+  SUBMITTED_FOR_APPROVAL:{ label: "Pending Approval", color: "#854F0B", bg: "#FAEEDA", dot: "#854F0B" },
+  APPROVED:              { label: "Approved",          color: "#085041", bg: "#E1F5EE", dot: "#085041" },
+  REJECTED:              { label: "Rejected",          color: "#791F1F", bg: "#FCEBEB", dot: "#791F1F" },
+  CLOSED:                { label: "Closed",            color: "#085041", bg: "#E1F5EE", dot: "#085041" },
 };
 
 const FILTERS = ["All", "REPORTED", "IN_PROGRESS", "APPROVED", "CLOSED"];
@@ -23,8 +43,8 @@ function StatusBadge({ status }: { status: string }) {
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 4,
       background: c.bg, color: c.color, padding: "3px 9px", borderRadius: 99,
-      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
-      border: `1px solid ${c.dot}35`, whiteSpace: "nowrap", flexShrink: 0,
+      fontSize: 10, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase",
+      boxShadow: SH.raisedSm, whiteSpace: "nowrap", flexShrink: 0,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: c.dot }} />
       {c.label}
@@ -56,55 +76,50 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
   }, {} as Record<string, number>);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", fontFamily: "'Inter',-apple-system,sans-serif", color: "#ffffff" }}>
-      {/* Ambient */}
-      <div style={{ position: "fixed", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }}>
-        <div style={{ position: "absolute", top: -80, left: "15%", width: 380, height: 240, background: "radial-gradient(ellipse, rgba(139, 92, 246, 0.08) 0%, transparent 70%)", borderRadius: "50%" }} />
-      </div>
+    <div style={{ minHeight: "100dvh", background: T.base, fontFamily: "'Inter',-apple-system,sans-serif", color: T.text1 }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: "100%", margin: "0 auto", padding: "0 16px 100px" }}>
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 500, margin: "0 auto", padding: "0 16px 100px" }}>
-
-        {/* Sticky Header */}
+        {/* Header */}
         <div style={{
           position: "sticky", top: 0, zIndex: 50,
-          background: "rgba(13, 13, 15, 0.94)", backdropFilter: "blur(20px)",
-          padding: "24px 8px 12px", margin: "0 -8px 16px",
-          borderBottom: "0.5px solid rgba(255, 255, 255, 0.08)",
+          background: T.base, padding: "24px 8px 12px", margin: "0 -8px 16px",
+          borderBottom: `1px solid ${T.border}`,
         }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0 }}>Dept. Reports</h1>
-              <p style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.35)", marginTop: 5, fontWeight: 600 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.04em", margin: 0, color: T.text1 }}>Dept. Reports</h1>
+              <p style={{ fontSize: 11, color: T.text3, marginTop: 5, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                 {initialIssues.length} total · all departments
               </p>
             </div>
           </div>
 
           {/* Search */}
-          <div style={{ position: "relative", marginBottom: 10 }}>
-            <Search size={14} color="rgba(255,255,255,0.3)" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <div style={{ position: "relative", marginBottom: 12 }}>
+            <Search size={14} color={T.text3} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
             <input
               type="text" placeholder="Search all issues…" value={search}
               onChange={e => setSearch(e.target.value)}
-              style={{ width: "100%", padding: "12px 14px 12px 38px", borderRadius: 14, border: "0.5px solid rgba(255, 255, 255, 0.12)", background: "rgba(255, 255, 255, 0.04)", color: "white", fontSize: 14, fontWeight: 500, outline: "none", boxSizing: "border-box" }}
+              style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 14, border: `1px solid ${T.border}`, background: T.raised, color: T.text1, fontSize: 14, fontWeight: 600, outline: "none", boxSizing: "border-box", boxShadow: SH.insetSoft }}
             />
           </div>
 
           {/* Status filter pills */}
-          <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", marginBottom: 8 }} className="no-scrollbar">
             {FILTERS.map(s => {
               const active = filter === s;
               const c = STATUS_CONFIG[s];
               return (
                 <button key={s} onClick={() => setFilter(s)} style={{
                   display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
-                  padding: "7px 14px", borderRadius: 99, fontSize: 11, fontWeight: 700, cursor: "pointer",
-                  border: `0.5px solid ${active ? (c ? c.dot + "55" : "#a78bfa55") : "rgba(255,255,255,0.08)"}`,
-                  background: active ? (c ? c.bg : "rgba(139,92,246,0.15)") : "rgba(255,255,255,0.03)",
-                  color: active ? (c ? c.color : "#a78bfa") : "rgba(255,255,255,0.35)",
+                  padding: "8px 16px", borderRadius: 99, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                  border: active ? "none" : `1px solid ${T.border}`,
+                  background: active ? (c ? c.bg : T.accentTint) : T.raised,
+                  color: active ? (c ? c.color : T.accentDark) : T.text3,
+                  boxShadow: active ? SH.insetSoft : SH.raisedSm
                 }}>
                   {s === "All" ? "All" : (STATUS_CONFIG[s]?.label ?? s)}
-                  <span style={{ fontSize: 9, fontWeight: 800, borderRadius: 99, padding: "1px 6px", background: active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.06)", color: active ? "white" : "rgba(255,255,255,0.25)" }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, borderRadius: 99, padding: "2px 8px", background: active ? "rgba(0,0,0,0.08)" : T.base, color: active ? (c ? c.color : T.accentDark) : T.text3, boxShadow: active ? "none" : SH.insetSoft }}>
                     {counts[s] || 0}
                   </span>
                 </button>
@@ -113,18 +128,19 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
           </div>
 
           {/* Department filter pills */}
-          <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none" }} className="no-scrollbar">
             {[{ id: "All", name: "All Depts" }, ...departments].map(d => {
               const active = deptFilter === d.id;
               return (
                 <button key={d.id} onClick={() => setDeptFilter(d.id)} style={{
-                  display: "inline-flex", alignItems: "center", gap: 5, flexShrink: 0,
-                  padding: "6px 12px", borderRadius: 99, fontSize: 10, fontWeight: 700, cursor: "pointer",
-                  background: active ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.03)",
-                  border: `0.5px solid ${active ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.08)"}`,
-                  color: active ? "#a78bfa" : "rgba(255,255,255,0.35)",
+                  display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0,
+                  padding: "8px 16px", borderRadius: 99, fontSize: 11, fontWeight: 800, cursor: "pointer",
+                  background: active ? T.accentTint : T.raised,
+                  border: active ? "none" : `1px solid ${T.border}`,
+                  color: active ? T.accentDark : T.text3,
+                  boxShadow: active ? SH.insetSoft : SH.raisedSm
                 }}>
-                  {d.id !== "All" && <Building2 size={9} />}
+                  {d.id !== "All" && <Building2 size={12} />}
                   {d.name}
                 </button>
               );
@@ -134,40 +150,41 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
 
         {/* Issue Cards */}
         {filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>
+          <div style={{ textAlign: "center", padding: "60px 20px", color: T.text3, fontSize: 13, fontWeight: 600 }}>
             No issues match your filters.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {filtered.map((issue: any) => {
               const dept = departments.find(d => d.id === issue.department_id);
               const date = new Date(issue.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
               const loc = issue.location_label?.split(",")[0] || "Unknown location";
+              
               return (
-                <div key={issue.id} onClick={() => router.push(`/issue?id=${issue.id}`)} style={{ borderRadius: 20, overflow: "hidden", border: "0.5px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)", cursor: "pointer" }}>
-                  <div style={{ height: 2, background: "linear-gradient(90deg, #7c3aed, transparent 80%)" }} />
-                  <div style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: "rgba(139,92,246,0.1)", border: "0.5px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>
+                <div key={issue.id} onClick={() => router.push(`/issue?id=${issue.id}`)} style={{ borderRadius: 20, background: T.base, border: `1px solid ${T.border}`, cursor: "pointer", boxShadow: SH.insetSoft, overflow: "hidden" }}>
+                  <div style={{ padding: "16px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 16, flexShrink: 0, background: T.raised, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: SH.raisedSm }}>
                         📋
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 15, fontWeight: 800, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 3 }}>{issue.title}</div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: "#a78bfa", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: T.text1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 4 }}>{issue.title}</div>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: T.text3, textTransform: "uppercase", letterSpacing: "0.06em" }}>
                           {dept?.name ?? "Unassigned"} · {issue.issue_type}
                         </div>
                       </div>
-                      <ChevronRight size={14} color="rgba(255,255,255,0.2)" />
+                      <ChevronRight size={16} color={T.text3} />
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "space-between" }}>
+                    
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "space-between", flexWrap: "wrap" }}>
                       <StatusBadge status={issue.status} />
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-                          <MapPin size={11} color="#a78bfa" />
-                          <span style={{ maxWidth: 90, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{loc}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: T.text3, fontWeight: 700 }}>
+                          <MapPin size={12} color={T.accent} />
+                          <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{loc}</span>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.3)", fontWeight: 500 }}>
-                          <Clock size={11} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: T.text3, fontWeight: 700 }}>
+                          <Clock size={12} />
                           {date}
                         </div>
                       </div>
@@ -179,8 +196,6 @@ export default function AdminReportsUI({ initialIssues, departments }: AdminRepo
           </div>
         )}
       </div>
-
-      
     </div>
   );
 }

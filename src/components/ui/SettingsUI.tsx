@@ -6,7 +6,8 @@ import { updateProfile, signOut } from "@/lib/client-actions/auth";
 import {
   User, Shield, LogOut, Mail, Building2, Calendar,
   ChevronRight, Bell, HelpCircle, Star, Palette,
-  Save, X, Edit2,
+  Save, X, Edit2, FileText, MapPin, Clock, Award,
+  Lock, Smartphone, Globe, ExternalLink,
 } from "lucide-react";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
@@ -20,6 +21,7 @@ const T = {
   accent:       "#1D9E75",
   accentDark:   "#167A5B",
   accentTint:   "#E1F5EE",
+  accentOnTint: "#085041",
   shL: "rgba(255,255,255,0.75)",
   shD: "rgba(0,0,0,0.09)",
 } as const;
@@ -90,42 +92,55 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
       color: T.text1,
     }}>
       <style>{`
-        .settings-container {
+        .profile-container {
           width: 100%;
           padding: 0 16px calc(90px + env(safe-area-inset-bottom, 0px));
         }
         @media (min-width: 768px) {
-          .settings-container {
-            max-width: 900px;
+          .profile-container {
+            max-width: 700px;
             margin: 0 auto;
             padding: 0 32px 90px;
           }
         }
-        .settings-main-layout {
+        .profile-info-grid {
           display: grid;
-          grid-template-columns: 1fr;
-          gap: 20px;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
         }
-        @media (min-width: 1024px) {
-          .settings-main-layout {
-            grid-template-columns: 1fr 1fr;
-            align-items: start;
+        @media (max-width: 400px) {
+          .profile-info-grid {
+            grid-template-columns: 1fr;
           }
         }
-        .settings-full-width {
-          grid-column: 1 / -1;
+        .profile-action-btn {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 16px 18px;
+          background: ${T.raised};
+          border: none;
+          cursor: pointer;
+          font-family: inherit;
+          text-align: left;
+          width: 100%;
+          transition: transform 0.1s ease;
+          -webkit-tap-highlight-color: transparent;
+        }
+        .profile-action-btn:active {
+          transform: scale(0.98);
         }
       `}</style>
 
-      <div className="settings-container">
+      <div className="profile-container">
 
         {/* Header */}
         <div style={{ padding: "28px 0 20px" }}>
-          <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 4px", color: T.text1 }}>
-            Settings
+          <h1 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-0.04em", margin: "0 0 4px", color: T.text1 }}>
+            Profile
           </h1>
           <p style={{ fontSize: 13, color: T.text3, margin: 0, fontWeight: 500 }}>
-            Global Preferences & Account
+            Manage your account & preferences
           </p>
         </div>
 
@@ -133,7 +148,7 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
         {error && (
           <div style={{
             marginBottom: 20, padding: 14, borderRadius: 14,
-            background: "#FCEBEB", border: `1px solid #791F1F30`,
+            background: "#FCEBEB", border: "1px solid #791F1F30",
             fontSize: 13, color: "#791F1F", fontWeight: 700,
             boxShadow: SH.raisedSm,
           }}>
@@ -141,170 +156,170 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
           </div>
         )}
 
-        {/* Profile Hero — full width */}
+        {/* ── Profile Hero Card ── */}
         <div style={{
-          borderRadius: 28, padding: "28px", marginBottom: 20,
+          borderRadius: 28, marginBottom: 24,
           background: `linear-gradient(145deg, ${T.accent}, ${T.accentDark})`,
           boxShadow: `${SH.raised}, 0 8px 32px ${T.accent}40`,
           position: "relative", overflow: "hidden",
         }}>
-          {/* decorative circles */}
-          <div style={{ position: "absolute", top: -30, right: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.12)" }} />
-          <div style={{ position: "absolute", bottom: -20, left: 20, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+          {/* Decorative elements */}
+          <div style={{ position: "absolute", top: -40, right: -30, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.10)" }} />
+          <div style={{ position: "absolute", top: 30, right: 40, width: 80, height: 80, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+          <div style={{ position: "absolute", bottom: -20, left: -10, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
 
-          <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 18 }}>
-            {/* Avatar */}
-            <div style={{
-              width: 68, height: 68, borderRadius: 20, flexShrink: 0,
-              background: "rgba(255,255,255,0.2)", border: "2px solid rgba(255,255,255,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 24, fontWeight: 900, color: "white", letterSpacing: "-0.02em",
-              boxShadow: `4px 4px 12px rgba(0,0,0,0.2)`,
-            }}>
-              {initials}
+          <div style={{ position: "relative", zIndex: 1, padding: "32px 28px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 20 }}>
+              {/* Avatar */}
+              <div style={{
+                width: 76, height: 76, borderRadius: 22, flexShrink: 0,
+                background: "rgba(255,255,255,0.18)", border: "2.5px solid rgba(255,255,255,0.30)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 28, fontWeight: 900, color: "white", letterSpacing: "-0.02em",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+                backdropFilter: "blur(10px)",
+              }}>
+                {initials}
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {isEditing ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <input
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      autoFocus
+                      style={{
+                        background: "rgba(255,255,255,0.18)", border: "1.5px solid rgba(255,255,255,0.30)",
+                        borderRadius: 12, padding: "10px 14px", color: "white",
+                        fontSize: 18, fontWeight: 800, outline: "none", width: "100%",
+                        fontFamily: "inherit", backdropFilter: "blur(10px)",
+                      }}
+                    />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <button
+                        onClick={handleUpdate}
+                        disabled={loading}
+                        style={{
+                          background: "white", color: T.accent, border: "none",
+                          borderRadius: 10, padding: "8px 18px", fontSize: 13, fontWeight: 800,
+                          cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                          fontFamily: "inherit", boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                        }}
+                      >
+                        <Save size={14} /> {loading ? "Saving…" : "Save"}
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        style={{
+                          background: "rgba(255,255,255,0.15)", color: "white", border: "none",
+                          borderRadius: 10, padding: "8px 18px", fontSize: 13, fontWeight: 800,
+                          cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        <X size={14} /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                      <div style={{
+                        fontSize: 22, fontWeight: 900, color: "white",
+                        letterSpacing: "-0.03em", overflow: "hidden",
+                        textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}>
+                        {fullName}
+                      </div>
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        style={{ background: "rgba(255,255,255,0.15)", border: "none", color: "rgba(255,255,255,0.8)", cursor: "pointer", padding: 6, borderRadius: 8 }}
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    </div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {user.email}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {isEditing ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <input
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                    autoFocus
-                    style={{
-                      background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.3)",
-                      borderRadius: 10, padding: "6px 12px", color: "white",
-                      fontSize: 18, fontWeight: 800, outline: "none", width: "100%",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <button
-                      onClick={handleUpdate}
-                      disabled={loading}
-                      style={{
-                        background: "white", color: T.accent, border: "none",
-                        borderRadius: 8, padding: "5px 14px", fontSize: 12, fontWeight: 800,
-                        cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <Save size={13} /> {loading ? "Saving…" : "Save"}
-                    </button>
-                    <button
-                      onClick={() => setIsEditing(false)}
-                      style={{
-                        background: "rgba(255,255,255,0.2)", color: "white", border: "none",
-                        borderRadius: 8, padding: "5px 14px", fontSize: 12, fontWeight: 800,
-                        cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <X size={13} /> Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                    <div style={{
-                      fontSize: 20, fontWeight: 900, color: "white",
-                      letterSpacing: "-0.03em", overflow: "hidden",
-                      textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    }}>
-                      {fullName}
-                    </div>
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      style={{ background: "none", border: "none", color: "rgba(255,255,255,0.65)", cursor: "pointer", padding: 4 }}
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                  </div>
-                  <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {user.email}
-                  </div>
-                </>
-              )}
-              {/* Role badge */}
+            {/* Role badge row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{
-                fontSize: 10, fontWeight: 800, padding: "5px 12px", borderRadius: 99,
-                background: "rgba(255,255,255,0.22)", color: "white",
-                letterSpacing: "0.06em", border: "0.5px solid rgba(255,255,255,0.18)",
+                fontSize: 11, fontWeight: 800, padding: "6px 14px", borderRadius: 99,
+                background: "rgba(255,255,255,0.20)", color: "white",
+                letterSpacing: "0.06em", border: "0.5px solid rgba(255,255,255,0.15)",
+                backdropFilter: "blur(6px)",
               }}>
                 {roleCfg.emoji} {roleCfg.label.toUpperCase()}
+              </span>
+              <span style={{
+                fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)",
+              }}>
+                Since {memberSince}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Main 2-col grid on desktop */}
-        <div className="settings-main-layout">
-
-          {/* Account Section */}
-          <SectionCard label="Account Identification">
-          {[
-            { icon: Mail,      label: "Email Address",    value: user.email ?? "—",                        bg: "#E6F1FB", fg: "#0C447C" },
-            { icon: Shield,    label: "Access Level",     value: `${roleCfg.emoji} ${roleCfg.label}`,      bg: roleCfg.bg, fg: roleCfg.fg },
-            ...(deptName ? [{ icon: Building2, label: "Assigned Unit", value: deptName, bg: "#EAF3DE", fg: "#27500A" }] : []),
-            { icon: Calendar,  label: "Member Since",     value: memberSince,                               bg: "#FAEEDA", fg: "#854F0B" },
-          ].map(({ icon: Icon, label, value, bg, fg }, i, arr) => (
-            <div key={label} style={{
-              display: "flex", alignItems: "center", gap: 14, padding: "14px 0",
-              borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none",
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                background: bg, display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: SH.raisedSm,
-              }}>
-                <Icon size={16} color={fg} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11, color: T.text3, fontWeight: 600, marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
-              </div>
-            </div>
-          ))}
-          </SectionCard>
-
-          {/* Preferences Section */}
-          <SectionCard label="Experience Settings">
-          {[
-            { icon: Palette,    label: "Visual Theme",  value: "Warm Light",   bg: "#FAECE7", fg: "#712B13" },
-            { icon: Bell,       label: "Push Alerts",   value: "All Enabled",  bg: "#FAEEDA", fg: "#854F0B" },
-            { icon: Star,       label: "Achievement",   value: "1,240 XP",     bg: "#EAF3DE", fg: "#27500A" },
-            { icon: HelpCircle, label: "Citizen Help",  value: "Support Hub",  bg: "#E6F1FB", fg: "#0C447C" },
-          ].map(({ icon: Icon, label, value, bg, fg }, i, arr) => (
-            <div key={label} style={{
-              display: "flex", alignItems: "center", gap: 14, padding: "14px 0",
-              borderBottom: i < arr.length - 1 ? `1px solid ${T.border}` : "none",
-              cursor: "pointer",
-            }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 12, flexShrink: 0,
-                background: bg, display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: SH.raisedSm,
-              }}>
-                <Icon size={16} color={fg} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.text1 }}>{label}</div>
-              </div>
-              <div style={{ fontSize: 11, color: T.text3, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
-                {value}
-                <ChevronRight size={14} color={T.text3} />
-              </div>
-            </div>
-          ))}
-          </SectionCard>
+        {/* ── Quick Info Cards ── */}
+        <div className="profile-info-grid" style={{ marginBottom: 20 }}>
+          <InfoTile icon={<Mail size={18} color="#0C447C" />} label="Email" value={user.email ?? "—"} bg="#E6F1FB" />
+          <InfoTile icon={<Shield size={18} color={roleCfg.fg} />} label="Role" value={roleCfg.label} bg={roleCfg.bg} />
+          {deptName && <InfoTile icon={<Building2 size={18} color="#27500A" />} label="Department" value={deptName} bg="#EAF3DE" />}
+          <InfoTile icon={<Calendar size={18} color="#854F0B" />} label="Member Since" value={memberSince} bg="#FAEEDA" />
         </div>
 
-        {/* Logout — full width */}
+        {/* ── Quick Actions ── */}
+        <div style={{
+          borderRadius: 24, overflow: "hidden",
+          background: T.raised,
+          boxShadow: SH.raised,
+          marginBottom: 24,
+        }}>
+          <div style={{
+            padding: "14px 20px",
+            borderBottom: `1px solid ${T.border}`,
+            fontSize: 10, fontWeight: 800, color: T.text3,
+            textTransform: "uppercase", letterSpacing: "0.1em",
+          }}>
+            Quick Actions
+          </div>
+          
+          <ActionRow icon={<FileText size={18} color="#0C447C" />} label="My Reports" subtitle="View all your reported issues" bg="#E6F1FB" onClick={() => router.push('/reports')} />
+          <ActionRow icon={<MapPin size={18} color="#27500A" />} label="Nearby Issues" subtitle="Explore issues around you" bg="#EAF3DE" onClick={() => router.push('/reports?tab=nearby')} />
+          <ActionRow icon={<Bell size={18} color="#854F0B" />} label="Notifications" subtitle="Manage your alerts" bg="#FAEEDA" onClick={() => router.push('/notifications')} last />
+        </div>
+
+        {/* ── Account Security ── */}
+        <div style={{
+          borderRadius: 24, overflow: "hidden",
+          background: T.raised,
+          boxShadow: SH.raised,
+          marginBottom: 24,
+        }}>
+          <div style={{
+            padding: "14px 20px",
+            borderBottom: `1px solid ${T.border}`,
+            fontSize: 10, fontWeight: 800, color: T.text3,
+            textTransform: "uppercase", letterSpacing: "0.1em",
+          }}>
+            Account & Security
+          </div>
+          
+          <ActionRow icon={<Lock size={18} color="#3C3489" />} label="Change Password" subtitle="Update your login credentials" bg="#EEEDFE" onClick={() => {}} />
+          <ActionRow icon={<Globe size={18} color="#0C447C" />} label="Language" subtitle="English (India)" bg="#E6F1FB" onClick={() => {}} last />
+        </div>
+
+        {/* ── Sign Out ── */}
         <button
           onClick={() => { if (confirm("Are you sure you want to sign out?")) handleLogout(); }}
           style={{
-            width: "100%", padding: "17px 0", borderRadius: 20,
+            width: "100%", padding: "18px 0", borderRadius: 20,
             background: "#FCEBEB", border: "none",
             color: "#791F1F",
             fontSize: 15, fontWeight: 800, cursor: "pointer",
@@ -312,41 +327,91 @@ export default function SettingsUI({ user, profile, deptName, roleConfig, member
             letterSpacing: "-0.01em",
             boxShadow: SH.raised,
             fontFamily: "inherit",
+            transition: "transform 0.1s ease",
           }}
         >
           <LogOut size={18} />
-          Sign Out Securely
+          Sign Out
         </button>
 
         {/* Wordmark */}
-        <div style={{ textAlign: "center", marginTop: 32, opacity: 0.3 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: T.text2 }}>CIVIC TRACKER PRO</div>
-          <div style={{ fontSize: 10, marginTop: 4, color: T.text3 }}>STABLE BUILD v1.4.2</div>
+        <div style={{ textAlign: "center", marginTop: 36, paddingBottom: 20, opacity: 0.25 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.12em", color: T.text2 }}>CIVIC TRACKER PRO</div>
+          <div style={{ fontSize: 10, marginTop: 4, color: T.text3, fontWeight: 500 }}>v1.4.2</div>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Section Card helper ───────────────────────────────────────────────────────
+// ── Info Tile ──────────────────────────────────────────────────────────────────
+function InfoTile({ icon, label, value, bg }: { icon: React.ReactNode; label: string; value: string; bg: string }) {
+  return (
+    <div style={{
+      borderRadius: 20, padding: "18px 16px",
+      background: T.raised,
+      boxShadow: SH.raised,
+      display: "flex", alignItems: "center", gap: 14,
+    }}>
+      <div style={{
+        width: 42, height: 42, borderRadius: 14, flexShrink: 0,
+        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: SH.raisedSm,
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: T.text3, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 800, color: T.text1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Action Row ────────────────────────────────────────────────────────────────
+function ActionRow({ icon, label, subtitle, bg, onClick, last }: { icon: React.ReactNode; label: string; subtitle: string; bg: string; onClick: () => void; last?: boolean }) {
+  return (
+    <button
+      className="profile-action-btn"
+      onClick={onClick}
+      style={{
+        borderBottom: last ? "none" : `1px solid ${T.border}`,
+      }}
+    >
+      <div style={{
+        width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+        background: bg, display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: SH.raisedSm,
+      }}>
+        {icon}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: T.text1 }}>{label}</div>
+        <div style={{ fontSize: 11, fontWeight: 500, color: T.text3, marginTop: 2 }}>{subtitle}</div>
+      </div>
+      <ChevronRight size={16} color={T.text3} />
+    </button>
+  );
+}
+
+// ── Section Card helper (kept for backwards compat) ───────────────────────────
 function SectionCard({ label, children, style }: { label: string; children: React.ReactNode; style?: React.CSSProperties }) {
-  const T2 = { raised: "#F5F3EC", border: "#DDD9CE", text3: "#888780", shD: "rgba(0,0,0,0.09)", shL: "rgba(255,255,255,0.75)" };
   return (
     <div style={{
       borderRadius: 24, overflow: "hidden",
-      background: T2.raised,
-      boxShadow: `8px 8px 16px ${T2.shD}, -8px -8px 16px ${T2.shL}`,
+      background: T.raised,
+      boxShadow: SH.raised,
       ...style,
     }}>
       <div style={{
-        padding: "12px 18px",
-        borderBottom: `1px solid ${T2.border}`,
-        fontSize: 10, fontWeight: 800, color: T2.text3,
+        padding: "14px 20px",
+        borderBottom: `1px solid ${T.border}`,
+        fontSize: 10, fontWeight: 800, color: T.text3,
         textTransform: "uppercase", letterSpacing: "0.1em",
       }}>
         {label}
       </div>
-      <div style={{ padding: "0 18px" }}>
+      <div style={{ padding: "0 20px" }}>
         {children}
       </div>
     </div>

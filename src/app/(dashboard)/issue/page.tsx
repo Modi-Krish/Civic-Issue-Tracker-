@@ -28,24 +28,30 @@ const SH = {
 
 // ── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  REPORTED:               { label: "Reported",         bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
-  DEPARTMENT_ASSIGNED:    { label: "Dept. Assigned",   bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
-  EMPLOYEE_ASSIGNED:      { label: "Emp. Assigned",    bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
-  IN_PROGRESS:            { label: "In Progress",      bg: "#EAF3DE", fg: "#27500A", dot: "#27500A" },
-  SUBMITTED_FOR_APPROVAL: { label: "Pending Approval", bg: "#FAEEDA", fg: "#854F0B", dot: "#854F0B" },
-  APPROVED:               { label: "Approved",          bg: "#E1F5EE", fg: "#085041", dot: T.accent },
-  REJECTED:               { label: "Rejected",          bg: "#FCEBEB", fg: "#791F1F", dot: "#791F1F" },
-  CLOSED:                 { label: "Closed",            bg: "#F0EEE8", fg: "#888780", dot: "#888780" },
+  REPORTED:         { label: "Reported",         bg: "#E5E7EB", fg: "#4B5563", dot: "#6B7280" },
+  VERIFIED:         { label: "Verified",         bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" },
+  ASSIGNED:         { label: "Assigned",         bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" },
+  ACCEPTED:         { label: "Accepted",         bg: "#FEF3C7", fg: "#D97706", dot: "#F59E0B" },
+  IN_PROGRESS:      { label: "In Progress",      bg: "#FFEDD5", fg: "#C2410C", dot: "#EA580C" },
+  COMPLETED:        { label: "Completed",        bg: "#DCFCE7", fg: "#15803D", dot: "#16A34A" },
+  COMMUNITY_REVIEW: { label: "Review",           bg: "#F3E8FF", fg: "#7E22CE", dot: "#9333EA" },
+  CLOSED:           { label: "Closed",           bg: "#F0EEE8", fg: "#888780", dot: "#888780" },
+  
+  // Legacy support
+  DEPARTMENT_ASSIGNED:    { label: "Assigned", bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" },
+  EMPLOYEE_ASSIGNED:      { label: "Assigned", bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" },
+  SUBMITTED_FOR_APPROVAL: { label: "Review",   bg: "#F3E8FF", fg: "#7E22CE", dot: "#9333EA" },
+  APPROVED:               { label: "Completed",bg: "#DCFCE7", fg: "#15803D", dot: "#16A34A" },
 };
 
 const STATUS_STEPS = [
-  { key: "REPORTED",               short: "Reported" },
-  { key: "DEPARTMENT_ASSIGNED",    short: "Dept." },
-  { key: "EMPLOYEE_ASSIGNED",      short: "Assigned" },
-  { key: "IN_PROGRESS",            short: "In Progress" },
-  { key: "SUBMITTED_FOR_APPROVAL", short: "Submitted" },
-  { key: "APPROVED",               short: "Approved" },
-  { key: "CLOSED",                 short: "Closed" },
+  { key: "REPORTED",         short: "Reported" },
+  { key: "VERIFIED",         short: "Verified" },
+  { key: "ASSIGNED",         short: "Assigned" },
+  { key: "IN_PROGRESS",      short: "Working" },
+  { key: "COMPLETED",        short: "Done" },
+  { key: "COMMUNITY_REVIEW", short: "Review" },
+  { key: "CLOSED",           short: "Closed" },
 ];
 
 const TYPE_META: Record<string, { emoji: string; bg: string; fg: string }> = {
@@ -361,29 +367,45 @@ function IssueDetailContent() {
       {/* ── Content ── */}
       <div style={{ position: "relative", maxWidth: 900, margin: "0 auto", padding: "16px 16px 100px" }}>
 
-        {/* Type hero chip */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
-          padding: "12px 14px", borderRadius: 18,
-          background: meta.bg, boxShadow: SH.raisedSm,
-        }}>
-          <span style={{ fontSize: 26 }}>{meta.emoji}</span>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: meta.fg, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-              {issue.issue_type}
-            </div>
-            <div style={{ fontSize: 11, color: T.text3, fontWeight: 500 }}>
-              Reported {new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
-            </div>
-          </div>
-          <div style={{ flex: 1 }} />
+        {/* Type hero chip & Predictive Alert */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
           <div style={{
-            fontSize: 11, color: T.text3, fontWeight: 600,
-            background: T.raised, padding: "4px 10px", borderRadius: 8,
-            boxShadow: SH.raisedSm,
+            display: "flex", alignItems: "center", gap: 12,
+            padding: "12px 14px", borderRadius: 18,
+            background: meta.bg, boxShadow: SH.raisedSm,
           }}>
-            by {reporter?.full_name ?? "Citizen"}
+            <span style={{ fontSize: 26 }}>{meta.emoji}</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: meta.fg, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                {issue.issue_type}
+              </div>
+              <div style={{ fontSize: 11, color: T.text3, fontWeight: 500 }}>
+                Reported {new Date(issue.created_at?.toDate ? issue.created_at.toDate() : issue.created_at).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}
+              </div>
+            </div>
+            <div style={{ flex: 1 }} />
+            <div style={{
+              fontSize: 11, color: T.text3, fontWeight: 600,
+              background: T.raised, padding: "4px 10px", borderRadius: 8,
+              boxShadow: SH.raisedSm,
+            }}>
+              by {reporter?.full_name ?? "Citizen"}
+            </div>
           </div>
+          
+          {/* Predictive Alerts Integration (Mock based on type for demo) */}
+          {(issue.issue_type === 'Road Damage' || issue.issue_type === 'Water Leakage') && (
+            <div style={{
+              background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '10px 14px',
+              borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer'
+            }}>
+              <span style={{ fontSize: 16 }}>⚠</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#991B1B' }}>Frequently Occurring Issue</div>
+                <div style={{ fontSize: 11, color: '#B91C1C' }}>This area has a high recurrence prediction. Tap to view history.</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progress */}
@@ -482,6 +504,14 @@ function IssueDetailContent() {
               <div style={{ fontSize: 13, fontWeight: 700, color: meta.fg }}>{issue.issue_type}</div>
             </div>
           </div>
+          {/* Tender Integration Mock */}
+          {issue.status !== 'REPORTED' && (
+            <>
+              <DetailRow icon={<span style={{ fontSize: 16 }}>🏛️</span>} label="Department" value={issue.department ?? "Public Works Dept"} />
+              <DetailRow icon={<span style={{ fontSize: 16 }}>🏢</span>} label="Assigned Tender Company" value={issue.assigned_company ?? "Apex Infra Solutions (Contract ends 2027)"} />
+              <DetailRow icon={<span style={{ fontSize: 16 }}>👷</span>} label="Assigned Officer" value={issue.assigned_employee ?? "Rajesh Kumar (Field Officer)"} />
+            </>
+          )}
         </SCard>
 
         {/* Activity Log */}

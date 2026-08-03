@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home, Users, Settings, Map as MapIcon,
-  FileText, Briefcase, Award, Plus,
+  FileText, Briefcase, Award, Plus, Bell
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -20,11 +20,10 @@ type NavItem = {
 };
 
 const CITIZEN_NAV: NavItem[] = [
-  { id: "home",     path: "/dashboard",  label: "Home",       Icon: Home },
-  { id: "reports",  path: "/my-reports", label: "My Reports", Icon: FileText },
-  { id: "report",   path: "/report",     label: "Report",     Icon: Plus,     isFab: true },
-  { id: "map",      path: "/map",        label: "Map",        Icon: MapIcon },
-  { id: "settings", path: "/settings",   label: "Settings",   Icon: Settings },
+  { id: "home",     path: "/dashboard",    label: "Home",       Icon: Home },
+  { id: "reports",  path: "/reports",      label: "Reports",    Icon: FileText },
+  { id: "notifs",   path: "/notifications",label: "Alerts",     Icon: Bell },
+  { id: "settings", path: "/settings",     label: "Profile",    Icon: Settings },
 ];
 
 const GOVERNMENT_OFFICER_NAV: NavItem[] = [

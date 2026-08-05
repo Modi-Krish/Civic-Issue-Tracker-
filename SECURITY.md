@@ -14,7 +14,7 @@ currently being supported with security updates.
 
 Please do not report security vulnerabilities through public GitHub issues.
 
-Instead, please report them by emailing [security@yourdomain.com](mailto:security@yourdomain.com).
+Instead, please report them by emailing [security@yourdomain.com](mailto:krishmody311@gmail.com).
 
 You should receive a response within 24 hours. If for some reason you do not, please follow up via email to ensure we have received your message.
 

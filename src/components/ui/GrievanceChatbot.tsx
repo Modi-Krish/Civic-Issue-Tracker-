@@ -43,6 +43,114 @@ const SH = {
   insetSoft: `inset 3px 3px 7px ${T.shD}, inset -3px -3px 7px ${T.shL}`,
 };
 
+const TRANSLATIONS = {
+  en: {
+    welcome: "Hello! I am your AI Civic Assistant. How can I help you today?",
+    welcome_back: "Welcome back! How can I help you today?",
+    report_problem: "Report a problem",
+    status_previous: "Status of my previous problem",
+    problems_nearby: "Problems nearby me",
+    ask_problem: "What is your problem? Please describe it briefly.",
+    no_previous: "You don't have any previous problems reported.",
+    fetch_error: "Sorry, I couldn't fetch your previous problems right now.",
+    view_nearby: "You can view all reported problems near you on the Map view in your Dashboard!",
+    ask_dept: "What is the department of your problem?",
+    dept_sanitation: "Sanitation",
+    dept_roads: "Road Damage",
+    dept_water: "Water Leakage",
+    dept_electricity: "Electricity Fault",
+    dept_other: "Other",
+    ask_photo: "Please provide a photo of the issue. You can use the image icon below, or tap 'Skip'.",
+    upload_photo: "Upload Photo",
+    skip_photo: "Skip Photo",
+    photo_uploaded: "[Photo Uploaded]",
+    ask_level: "What is the priority level of this issue?",
+    level_high: "High (Emergency)",
+    level_medium: "Medium",
+    level_low: "Low",
+    submitting: "Submitting your grievance...",
+    need_gps: "I need your GPS location to submit this report. Please enable location services on your device and click 'Retry GPS' below.",
+    success: "Success! Your grievance has been registered.",
+    start_new: "Start New Conversation",
+    gps_secured: "GPS location secured! Submitting your issue...",
+    gps_failed: "Failed to get GPS. Please ensure location services are enabled on your device.",
+    gps_unsupported: "GPS is not supported on this device.",
+    retry_gps: "Retry GPS",
+    obtaining_loc: "Obtaining location...",
+    gps_unavailable: "GPS unavailable. Defaulting to municipal center.",
+  },
+  hi: {
+    welcome: "नमस्ते! मैं आपका एआई नागरिक सहायक हूँ। मैं आज आपकी कैसे मदद कर सकता हूँ?",
+    welcome_back: "वापसी पर स्वागत है! मैं आज आपकी कैसे मदद कर सकता हूँ?",
+    report_problem: "समस्या की रिपोर्ट करें",
+    status_previous: "मेरी पिछली समस्या की स्थिति",
+    problems_nearby: "मेरे आस-पास की समस्याएं",
+    ask_problem: "आपकी समस्या क्या है? कृपया संक्षेप में वर्णन करें।",
+    no_previous: "आपने पहले कोई समस्या दर्ज नहीं की है।",
+    fetch_error: "क्षमा करें, मैं अभी आपकी पिछली समस्याओं को प्राप्त नहीं कर सका।",
+    view_nearby: "आप अपने डैशबोर्ड में मानचित्र दृश्य पर अपने आस-पास दर्ज सभी समस्याओं को देख सकते हैं!",
+    ask_dept: "आपकी समस्या का विभाग कौन सा है?",
+    dept_sanitation: "स्वच्छता (Sanitation)",
+    dept_roads: "सड़क क्षति (Road Damage)",
+    dept_water: "पानी का रिसाव (Water Leakage)",
+    dept_electricity: "बिजली दोष (Electricity)",
+    dept_other: "अन्य (Other)",
+    ask_photo: "कृपया समस्या की एक तस्वीर प्रदान करें। आप नीचे दिए गए छवि आइकन का उपयोग कर सकते हैं, या 'छोड़ें' पर टैप कर सकते हैं।",
+    upload_photo: "फोटो अपलोड करें",
+    skip_photo: "छोड़ें (Skip)",
+    photo_uploaded: "[फोटो अपलोड किया गया]",
+    ask_level: "इस समस्या का प्राथमिकता स्तर क्या है?",
+    level_high: "उच्च (High)",
+    level_medium: "मध्यम (Medium)",
+    level_low: "निम्न (Low)",
+    submitting: "आपकी शिकायत दर्ज की जा रही है...",
+    need_gps: "इस रिपोर्ट को सबमिट करने के लिए मुझे आपके जीपीएस स्थान की आवश्यकता है। कृपया अपने डिवाइस पर स्थान सेवाएँ चालू करें और नीचे 'जीपीएस पुनः प्रयास करें' पर क्लिक करें।",
+    success: "सफलता! आपकी शिकायत दर्ज कर ली गई है।",
+    start_new: "नई बातचीत शुरू करें",
+    gps_secured: "जीपीएस स्थान सुरक्षित! आपकी समस्या दर्ज की जा रही है...",
+    gps_failed: "जीपीएस प्राप्त करने में विफल। कृपया सुनिश्चित करें कि स्थान सेवाएं सक्षम हैं।",
+    gps_unsupported: "इस डिवाइस पर जीपीएस समर्थित नहीं है।",
+    retry_gps: "जीपीएस पुनः प्रयास करें",
+    obtaining_loc: "स्थान प्राप्त किया जा रहा है...",
+    gps_unavailable: "जीपीएस अनुपलब्ध।",
+  },
+  gu: {
+    welcome: "નમસ્તે! હું તમારો એઆઈ નાગરિક સહાયક છું. આજે હું તમારી કેવી રીતે મદદ કરી શકું?",
+    welcome_back: "ફરી સ્વાગત છે! આજે હું તમારી કેવી રીતે મદદ કરી શકું?",
+    report_problem: "સમસ્યાની જાણ કરો",
+    status_previous: "મારી અગાઉની સમસ્યાની સ્થિતિ",
+    problems_nearby: "મારી નજીકની સમસ્યાઓ",
+    ask_problem: "તમારી સમસ્યા શું છે? કૃપા કરીને ટૂંકમાં વર્ણન કરો.",
+    no_previous: "તમે અગાઉ કોઈ સમસ્યા નોંધાવી નથી.",
+    fetch_error: "માફ કરશો, હું અત્યારે તમારી અગાઉની સમસ્યાઓ મેળવી શક્યો નથી.",
+    view_nearby: "તમે તમારા ડેશબોર્ડમાં નકશા દૃશ્ય પર તમારી નજીક નોંધાયેલી તમામ સમસ્યાઓ જોઈ શકો છો!",
+    ask_dept: "તમારી સમસ્યાનો વિભાગ કયો છે?",
+    dept_sanitation: "સ્વચ્છતા (Sanitation)",
+    dept_roads: "રસ્તાનું નુકસાન (Road Damage)",
+    dept_water: "પાણી લિકેજ (Water Leakage)",
+    dept_electricity: "વીજળીની ખામી (Electricity)",
+    dept_other: "અન્ય (Other)",
+    ask_photo: "કૃપા કરીને સમસ્યાનો ફોટો પ્રદાન કરો. તમે નીચે આપેલા છબી ચિહ્નનો ઉપયોગ કરી શકો છો અથવા 'છોડો' પર ટેપ કરી શકો છો.",
+    upload_photo: "ફોટો અપલોડ કરો",
+    skip_photo: "છોડો (Skip)",
+    photo_uploaded: "[ફોટો અપલોડ કરેલ છે]",
+    ask_level: "આ સમસ્યાનું પ્રાધાન્ય સ્તર શું છે?",
+    level_high: "ઉચ્ચ (High)",
+    level_medium: "મધ્યમ (Medium)",
+    level_low: "નિમ્ન (Low)",
+    submitting: "તમારી ફરિયાદ સબમિટ થઈ રહી છે...",
+    need_gps: "આ રિપોર્ટ સબમિટ કરવા માટે મને તમારા જીપીએસ સ્થાનની જરૂર છે. કૃપા કરીને તમારા ઉપકરણ પર સ્થાન સેવાઓ ચાલુ કરો અને નીચે 'જીપીએસ ફરીથી પ્રયાસ કરો' પર ક્લિક કરો.",
+    success: "સફળતા! તમારી ફરિયાદ નોંધવામાં આવી છે.",
+    start_new: "નવી વાતચીત શરૂ કરો",
+    gps_secured: "જીપીએસ સ્થાન સુરક્ષિત! તમારી સમસ્યા સબમિટ કરી રહ્યાં છીએ...",
+    gps_failed: "જીપીએસ મેળવવામાં નિષ્ફળ. કૃપા કરીને ખાતરી કરો કે સ્થાન સેવાઓ સક્ષમ છે.",
+    gps_unsupported: "આ ઉપકરણ પર જીપીએસ સપોર્ટેડ નથી.",
+    retry_gps: "જીપીએસ ફરીથી પ્રયાસ કરો",
+    obtaining_loc: "સ્થાન મેળવી રહ્યાં છીએ...",
+    gps_unavailable: "જીપીએસ અનુપલબ્ધ.",
+  }
+};
+
 const Chip = ({ children, onClick, customColor = null }: any) => (
   <button onClick={onClick} style={{
     background: customColor ? `${customColor}22` : T.accentTint, 
@@ -67,6 +175,7 @@ export default function GrievanceChatbot({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [preferredLang, setPreferredLang] = useState<'en' | 'hi' | 'gu'>('en');
+  const t = TRANSLATIONS[preferredLang];
   
   // Guided Flow State
   const [flowState, setFlowState] = useState<FlowState>('IDLE');
@@ -98,6 +207,10 @@ export default function GrievanceChatbot({
   const mediaRecorderRef = useRef<any>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  useEffect(() => {
+    setLocationLabel(t.obtaining_loc);
+  }, [preferredLang]);
+
   const appendAiMsg = (text: string) => {
     const msg: Message = { sender: 'ai', text, timestamp: new Date() };
     setMessages(prev => [...prev, msg]);
@@ -111,10 +224,7 @@ export default function GrievanceChatbot({
   };
 
   const sendWelcomeMessage = (lang: 'en' | 'hi' | 'gu') => {
-    let welcome = "Hello! I am your AI Civic Assistant. How can I help you today?";
-    if (lang === 'hi') welcome = "नमस्ते! मैं आपका एआई नागरिक सहायक हूँ। मैं आज आपकी कैसे मदद कर सकता हूँ?";
-    else if (lang === 'gu') welcome = "નમસ્તે! હું તમારો એઆઈ નાગરિક સહાયક છું. આજે હું તમારી કેવી રીતે મદદ કરી શકું?";
-    appendAiMsg(welcome);
+    appendAiMsg(TRANSLATIONS[lang].welcome);
     setFlowState('IDLE');
   };
 
@@ -124,9 +234,8 @@ export default function GrievanceChatbot({
         getConversationHistory(user.uid).then(({ messages: history }) => {
           if (history.length > 0) {
             setMessages(history);
-            // Resume flow if history ends with something specific, or just reset to IDLE
             setFlowState('IDLE'); 
-            appendAiMsg("Welcome back! How can I help you today?");
+            appendAiMsg(t.welcome_back);
           } else {
             sendWelcomeMessage(preferredLang);
           }
@@ -147,30 +256,31 @@ export default function GrievanceChatbot({
           setLng(pos.coords.longitude);
           setLocationLabel(`Location captured: (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
           if (retry) {
-             appendAiMsg("GPS location secured! Submitting your issue...");
+             appendAiMsg(t.gps_secured);
              submitFlow(draftDetails, pos.coords.latitude, pos.coords.longitude);
           }
         },
         (err) => {
           console.warn("Geolocation failed:", err);
           if (!retry) {
-             setLocationLabel('GPS unavailable. Defaulting to municipal center.');
+             setLocationLabel(t.gps_unavailable);
              setLat(22.3072);
              setLng(73.1812);
           } else {
-             appendAiMsg("Failed to get GPS. Please ensure location services are enabled on your device.");
+             appendAiMsg(t.gps_failed);
           }
         },
         { timeout: 10000 }
       );
     } else if (retry) {
-        appendAiMsg("GPS is not supported on this device.");
+        appendAiMsg(t.gps_unsupported);
     }
   };
 
   const handleLanguageChange = (lang: 'en' | 'hi' | 'gu') => {
     setPreferredLang(lang);
-    sendWelcomeMessage(lang);
+    appendAiMsg(TRANSLATIONS[lang].welcome);
+    setFlowState('IDLE');
   };
 
   useEffect(() => {
@@ -232,9 +342,9 @@ export default function GrievanceChatbot({
       reader.onload = () => {
         setFilePreview(reader.result as string);
         if (flowState === 'ASK_PHOTO') {
-            appendUserMsg("[Photo Uploaded]");
+            appendUserMsg(t.photo_uploaded);
             setFlowState('ASK_LEVEL');
-            appendAiMsg("Great. Finally, what is the priority level of this issue?");
+            appendAiMsg(t.ask_level);
         }
       };
       reader.readAsDataURL(file);
@@ -250,60 +360,54 @@ export default function GrievanceChatbot({
       setInputText('');
     }
 
-    // Process based on State Machine
-    if (flowState === 'IDLE') {
-        // Assume they want to report a problem if they type directly
+    if (flowState === 'IDLE' || flowState === 'ASK_PROBLEM') {
         setDraftDetails((prev: any) => ({ ...prev, description: textToSend, title: textToSend.substring(0, 30) + '...' }));
         setFlowState('ASK_DEPT');
-        appendAiMsg("Got it. What is the department of your problem?");
-    } else if (flowState === 'ASK_PROBLEM') {
-        setDraftDetails((prev: any) => ({ ...prev, description: textToSend, title: textToSend.substring(0, 30) + '...' }));
-        setFlowState('ASK_DEPT');
-        appendAiMsg("Thank you. What is the department of your problem?");
+        appendAiMsg(t.ask_dept);
     } else if (flowState === 'ASK_DEPT') {
-        // Fallback if they type the department
         setDraftDetails((prev: any) => ({ ...prev, category: 'Other', department_slug: 'other' }));
         setFlowState('ASK_PHOTO');
-        appendAiMsg("Please provide a photo of the issue. You can use the image icon below, or tap 'Skip'.");
+        appendAiMsg(t.ask_photo);
     } else if (flowState === 'ASK_PHOTO') {
-        if (textToSend.toLowerCase().includes('skip')) {
+        if (textToSend.toLowerCase().includes('skip') || textToSend.includes('છોડો') || textToSend.includes('छोड़ें')) {
             setFlowState('ASK_LEVEL');
-            appendAiMsg("What is the priority level of this issue?");
+            appendAiMsg(t.ask_level);
         }
     } else if (flowState === 'ASK_LEVEL') {
         let p = 'MEDIUM';
-        if (textToSend.toLowerCase().includes('high')) p = 'CRITICAL';
-        if (textToSend.toLowerCase().includes('low')) p = 'LOW';
+        const txtLower = textToSend.toLowerCase();
+        if (txtLower.includes('high') || txtLower.includes('उच्च') || txtLower.includes('ઉચ્ચ')) p = 'CRITICAL';
+        if (txtLower.includes('low') || txtLower.includes('निम्न') || txtLower.includes('નિમ્ન')) p = 'LOW';
         handleLevelSelect(p, textToSend);
     }
   };
 
-  // Predefined Action Handlers
-  const handleAction = async (action: string) => {
-      appendUserMsg(action);
+  const handleAction = async (actionId: string, actionText: string) => {
+      appendUserMsg(actionText);
       
-      if (action === 'Report a problem') {
+      if (actionId === 'report_problem') {
           setFlowState('ASK_PROBLEM');
-          appendAiMsg("What is your problem? Please describe it briefly.");
-      } else if (action === 'Status of my previous problem') {
+          appendAiMsg(t.ask_problem);
+      } else if (actionId === 'status_previous') {
           setLoading(true);
           try {
              const q = query(collection(db, 'issues'), where('reporter_id', '==', user.uid));
              const snaps = await getDocs(q);
              if (snaps.empty) {
-                appendAiMsg("You don't have any previous problems reported.");
+                appendAiMsg(t.no_previous);
              } else {
                 const issues = snaps.docs.map(d => ({id: d.id, ...d.data()})).sort((a:any, b:any) => b.created_at?.toMillis() - a.created_at?.toMillis());
                 const latest = issues[0] as any;
-                appendAiMsg(`Your most recent issue "${latest.title}" is currently marked as ${latest.status}.`);
+                let statusMsg = t.most_recent.replace('{title}', latest.title).replace('{status}', latest.status);
+                appendAiMsg(statusMsg);
              }
           } catch(e) {
-             appendAiMsg("Sorry, I couldn't fetch your previous problems right now.");
+             appendAiMsg(t.fetch_error);
           }
           setLoading(false);
           setFlowState('IDLE');
-      } else if (action === 'Problems nearby me') {
-          appendAiMsg("You can view all reported problems near you on the Map view in your Dashboard!");
+      } else if (actionId === 'problems_nearby') {
+          appendAiMsg(t.view_nearby);
           setFlowState('IDLE');
       }
   };
@@ -312,7 +416,7 @@ export default function GrievanceChatbot({
       appendUserMsg(categoryName);
       setDraftDetails((prev: any) => ({ ...prev, category: categoryName, department_slug: slug }));
       setFlowState('ASK_PHOTO');
-      appendAiMsg("Please provide a photo of the issue. You can use the image icon below, or tap 'Skip'.");
+      appendAiMsg(t.ask_photo);
   };
 
   const handleLevelSelect = (levelCode: string, levelName: string) => {
@@ -321,10 +425,9 @@ export default function GrievanceChatbot({
       
       setFlowState('SUBMITTING');
       if (!lat || !lng) {
-          appendAiMsg("I need your GPS location to submit this report. Please enable location services on your device and click 'Retry GPS' below.");
+          appendAiMsg(t.need_gps);
       } else {
-          appendAiMsg("Submitting your grievance...");
-          // Execute submission
+          appendAiMsg(t.submitting);
           submitFlow({ ...draftDetails, priority: levelCode }, lat, lng);
       }
   };
@@ -356,7 +459,7 @@ export default function GrievanceChatbot({
           filePath: finalFilePath,
           originalLanguage: preferredLang,
           originalText: finalDetails.description,
-          translatedText: finalDetails.description, // simplified for guided flow
+          translatedText: finalDetails.description,
           preferredLanguage: preferredLang,
           aiPriority: finalDetails.priority,
           finalPriority: finalDetails.priority,
@@ -369,16 +472,8 @@ export default function GrievanceChatbot({
         setSelectedFile(null);
         setFilePreview(null);
         
-        appendAiMsg(`Success! Your grievance has been registered.
-        
-📋 **Grievance Number:** ${result.complaintNumber}
-🏢 **Department:** ${finalDetails.category}
-⚠️ **Priority:** ${finalDetails.priority}
-
-You will receive real-time updates as our teams begin work.`);
-        
+        appendAiMsg(`${t.success}\n\n📋 **Grievance Number:** ${result.complaintNumber}\n🏢 **Department:** ${finalDetails.category}\n⚠️ **Priority:** ${finalDetails.priority}`);
         setFlowState('DONE');
-        
       } catch (err: any) {
         console.error(err);
         appendAiMsg(`Failed to submit grievance: ${err.message}`);
@@ -505,35 +600,35 @@ You will receive real-time updates as our teams begin work.`);
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '10px 20px', background: T.base }}>
               {flowState === 'IDLE' && (
                 <>
-                  <Chip onClick={() => handleAction('Report a problem')}>Report a problem</Chip>
-                  <Chip onClick={() => handleAction('Status of my previous problem')}>Status of my previous problem</Chip>
-                  <Chip onClick={() => handleAction('Problems nearby me')}>Problems nearby me</Chip>
+                  <Chip onClick={() => handleAction('report_problem', t.report_problem)}>{t.report_problem}</Chip>
+                  <Chip onClick={() => handleAction('status_previous', t.status_previous)}>{t.status_previous}</Chip>
+                  <Chip onClick={() => handleAction('problems_nearby', t.problems_nearby)}>{t.problems_nearby}</Chip>
                 </>
               )}
               {flowState === 'ASK_DEPT' && (
                 <>
-                  <Chip onClick={() => handleDeptSelect('sanitation', 'Sanitation')}>Sanitation</Chip>
-                  <Chip onClick={() => handleDeptSelect('roads', 'Road Damage')}>Road Damage</Chip>
-                  <Chip onClick={() => handleDeptSelect('water', 'Water Leakage')}>Water Leakage</Chip>
-                  <Chip onClick={() => handleDeptSelect('electricity', 'Electricity')}>Electricity Fault</Chip>
-                  <Chip onClick={() => handleDeptSelect('other', 'Other')}>Other</Chip>
+                  <Chip onClick={() => handleDeptSelect('sanitation', t.dept_sanitation)}>{t.dept_sanitation}</Chip>
+                  <Chip onClick={() => handleDeptSelect('roads', t.dept_roads)}>{t.dept_roads}</Chip>
+                  <Chip onClick={() => handleDeptSelect('water', t.dept_water)}>{t.dept_water}</Chip>
+                  <Chip onClick={() => handleDeptSelect('electricity', t.dept_electricity)}>{t.dept_electricity}</Chip>
+                  <Chip onClick={() => handleDeptSelect('other', t.dept_other)}>{t.dept_other}</Chip>
                 </>
               )}
               {flowState === 'ASK_PHOTO' && (
                 <>
-                  <Chip onClick={() => fileInputRef.current?.click()}>Upload Photo</Chip>
-                  <Chip onClick={() => sendMessage('Skip Photo', true)}>Skip Photo</Chip>
+                  <Chip onClick={() => fileInputRef.current?.click()}>{t.upload_photo}</Chip>
+                  <Chip onClick={() => sendMessage(t.skip_photo, true)}>{t.skip_photo}</Chip>
                 </>
               )}
               {flowState === 'ASK_LEVEL' && (
                 <>
-                  <Chip onClick={() => handleLevelSelect('CRITICAL', 'High Priority')} customColor="#B91C1C">High (Emergency)</Chip>
-                  <Chip onClick={() => handleLevelSelect('MEDIUM', 'Medium Priority')} customColor="#C2410C">Medium</Chip>
-                  <Chip onClick={() => handleLevelSelect('LOW', 'Low Priority')}>Low</Chip>
+                  <Chip onClick={() => handleLevelSelect('CRITICAL', t.level_high)} customColor="#B91C1C">{t.level_high}</Chip>
+                  <Chip onClick={() => handleLevelSelect('MEDIUM', t.level_medium)} customColor="#C2410C">{t.level_medium}</Chip>
+                  <Chip onClick={() => handleLevelSelect('LOW', t.level_low)}>{t.level_low}</Chip>
                 </>
               )}
               {flowState === 'DONE' && (
-                <Chip onClick={() => setFlowState('IDLE')}>Start New Conversation</Chip>
+                <Chip onClick={() => setFlowState('IDLE')}>{t.start_new}</Chip>
               )}
             </div>
         )}
@@ -627,7 +722,7 @@ You will receive real-time updates as our teams begin work.`);
             </div>
             {(!lat || !lng) && (
                <button onClick={() => captureGPS(true)} style={{ background: 'none', border: 'none', color: T.accent, fontSize: 9, cursor: 'pointer', fontWeight: 700 }}>
-                  Retry GPS
+                  {t.retry_gps}
                </button>
             )}
           </div>

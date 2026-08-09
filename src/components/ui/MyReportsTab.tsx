@@ -205,11 +205,15 @@ export default function MyReportsTab({ user, profile }: { user: any, profile: an
         const { db } = await import('@/lib/firebase');
         const q = query(
           collection(db, 'issues'), 
-          where('reporter_id', '==', user.uid),
-          orderBy('created_at', 'desc')
+          where('reporter_id', '==', user.uid)
         );
         unsubscribe = onSnapshot(q, (snapshot) => {
           const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          data.sort((a: any, b: any) => {
+            const timeA = a.created_at?.toMillis ? a.created_at.toMillis() : 0;
+            const timeB = b.created_at?.toMillis ? b.created_at.toMillis() : 0;
+            return timeB - timeA;
+          });
           setIssues(data);
           setLoading(false);
         });
@@ -229,7 +233,7 @@ export default function MyReportsTab({ user, profile }: { user: any, profile: an
   const filtered = issues.filter((i: any) => {
     const sMap: any = {
       'REPORTED': ['REPORTED'],
-      'IN_PROGRESS': ['IN_PROGRESS'],
+      'IN_PROGRESS': ['IN_PROGRESS', 'DEPARTMENT_ASSIGNED', 'EMPLOYEE_ASSIGNED', 'COMPANY_ASSIGNED'],
       'COMPLETED': ['APPROVED', 'COMPLETED', 'CLOSED'],
       'COMMUNITY_REVIEW': ['SUBMITTED_FOR_APPROVAL', 'COMMUNITY_REVIEW'],
       'CLOSED': ['CLOSED']

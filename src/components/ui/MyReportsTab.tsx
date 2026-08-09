@@ -28,7 +28,7 @@ const SH = {
 };
 
 const NEW_STATUS_COLORS = {
-  REPORTED: { label: "Reported", bg: "#E5E7EB", fg: "#4B5563", dot: "#6B7280" }, // Gray
+  REPORTED: { label: "New (Unassigned)", bg: "#E5E7EB", fg: "#4B5563", dot: "#6B7280" }, // Gray
   VERIFIED: { label: "Verified", bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" },
   ASSIGNED: { label: "Assigned", bg: "#DBEAFE", fg: "#1D4ED8", dot: "#2563EB" }, // Blue
   IN_PROGRESS: { label: "In Progress", bg: "#FFEDD5", fg: "#C2410C", dot: "#EA580C" }, // Orange

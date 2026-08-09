@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 'use client';
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Clock, User, ArrowLeft, Star, Camera, CheckCircle2, Check } from 'lucide-react';
+import { MapPin, Clock, User, ArrowLeft, Star, Camera, CheckCircle2, Check, MessageSquare, Send, Globe } from 'lucide-react';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const T = {
@@ -256,6 +258,81 @@ function IssueDetailContent() {
   const [reporter, setReporter] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const { user, profile } = useAuth();
+  const [messages, setMessages] = useState<any[]>([]);
+  const [newMsg, setNewMsg] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    let unsub: any = null;
+    async function listenMessages() {
+      try {
+        const { collection, query, where, orderBy, onSnapshot } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const q = query(
+          collection(db, "issue_messages"),
+          where("issue_id", "==", id),
+          orderBy("created_at", "asc")
+        );
+        unsub = onSnapshot(q, (snap) => {
+          setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        });
+      } catch (err) {
+        console.error("Error setting up messaging listener:", err);
+      }
+    }
+    listenMessages();
+    return () => { if (unsub) unsub(); };
+  }, [id]);
+
+  const handleSendMessage = async () => {
+    if (!newMsg.trim() || !id || !issue) return;
+    setSendingMsg(true);
+    const textToSend = newMsg;
+    setNewMsg("");
+
+    try {
+      const { collection, addDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      
+      const isCitizen = profile?.role === 'citizen';
+      const citizenLang = issue.preferred_language || issue.original_language || 'en';
+      const targetLang = isCitizen ? 'en' : citizenLang;
+
+      let translated = textToSend;
+      if (targetLang !== (isCitizen ? citizenLang : 'en')) {
+        try {
+          const res = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: textToSend, targetLanguage: targetLang })
+          });
+          const data = await res.json();
+          if (data.translatedText) {
+            translated = data.translatedText;
+          }
+        } catch (err) {
+          console.warn("Translation API error:", err);
+        }
+      }
+
+      await addDoc(collection(db, "issue_messages"), {
+        issue_id: id,
+        sender_id: user?.uid || user?.id || 'anonymous',
+        sender_name: profile?.full_name || user?.email?.split('@')[0] || 'User',
+        sender_role: profile?.role || 'citizen',
+        text: textToSend,
+        translated_text: translated,
+        created_at: new Date().toISOString()
+      });
+    } catch (err: any) {
+      alert("Failed to send message: " + err.message);
+    } finally {
+      setSendingMsg(false);
+    }
+  };
+
   const [citizenRating, setCitizenRating] = useState<number>(5);
   const [citizenComment, setCitizenComment] = useState<string>("");
   const [submittingRating, setSubmittingRating] = useState<boolean>(false);
@@ -466,7 +543,7 @@ function IssueDetailContent() {
                 </div>
                 {issue.citizen_feedback && (
                   <p style={{ fontSize: 13, color: T.text2, fontStyle: "italic", margin: 0 }}>
-                    "{issue.citizen_feedback}"
+                    &quot;{issue.citizen_feedback}&quot;
                   </p>
                 )}
               </div>
@@ -521,6 +598,96 @@ function IssueDetailContent() {
               ))}
             </div>
           )}
+        </SCard>
+
+        {/* ── Translation Supported Grievance Chat ── */}
+        <SCard>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+            <MessageSquare size={16} color={T.accent} />
+            <SecLabel>Grievance Conversation</SecLabel>
+            <span style={{ fontSize: 10, background: T.accentTint, color: "#085041", padding: "2px 8px", borderRadius: 10, fontWeight: 800 }}>
+              Translate Active
+            </span>
+          </div>
+
+          {/* Message registry */}
+          <div style={{
+            maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column",
+            gap: 12, padding: "12px", background: T.base, borderRadius: 16,
+            boxShadow: SH.inset, marginBottom: 14
+          }}>
+            {messages.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "32px 0", color: T.text3, fontSize: 12 }}>
+                No messages exchanged yet.
+              </div>
+            ) : (
+              messages.map((msg, index) => {
+                const isMe = msg.sender_id === user?.uid || msg.sender_id === user?.id;
+                const hasTranslation = msg.translated_text && msg.translated_text !== msg.text;
+                return (
+                  <div key={msg.id || index} style={{
+                    alignSelf: isMe ? "flex-end" : "flex-start",
+                    maxWidth: "80%", display: "flex", flexDirection: "column",
+                    alignItems: isMe ? "flex-end" : "flex-start"
+                  }}>
+                    <div style={{ fontSize: 9, color: T.text3, marginBottom: 2, fontWeight: 700 }}>
+                      {msg.sender_name} ({msg.sender_role.replace('_', ' ')})
+                    </div>
+                    <div style={{
+                      background: isMe ? T.accent : T.raised,
+                      color: isMe ? "white" : T.text1,
+                      padding: "10px 14px", borderRadius: 14,
+                      border: isMe ? "none" : `1px solid ${T.border}`,
+                      boxShadow: SH.raisedSm, fontSize: 12.5, lineHeight: 1.4
+                    }}>
+                      <div>{msg.text}</div>
+                      {hasTranslation && (
+                        <div style={{
+                          marginTop: 6, paddingTop: 6, borderTop: `1px solid ${isMe ? "rgba(255,255,255,0.2)" : T.border}`,
+                          fontSize: 11, fontStyle: "italic", opacity: 0.9,
+                          display: "flex", alignItems: "center", gap: 4
+                        }}>
+                          <Globe size={10} /> {msg.translated_text}
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 8, color: T.text3, marginTop: 2 }}>
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Input area */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Type message..."
+              value={newMsg}
+              onChange={e => setNewMsg(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleSendMessage(); }}
+              style={{
+                flex: 1, padding: "10px 14px", borderRadius: 12,
+                background: T.raised, border: `1px solid ${T.border}`,
+                boxShadow: SH.inset, color: T.text1, fontSize: 13,
+                outline: "none", fontFamily: "inherit"
+              }}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!newMsg.trim() || sendingMsg}
+              style={{
+                width: 38, height: 38, borderRadius: 12, border: "none",
+                background: T.accent, color: "white", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: SH.raisedSm, opacity: !newMsg.trim() || sendingMsg ? 0.6 : 1
+              }}
+            >
+              <Send size={16} />
+            </button>
+          </div>
         </SCard>
       </div>
     </div>

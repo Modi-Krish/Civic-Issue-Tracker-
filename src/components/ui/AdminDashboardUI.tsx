@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, CheckCircle2, ArrowRight, Building2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -67,7 +68,7 @@ interface DeptStat {
 interface AdminDashboardUIProps {
   user: any;
   profile: any;
-  initialStats: { total: number; resolved: number; open: number; departments: number };
+  initialStats: { total: number; resolved: number; open: number; departments: number; overdue: number; slaCompliantRate: number };
   initialDeptStats: DeptStat[];
   initialRecent: any[];
 }
@@ -82,8 +83,26 @@ export default function AdminDashboardUI({
   const [deptStats, setDeptStats] = useState(initialDeptStats);
   const [recentIssues] = useState(initialRecent);
   const [togglingDept, setTogglingDept] = useState<string | null>(null);
+  
+  const [insights, setInsights] = useState<any[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(true);
 
-  useState(() => {
+  useEffect(() => {
+    async function fetchInsights() {
+      try {
+        const res = await fetch('/api/analytics/insights');
+        const data = await res.json();
+        if (data.insights) setInsights(data.insights);
+      } catch (err) {
+        console.warn("Failed to fetch AI insights:", err);
+      } finally {
+        setInsightsLoading(false);
+      }
+    }
+    fetchInsights();
+  }, []);
+
+  useEffect(() => {
     async function fetchAlertsCount() {
       try {
         const res = await fetch('/api/analytics/patterns?status=ACTIVE');
@@ -169,6 +188,17 @@ export default function AdminDashboardUI({
             grid-template-columns: repeat(3, 1fr);
           }
         }
+        .admin-health-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 20px;
+          margin-bottom: 28px;
+        }
+        @media (min-width: 1024px) {
+          .admin-health-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
       `}</style>
 
       <div className="admin-container">
@@ -238,8 +268,9 @@ export default function AdminDashboardUI({
               </div>
             </section>
 
-            {/* System health */}
-            <section style={{ marginBottom: 28 }}>
+            {/* System health & SLA Compliance dual-grid */}
+            <section className="admin-health-grid">
+              {/* System Health */}
               <div style={{ borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, padding: 24 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 12 }}>
                   <div>
@@ -259,6 +290,73 @@ export default function AdminDashboardUI({
                   ))}
                 </div>
               </div>
+
+              {/* SLA Compliance */}
+              <div style={{ borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, padding: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18, flexWrap: "wrap", gap: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#C2410C", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>SLA Compliance</div>
+                    <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.25, color: T.text1 }}>
+                      {stats.overdue} active grievances have breached resolution SLA
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: "#C2410C" }}>{stats.slaCompliantRate}%</span>
+                </div>
+                <div style={{ height: 10, borderRadius: 99, background: T.base, overflow: "hidden", boxShadow: SH.insetSoft }}>
+                  <div style={{ height: "100%", width: `${stats.slaCompliantRate}%`, borderRadius: 99, background: `linear-gradient(90deg, #F97316, #C2410C)` }} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10 }}>
+                  {["Critical", "Standard SLA", "Overdue"].map((s, i) => (
+                    <span key={s} style={{ fontSize: 10, fontWeight: 800, color: i === 2 ? "#C2410C" : T.text3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{s}</span>
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {/* AI Redressal Insights */}
+            <section style={{ marginBottom: 28 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, padding: "0 4px" }}>
+                <h2 style={{ fontSize: 16, fontWeight: 900, letterSpacing: "-0.02em", color: T.text1, margin: 0 }}>
+                  AI Redressal Insights
+                </h2>
+                <span style={{ fontSize: 9, background: T.accentTint, color: T.accentDark, padding: "3px 9px", borderRadius: 10, fontWeight: 800, textTransform: "uppercase" }}>
+                  Realtime Cluster Analysis
+                </span>
+              </div>
+
+              {insightsLoading ? (
+                <div style={{ padding: 24, textAlign: "center", background: T.raised, borderRadius: 20, boxShadow: SH.insetSoft }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", border: "2px solid #DDD9CE", borderTopColor: T.accent, animation: "spin 1s linear infinite", margin: "0 auto" }} />
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {insights.map((ins, idx) => (
+                    <div key={idx} style={{
+                      borderRadius: 20, padding: 18, background: T.raised,
+                      borderLeft: `5px solid ${ins.priority === 'HIGH' || ins.priority === 'CRITICAL' ? '#C2410C' : T.accent}`,
+                      borderTop: `1px solid ${T.border}`,
+                      borderRight: `1px solid ${T.border}`,
+                      borderBottom: `1px solid ${T.border}`,
+                      boxShadow: SH.raised
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 16 }}>{ins.type === 'HOTSPOT' ? '🚨' : '📈'}</span>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: T.text1 }}>{ins.title}</span>
+                        </div>
+                        <span style={{
+                          fontSize: 9, fontWeight: 900, padding: "2px 8px", borderRadius: 8,
+                          background: ins.priority === 'CRITICAL' ? '#FCEBEB' : ins.priority === 'HIGH' ? '#FFFBEB' : T.accentTint,
+                          color: ins.priority === 'CRITICAL' ? '#791F1F' : ins.priority === 'HIGH' ? '#B45309' : T.accentDark,
+                        }}>
+                          {ins.priority} URGENCY
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.5, margin: 0 }}>{ins.body}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Department Performance — responsive grid */}

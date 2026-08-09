@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MapPin, Star, Plus, CheckCircle2, Trophy,
-  FileText, ChevronRight,
+  FileText, ChevronRight, Sparkles,
 } from "lucide-react";
+import GrievanceChatbot from "./GrievanceChatbot";
 
 const T = {
   base:         "#EDEBE4",
@@ -154,6 +155,7 @@ export default function DashboardUI({
   initialStats, initialNearby, initialRecent, initialActive,
 }: DashboardUIProps) {
   const router = useRouter();
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   const [statsData]    = useState(initialStats);
   const [nearbyIssues] = useState(initialNearby);
   const [recentIssues] = useState(initialRecent);
@@ -368,20 +370,36 @@ export default function DashboardUI({
                     }}>
                       Report local issues to build a better neighborhood.
                     </p>
-                    <button
-                      onClick={() => router.push("/report")}
-                      style={{
-                        display: "inline-flex", alignItems: "center", gap: 7,
-                        padding: "11px 22px", borderRadius: 14,
-                        background: "#fff", color: T.accentDark,
-                        fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
-                        border: "none", cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-                      }}
-                    >
-                      <Plus size={15} strokeWidth={2.5} />
-                      Report Issue
-                    </button>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      <button
+                        onClick={() => router.push("/report")}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 7,
+                          padding: "11px 22px", borderRadius: 14,
+                          background: "#fff", color: T.accentDark,
+                          fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+                          border: "none", cursor: "pointer",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                        }}
+                      >
+                        <Plus size={15} strokeWidth={2.5} />
+                        Report Issue
+                      </button>
+                      <button
+                        onClick={() => setChatbotOpen(true)}
+                        style={{
+                          display: "inline-flex", alignItems: "center", gap: 7,
+                          padding: "11px 22px", borderRadius: 14,
+                          background: "rgba(255,255,255,0.15)", color: "#fff",
+                          fontSize: 13.5, fontWeight: 800, fontFamily: "inherit",
+                          border: "1px solid rgba(255,255,255,0.25)", cursor: "pointer",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        }}
+                      >
+                        <Sparkles size={15} strokeWidth={2.5} />
+                        AI Assistant
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -546,6 +564,40 @@ export default function DashboardUI({
           </section>
         </div>
       </div>
+
+      {/* Floating AI Grievance Assistant Button */}
+      <button
+        onClick={() => setChatbotOpen(true)}
+        style={{
+          position: "fixed",
+          bottom: "calc(96px + env(safe-area-inset-bottom, 0px))",
+          right: 20,
+          width: 56,
+          height: 56,
+          borderRadius: "50%",
+          background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
+          border: "none",
+          boxShadow: `0 8px 24px ${T.accent}44, 4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          cursor: "pointer",
+          zIndex: 999,
+          transition: "transform 0.15s ease",
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+      >
+        <Sparkles size={24} />
+      </button>
+
+      {/* Grievance Chatbot Dialog */}
+      <GrievanceChatbot 
+        isOpen={chatbotOpen} 
+        onClose={() => setChatbotOpen(false)} 
+        user={user}
+      />
 
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes pulseGreen {

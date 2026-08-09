@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -33,7 +34,16 @@ export default function AdminPage() {
         // 2. All Issues
         const qIssues = query(collection(db, 'issues'));
         const issuesSnap = await getDocs(qIssues);
-        const issueList = issuesSnap.docs.map(d => ({ id: d.id, status: d.data().status, department_id: d.data().department_id }));
+        const issueList = issuesSnap.docs.map(d => {
+          const data = d.data();
+          return {
+            id: d.id,
+            status: data.status,
+            department_id: data.department_id,
+            sla_deadline: data.sla_deadline,
+            created_at: data.created_at?.toDate ? data.created_at.toDate().toISOString() : data.created_at
+          };
+        });
 
         // 3. Recent Issues
         const qRecent = query(collection(db, 'issues'), orderBy('created_at', 'desc'), limit(5));
@@ -44,6 +54,17 @@ export default function AdminPage() {
         const resolved = issueList.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
         const open = issueList.filter((i: any) => i.status !== "CLOSED" && i.status !== "REJECTED" && i.status !== "APPROVED").length;
 
+        const nowStr = new Date().toISOString();
+        const overdue = issueList.filter((i: any) => 
+          i.status !== "CLOSED" && 
+          i.status !== "REJECTED" && 
+          i.status !== "APPROVED" && 
+          i.sla_deadline && 
+          i.sla_deadline < nowStr
+        ).length;
+
+        const slaCompliantRate = open > 0 ? Math.round(((open - overdue) / open) * 100) : 100;
+
         const deptStats = deptList.map((dept: any) => {
           const deptIssues = issueList.filter((i: any) => i.department_id === dept.id);
           const deptResolved = deptIssues.filter((i: any) => i.status === "CLOSED" || i.status === "APPROVED").length;
@@ -52,7 +73,7 @@ export default function AdminPage() {
         });
 
         setData({
-          stats: { total, resolved, open, departments: deptList.length },
+          stats: { total, resolved, open, departments: deptList.length, overdue, slaCompliantRate },
           deptStats,
           recent: recentIssues,
         });

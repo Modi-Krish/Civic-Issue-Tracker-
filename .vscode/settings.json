@@ -4,5 +4,14 @@
         "**/node_modules/**",
         "**/.next/**",
         "**/out/**"
+    ],
+    "gradle.nestedProjects": [
+        "android"
+    ],
+    "java.import.gradle.version": "8.13",
+    "java.import.gradle.wrapper.enabled": false,
+    "java.project.resourceFilters": [
+        "node_modules",
+        ".git"
     ]
 }

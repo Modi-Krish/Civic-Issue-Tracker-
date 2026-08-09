@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebase/admin';
+import crypto from 'crypto';
 
-function generateRandomId() {
-  return 'emp-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-}
 
 export async function GET(request: Request) {
   try {
@@ -55,7 +53,7 @@ export async function POST(request: Request) {
       throw new Error("Firebase Admin Auth not initialized");
     }
 
-    const generatedPassword = Math.random().toString(36).slice(-8) + 'Emp@1';
+    const generatedPassword = crypto.randomBytes(8).toString('hex') + 'Emp@1';
 
     let userRecord;
     try {

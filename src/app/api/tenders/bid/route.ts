@@ -1,16 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { logAuditAction } from '@/lib/utils/audit';
-import crypto from 'crypto';
+import { stringToUUID } from '@/lib/utils/uuid';
 
-function stringToUUID(idStr: string | null | undefined): string {
-  if (!idStr) return '00000000-0000-4000-8000-000000000000';
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  if (uuidRegex.test(idStr)) return idStr;
-
-  const hex = crypto.createHash('md5').update(idStr).digest('hex');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
-}
 
 export async function POST(request: Request) {
   try {

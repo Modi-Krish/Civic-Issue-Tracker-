@@ -393,19 +393,7 @@ function IssueDetailContent() {
             </div>
           </div>
           
-          {/* Predictive Alerts Integration (Mock based on type for demo) */}
-          {(issue.issue_type === 'Road Damage' || issue.issue_type === 'Water Leakage') && (
-            <div style={{
-              background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '10px 14px',
-              borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer'
-            }}>
-              <span style={{ fontSize: 16 }}>⚠</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#991B1B' }}>Frequently Occurring Issue</div>
-                <div style={{ fontSize: 11, color: '#B91C1C' }}>This area has a high recurrence prediction. Tap to view history.</div>
-              </div>
-            </div>
-          )}
+
         </div>
 
         {/* Progress */}
@@ -504,12 +492,11 @@ function IssueDetailContent() {
               <div style={{ fontSize: 13, fontWeight: 700, color: meta.fg }}>{issue.issue_type}</div>
             </div>
           </div>
-          {/* Tender Integration Mock */}
           {issue.status !== 'REPORTED' && (
             <>
-              <DetailRow icon={<span style={{ fontSize: 16 }}>🏛️</span>} label="Department" value={issue.department ?? "Public Works Dept"} />
-              <DetailRow icon={<span style={{ fontSize: 16 }}>🏢</span>} label="Assigned Tender Company" value={issue.assigned_company ?? "Apex Infra Solutions (Contract ends 2027)"} />
-              <DetailRow icon={<span style={{ fontSize: 16 }}>👷</span>} label="Assigned Officer" value={issue.assigned_employee ?? "Rajesh Kumar (Field Officer)"} />
+              <DetailRow icon={<span style={{ fontSize: 16 }}>🏛️</span>} label="Department" value={issue.department ?? "Not assigned"} />
+              {issue.assigned_company && <DetailRow icon={<span style={{ fontSize: 16 }}>🏢</span>} label="Assigned Tender Company" value={issue.assigned_company} />}
+              {issue.assigned_employee && <DetailRow icon={<span style={{ fontSize: 16 }}>👷</span>} label="Assigned Officer" value={issue.assigned_employee} />}
             </>
           )}
         </SCard>

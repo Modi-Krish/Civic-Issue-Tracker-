@@ -13,6 +13,27 @@ import {
   Loader2,
 } from 'lucide-react';
 
+// ── Design tokens (shared with AdminDashboardUI) ──
+const T = {
+  base:       '#EDEBE4',
+  raised:     '#F5F3EC',
+  border:     '#DDD9CE',
+  text1:      '#2C2C2A',
+  text2:      '#5F5E5A',
+  text3:      '#888780',
+  accent:     '#1D9E75',
+  accentDark: '#167A5B',
+  accentTint: '#E1F5EE',
+  shL: 'rgba(255,255,255,0.75)',
+  shD: 'rgba(0,0,0,0.09)',
+} as const;
+
+const SH = {
+  raised:    `8px 8px 16px ${T.shD}, -8px -8px 16px ${T.shL}`,
+  raisedSm:  `4px 4px 8px ${T.shD}, -4px -4px 8px ${T.shL}`,
+  insetSoft: `inset 3px 3px 7px ${T.shD}, -3px -3px 7px ${T.shL}`,
+};
+
 interface PatternCardProps {
   pattern: any;
   onViewDetail: (pattern: any) => void;
@@ -20,36 +41,32 @@ interface PatternCardProps {
   loadingId: string | null;
 }
 
-const severityConfig: Record<string, { bg: string; border: string; badge: string; badgeText: string; icon: React.ReactNode; label: string }> = {
+const severityConfig: Record<string, { accentBar: string; badgeBg: string; badgeText: string; icon: React.ReactNode; label: string }> = {
   CRITICAL: {
-    bg: '#fef2f2',
-    border: '#fecaca',
-    badge: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-    badgeText: '#fff',
+    accentBar: '#791F1F',
+    badgeBg: '#FCEBEB',
+    badgeText: '#791F1F',
     icon: <ShieldAlert size={14} />,
     label: 'Critical',
   },
   HIGH: {
-    bg: '#fff7ed',
-    border: '#fed7aa',
-    badge: 'linear-gradient(135deg, #ea580c, #c2410c)',
-    badgeText: '#fff',
+    accentBar: '#854F0B',
+    badgeBg: '#FAEEDA',
+    badgeText: '#854F0B',
     icon: <AlertTriangle size={14} />,
     label: 'High',
   },
   MEDIUM: {
-    bg: '#fffbeb',
-    border: '#fde68a',
-    badge: 'linear-gradient(135deg, #d97706, #b45309)',
-    badgeText: '#fff',
+    accentBar: '#0C447C',
+    badgeBg: '#E6F1FB',
+    badgeText: '#0C447C',
     icon: <AlertTriangle size={14} />,
     label: 'Medium',
   },
   LOW: {
-    bg: '#f0fdf4',
-    border: '#bbf7d0',
-    badge: 'linear-gradient(135deg, #16a34a, #15803d)',
-    badgeText: '#fff',
+    accentBar: '#085041',
+    badgeBg: '#E1F5EE',
+    badgeText: '#085041',
     icon: <Info size={14} />,
     label: 'Low',
   },
@@ -79,18 +96,19 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
   return (
     <div
       style={{
-        borderRadius: 18,
-        border: `1.5px solid ${severity.border}`,
-        background: '#ffffff',
+        borderRadius: 20,
+        border: `1px solid ${T.border}`,
+        background: T.raised,
         overflow: 'hidden',
         transition: 'box-shadow 0.2s ease, transform 0.2s ease',
         cursor: 'pointer',
+        boxShadow: SH.raised,
       }}
       className="hover:shadow-lg hover:-translate-y-0.5"
       onClick={() => onViewDetail(pattern)}
     >
       {/* Top accent bar */}
-      <div style={{ height: 4, background: severity.badge }} />
+      <div style={{ height: 4, background: severity.accentBar }} />
 
       <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Header row */}
@@ -104,13 +122,14 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
                   alignItems: 'center',
                   gap: 5,
                   padding: '4px 10px',
-                  borderRadius: 8,
-                  background: severity.badge,
+                  borderRadius: 10,
+                  background: severity.badgeBg,
                   color: severity.badgeText,
                   fontSize: 11,
                   fontWeight: 800,
-                  letterSpacing: 0.3,
+                  letterSpacing: '0.05em',
                   textTransform: 'uppercase',
+                  boxShadow: SH.raisedSm,
                 }}
               >
                 {severity.icon}
@@ -124,12 +143,13 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
                     alignItems: 'center',
                     gap: 4,
                     padding: '4px 8px',
-                    borderRadius: 8,
-                    background: '#fef2f2',
-                    color: '#dc2626',
+                    borderRadius: 10,
+                    background: '#FCEBEB',
+                    color: '#791F1F',
                     fontSize: 11,
                     fontWeight: 700,
                     animation: 'pulse 2s infinite',
+                    boxShadow: SH.raisedSm,
                   }}
                 >
                   <Clock size={12} />
@@ -141,11 +161,12 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
                 <span
                   style={{
                     padding: '4px 8px',
-                    borderRadius: 8,
-                    background: pattern.status === 'MONITORING' ? '#dbeafe' : '#f1f5f9',
-                    color: pattern.status === 'MONITORING' ? '#1d4ed8' : '#475569',
+                    borderRadius: 10,
+                    background: pattern.status === 'MONITORING' ? '#E6F1FB' : T.base,
+                    color: pattern.status === 'MONITORING' ? '#0C447C' : T.text2,
                     fontSize: 11,
                     fontWeight: 700,
+                    boxShadow: SH.raisedSm,
                   }}
                 >
                   {pattern.status}
@@ -158,20 +179,21 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
               style={{
                 fontSize: 15,
                 fontWeight: 800,
-                color: '#0f172a',
+                color: T.text1,
                 margin: 0,
                 lineHeight: 1.35,
+                letterSpacing: '-0.02em',
               }}
               className="line-clamp-2"
             >
               {pattern.pattern_type?.replace(/_/g, ' ') || 'Unknown Pattern'}
               {pattern.category && (
-                <span style={{ color: '#94a3b8', fontWeight: 600 }}> · {pattern.category}</span>
+                <span style={{ color: T.text3, fontWeight: 600 }}> · {pattern.category}</span>
               )}
             </h3>
           </div>
 
-          <ChevronRight size={20} style={{ color: '#94a3b8', flexShrink: 0, marginTop: 4 }} />
+          <ChevronRight size={20} style={{ color: T.text3, flexShrink: 0, marginTop: 4 }} />
         </div>
 
         {/* Description */}
@@ -179,7 +201,7 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
           <p
             style={{
               fontSize: 13,
-              color: '#64748b',
+              color: T.text2,
               margin: 0,
               lineHeight: 1.5,
             }}
@@ -196,25 +218,25 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
             flexWrap: 'wrap',
             gap: 12,
             fontSize: 12,
-            color: '#64748b',
+            color: T.text2,
             fontWeight: 600,
           }}
         >
           {pattern.occurrence_count && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <TrendingUp size={13} style={{ color: '#94a3b8' }} />
+              <TrendingUp size={13} style={{ color: T.text3 }} />
               {pattern.occurrence_count} occurrences
             </span>
           )}
           {pattern.affected_area && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <MapPin size={13} style={{ color: '#94a3b8' }} />
+              <MapPin size={13} style={{ color: T.text3 }} />
               {pattern.affected_area}
             </span>
           )}
           {pattern.predicted_next_at && (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <Clock size={13} style={{ color: '#94a3b8' }} />
+              <Clock size={13} style={{ color: T.text3 }} />
               Next: {formatDate(pattern.predicted_next_at)}
             </span>
           )}
@@ -226,23 +248,24 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
             <div
               style={{
                 flex: 1,
-                height: 6,
-                borderRadius: 3,
-                background: '#f1f5f9',
+                height: 8,
+                borderRadius: 99,
+                background: T.base,
                 overflow: 'hidden',
+                boxShadow: SH.insetSoft,
               }}
             >
               <div
                 style={{
                   height: '100%',
                   width: `${Math.round(pattern.confidence_score * 100)}%`,
-                  borderRadius: 3,
-                  background: 'linear-gradient(90deg, #0ea5e9, #8b5cf6)',
+                  borderRadius: 99,
+                  background: `linear-gradient(90deg, ${T.accent}, ${T.accentDark})`,
                   transition: 'width 0.6s ease',
                 }}
               />
             </div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#64748b', flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: T.text2, flexShrink: 0 }}>
               {Math.round(pattern.confidence_score * 100)}% conf.
             </span>
           </div>
@@ -259,16 +282,16 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
             style={{
               flex: 1,
               padding: '9px 14px',
-              borderRadius: 10,
-              background: '#f1f5f9',
-              color: '#334155',
+              borderRadius: 12,
+              background: T.base,
+              color: T.text1,
               fontSize: 12,
               fontWeight: 700,
-              border: 'none',
+              border: `1px solid ${T.border}`,
               cursor: 'pointer',
               transition: 'background 0.15s',
+              boxShadow: SH.raisedSm,
             }}
-            className="hover:bg-slate-200"
           >
             View Details
           </button>
@@ -279,8 +302,8 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
             style={{
               flex: 1,
               padding: '9px 14px',
-              borderRadius: 10,
-              background: 'linear-gradient(135deg, #10b981, #059669)',
+              borderRadius: 12,
+              background: `linear-gradient(135deg, ${T.accent}, ${T.accentDark})`,
               color: 'white',
               fontSize: 12,
               fontWeight: 700,
@@ -292,6 +315,7 @@ export default function PatternCard({ pattern, onViewDetail, onResolve, loadingI
               justifyContent: 'center',
               gap: 6,
               transition: 'opacity 0.15s',
+              boxShadow: SH.raisedSm,
             }}
           >
             {isLoading ? (

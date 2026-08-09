@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import GrievanceChatbot from '@/components/ui/GrievanceChatbot';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/lib/supabase/auth-context';
 
 export default function AssistantPage() {
   const { user, loading } = useAuth();

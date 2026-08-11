@@ -178,7 +178,7 @@ export default function SmartReportModal({
       
       // Get department based on category
       const { query, where, getDocs } = await import('firebase/firestore');
-      const deptSlug = category.toLowerCase().replace(/\s+/g, '-');
+      const deptSlug = (category || 'other').toLowerCase().replace(/\s+/g, '-');
       const deptQuery = query(collection(db, 'departments'), where('slug', '==', deptSlug));
       const deptSnap = await getDocs(deptQuery);
       

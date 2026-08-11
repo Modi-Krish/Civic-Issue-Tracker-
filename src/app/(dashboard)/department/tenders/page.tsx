@@ -56,7 +56,17 @@ export default function ManageTendersPage() {
           }
         }
 
-        if (profile?.role === 'superadmin' || profile?.role === 'admin' || profile?.role === 'government_official') {
+        const isCommandCentre = 
+          profile?.role === 'city_command_centre' ||
+          profile?.role === 'super_admin' ||
+          profile?.role === 'superadmin' ||
+          profile?.role === 'admin' ||
+          profile?.role === 'government_officer' ||
+          profile?.role === 'government_official' ||
+          profile?.department_id === 'city_command_centre' ||
+          profile?.department_id === 'command_centre';
+
+        if (isCommandCentre) {
           mode = 'TENDER';
         }
 
@@ -70,7 +80,7 @@ export default function ManageTendersPage() {
             .order('created_at', { ascending: false });
 
           if (data) {
-            if (profile?.role === 'superadmin' || profile?.role === 'admin' || profile?.role === 'government_official') {
+            if (isCommandCentre) {
               setTenders(data as Tender[]);
             } else {
               const deptIdLower = String(userDeptSlug || '').toLowerCase();

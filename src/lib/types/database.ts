@@ -1,5 +1,5 @@
 // ─── Enums ───────────────────────────────────────────────────────────
-export type UserRole = 'citizen' | 'government_officer' | 'company_admin' | 'company_employee' | 'department_admin' | 'employee' | 'super_admin';
+export type UserRole = 'citizen' | 'government_officer' | 'company_admin' | 'company_employee' | 'department_admin' | 'employee' | 'super_admin' | 'city_command_centre';
 
 export type IssueStatus =
   | 'REPORTED'

@@ -70,10 +70,25 @@ export default function ManageTendersPage() {
             .order('created_at', { ascending: false });
 
           if (data) {
-            const filtered = userDeptSlug
-              ? data.filter(t => t.department_id === deptDocData?.id || t.department_id === userDeptSlug || t.title?.toLowerCase().includes(String(userDeptSlug).toLowerCase()))
-              : data;
-            setTenders((filtered.length > 0 ? filtered : data) as Tender[]);
+            if (profile?.role === 'superadmin' || profile?.role === 'admin' || profile?.role === 'government_official') {
+              setTenders(data as Tender[]);
+            } else {
+              const deptIdLower = String(userDeptSlug || '').toLowerCase();
+              const deptIdRaw = String(deptDocData?.id || '').toLowerCase();
+              const deptSlugRaw = String(deptDocData?.slug || '').toLowerCase();
+
+              const filtered = data.filter(t => {
+                const targetDept = String(t.department_id || '').toLowerCase();
+                const titleLower = String(t.title || '').toLowerCase();
+                return (
+                  (deptIdLower && targetDept === deptIdLower) ||
+                  (deptIdRaw && targetDept === deptIdRaw) ||
+                  (deptSlugRaw && targetDept === deptSlugRaw) ||
+                  (deptIdLower && titleLower.includes(deptIdLower))
+                );
+              });
+              setTenders(filtered as Tender[]);
+            }
           }
         }
       } catch (err) {

@@ -168,10 +168,7 @@ export default function ManageTendersPage() {
         
         {/* Header */}
         <div>
-          <Link href="/department" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13, color: T.text3, fontWeight: 700, textDecoration: "none", marginBottom: 16 }}>
-            <ArrowLeft size={16} />
-            Back to Operational Queue
-          </Link>
+
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: T.raised, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: T.accentDark, boxShadow: SH.raisedSm }}>

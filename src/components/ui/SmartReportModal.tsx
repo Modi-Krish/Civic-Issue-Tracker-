@@ -176,12 +176,24 @@ export default function SmartReportModal({
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
       const { db } = await import('@/lib/firebase');
       
+      // Get department based on category
+      const { query, where, getDocs } = await import('firebase/firestore');
+      const deptSlug = category.toLowerCase().replace(/\s+/g, '-');
+      const deptQuery = query(collection(db, 'departments'), where('slug', '==', deptSlug));
+      const deptSnap = await getDocs(deptQuery);
+      
+      let deptId = 'default_dept';
+      if (!deptSnap.empty) {
+        deptId = deptSnap.docs[0].id;
+      }
+      
       await addDoc(collection(db, 'issues'), {
         title,
         description: desc,
         issue_type: category,
         status: 'REPORTED',
         reporter_id: user.uid,
+        department_id: deptId,
         location_lat: lat,
         location_lng: lng,
         location_label: '',

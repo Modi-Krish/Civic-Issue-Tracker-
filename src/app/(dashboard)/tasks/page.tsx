@@ -54,9 +54,11 @@ export default function TasksPage() {
       try {
         const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
-        const q = query(collection(db, 'issues'), where('assigned_employee_id', '==', user!.id), orderBy('created_at', 'desc'));
+        const q = query(collection(db, 'issues'), where('assigned_employee_id', '==', user!.id));
         unsubscribe = onSnapshot(q, snapshot => {
-          setAllTasks(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as unknown as Issue[]);
+          const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+          docs.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+          setAllTasks(docs as unknown as Issue[]);
           setLoading(false);
         }, err => {
           console.error('Error listening to tasks:', err);

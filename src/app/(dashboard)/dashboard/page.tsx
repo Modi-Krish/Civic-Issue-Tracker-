@@ -66,16 +66,18 @@ export default function DashboardPage() {
         };
 
         // 1. My Issues
-        const qMyIssues = query(collection(db, 'issues'), where('reporter_id', '==', user.uid), orderBy('created_at', 'desc'));
+        const qMyIssues = query(collection(db, 'issues'), where('reporter_id', '==', user.uid));
         unsubMyIssues = onSnapshot(qMyIssues, (snap) => {
           myIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          myIssues.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
           updateState();
         });
 
         // 2. Nearby Issues
-        const qNearby = query(collection(db, 'issues'), where('reporter_id', '!=', user.uid), orderBy('created_at', 'desc'));
+        const qNearby = query(collection(db, 'issues'), where('reporter_id', '!=', user.uid));
         unsubNearby = onSnapshot(qNearby, (snap) => {
           nearbyIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          nearbyIssues.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
           updateState();
         });
 

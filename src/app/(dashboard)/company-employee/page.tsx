@@ -73,13 +73,13 @@ export default function CompanyEmployeeDashboard() {
           import('@/lib/firebase').then(({ db }) => {
             const q = query(
               collection(db, 'issues'), 
-              where('assigned_employee_id', '==', user.uid), 
-              orderBy('created_at', 'desc')
+              where('assigned_employee_id', '==', user.uid)
             );
             unsubscribeSnap = onSnapshot(q, (snapshot) => {
               const tasksData = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter((t: any) => t.status !== 'CLOSED');
+              tasksData.sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
               setTasks(tasksData);
               setLoading(false);
             }, (error) => {

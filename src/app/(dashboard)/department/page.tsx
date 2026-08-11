@@ -80,11 +80,11 @@ export default function DepartmentPage() {
         // 2. Issues (real-time)
         const qIssues = query(
           collection(db, 'issues'), 
-          where('department_id', '==', profile!.department_id!),
-          orderBy('created_at', 'desc')
+          where('department_id', '==', profile!.department_id!)
         );
         unsubscribeIssues = onSnapshot(qIssues, (snapshot) => {
           const issuesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          issuesData.sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
           setAllIssues(issuesData as Issue[]);
           
           setLoading((prev) => {

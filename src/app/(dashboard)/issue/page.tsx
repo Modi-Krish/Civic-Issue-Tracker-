@@ -342,17 +342,29 @@ function IssueDetailContent() {
     if (!id || !issue) return;
     setSubmittingRating(true);
     try {
-      const { doc, updateDoc, serverTimestamp, addDoc, collection } = await import("firebase/firestore");
+      const { doc, updateDoc, serverTimestamp } = await import("firebase/firestore");
       const { db } = await import("@/lib/firebase");
       const isReworkRequired = citizenRating < 2.5;
-      const nextStatus = isReworkRequired ? "COMPANY_ASSIGNED" : "CLOSED";
+      const nextStatus = isReworkRequired ? "IN_PROGRESS" : "CLOSED";
       const commentText = isReworkRequired
-        ? `Citizen gave rating ${citizenRating}/5.0 (< 2.5 threshold). Sent back to Company for repair again!`
+        ? `Citizen gave rating ${citizenRating}/5.0 (< 2.5 threshold). Unclosed and sent back for repair!`
         : `Citizen approved repair quality with rating ${citizenRating}/5.0. Issue resolved and closed.`;
-      await updateDoc(doc(db, "issues", id), { status: nextStatus, rating: citizenRating, citizen_feedback: citizenComment || null, updated_at: serverTimestamp() });
+      await updateDoc(doc(db, "issues", id), {
+        status: nextStatus,
+        rating: citizenRating,
+        citizen_feedback: citizenComment || null,
+        closed_at: isReworkRequired ? null : serverTimestamp(),
+        updated_at: serverTimestamp()
+      });
       const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
       await logStatusAndNotify(db, id, issue.reporter_id, issue.status, nextStatus, issue.reporter_id || "CITIZEN", commentText);
-      setIssue((prev: any) => ({ ...prev, status: nextStatus, rating: citizenRating, citizen_feedback: citizenComment }));
+      setIssue((prev: any) => ({
+        ...prev,
+        status: nextStatus,
+        rating: citizenRating,
+        citizen_feedback: citizenComment,
+        closed_at: isReworkRequired ? null : prev.closed_at
+      }));
       setRatingSubmitted(true);
     } catch (err: any) {
       alert("Failed to submit rating: " + err.message);
@@ -487,18 +499,19 @@ function IssueDetailContent() {
         </div>
 
         {/* Citizen Rating */}
-        {(issue.status === "COMMUNITY_REVIEW" || issue.rating) && (
-          <SCard style={{ border: issue.status === "COMMUNITY_REVIEW" ? `2px solid #854F0B55` : undefined, background: issue.status === "COMMUNITY_REVIEW" ? "#FAEEDA" : T.raised }}>
+        {/* Citizen Rating */}
+        {(issue.status === "CLOSED" || issue.status === "COMMUNITY_REVIEW" || issue.status === "COMPLETED" || issue.status === "APPROVED" || issue.status === "SUBMITTED_FOR_APPROVAL" || issue.rating !== undefined) && (
+          <SCard style={{ border: (issue.status === "COMMUNITY_REVIEW" || (!issue.rating && !ratingSubmitted)) ? `2px solid #854F0B55` : undefined, background: (issue.status === "COMMUNITY_REVIEW" || (!issue.rating && !ratingSubmitted)) ? "#FAEEDA" : T.raised }}>
             <SecLabel icon={<Star size={14} color="#854F0B" fill="#854F0B" />}>
-              {issue.status === "COMMUNITY_REVIEW" ? "Rate & Review Repair Quality" : "Citizen Rating & Review"}
+              {(!issue.rating && !ratingSubmitted) ? "Rate & Review Repair Quality" : "Citizen Rating & Review"}
             </SecLabel>
 
-            {issue.status === "COMMUNITY_REVIEW" && !ratingSubmitted ? (
+            {(!issue.rating && !ratingSubmitted) ? (
               <div>
                 <p style={{ fontSize: 13, color: T.text2, margin: "0 0 12px" }}>
-                  Please rate the quality of the repair work done by the contractor.
+                  Please rate the quality of the repair work done for this report.
                   <strong style={{ color: "#791F1F", display: "block", marginTop: 4 }}>
-                    Note: Ratings below 2.5/5.0 will send the work back for repair.
+                    Note: Ratings below 2.5/5.0 will unclose the report and send it back for rework!
                   </strong>
                 </p>
                 <div style={{ display: "flex", gap: 10, marginBottom: 14, justifyContent: "center" }}>
@@ -534,13 +547,21 @@ function IssueDetailContent() {
                   fontSize: 14, fontWeight: 800, border: "none", cursor: submittingRating ? "not-allowed" : "pointer",
                   boxShadow: SH.raisedSm, fontFamily: "inherit",
                 }}>
-                  {submittingRating ? "Submitting…" : (citizenRating < 2.5 ? "Submit Rating (Send Back for Rework)" : "Approve & Mark Resolved")}
+                  {submittingRating ? "Submitting…" : (citizenRating < 2.5 ? "Submit Rating (Unclose & Reopen for Rework)" : "Approve & Mark Resolved")}
                 </button>
               </div>
             ) : (
               <div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: (issue.rating ?? citizenRating) < 2.5 ? "#791F1F" : T.accentDark, marginBottom: 4 }}>
-                  {issue.rating ?? citizenRating} / 5.0 ⭐
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: (issue.rating ?? citizenRating) < 2.5 ? "#791F1F" : T.accentDark, marginBottom: 4 }}>
+                    {issue.rating ?? citizenRating} / 5.0 ⭐
+                  </div>
+                  <button 
+                    onClick={() => setRatingSubmitted(false)}
+                    style={{ fontSize: 11, fontWeight: 700, background: "transparent", border: `1px solid ${T.border}`, borderRadius: 8, padding: "4px 8px", cursor: "pointer", color: T.text2 }}
+                  >
+                    Change Rating
+                  </button>
                 </div>
                 {issue.citizen_feedback && (
                   <p style={{ fontSize: 13, color: T.text2, fontStyle: "italic", margin: 0 }}>

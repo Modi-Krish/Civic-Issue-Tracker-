@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, MapPin, Clock, ChevronRight, Filter, Share2, Trash2, ShieldAlert } from "lucide-react";
+import { Search, Plus, MapPin, Clock, ChevronRight, Filter, Share2, Trash2, ShieldAlert, Star } from "lucide-react";
 import { useAuth } from '@/lib/supabase/auth-context';
 
 const T = {
@@ -145,7 +145,14 @@ function IssueCard({ issue }: { issue: any }) {
               </div>
             </div>
           </div>
-          <StatusBadge status={issue.status} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
+            <StatusBadge status={issue.status} />
+            {issue.rating !== undefined && issue.rating !== null && (
+              <span style={{ fontSize: 11, fontWeight: 800, color: issue.rating < 2.5 ? "#791F1F" : "#854F0B", background: issue.rating < 2.5 ? "#FCEBEB" : "#FAEEDA", padding: "2px 8px", borderRadius: 99 }}>
+                ★ {issue.rating}/5.0
+              </span>
+            )}
+          </div>
         </div>
 
         <p style={{ fontSize: 13, color: T.text2, margin: '0 0 16px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -179,6 +186,14 @@ function IssueCard({ issue }: { issue: any }) {
           <button style={{ padding: '8px 12px', borderRadius: 10, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
             <Share2 size={14} /> Share
           </button>
+          {(issue.status === 'CLOSED' || issue.status === 'COMMUNITY_REVIEW' || issue.status === 'COMPLETED' || issue.status === 'APPROVED') && (
+            <button 
+              onClick={() => router.push(`/issue?id=${issue.id}`)}
+              style={{ padding: '8px 12px', borderRadius: 10, background: '#FAEEDA', color: '#854F0B', border: '1px solid #854F0B33', fontWeight: 800, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit' }}
+            >
+              <Star size={14} fill="#854F0B" /> {issue.rating !== undefined && issue.rating !== null ? "Change Rating" : "Rate & Review"}
+            </button>
+          )}
           {issue.status === 'REPORTED' && (
             <button style={{ padding: '8px 12px', borderRadius: 10, background: '#FEE2E2', color: '#B91C1C', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Trash2 size={14} /> Delete

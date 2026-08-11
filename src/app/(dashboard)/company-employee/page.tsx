@@ -79,7 +79,10 @@ export default function CompanyEmployeeDashboard() {
               const tasksData = snapshot.docs
                 .map(doc => ({ id: doc.id, ...doc.data() }))
                 .filter((t: any) => t.status !== 'CLOSED');
-              tasksData.sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+              tasksData.sort((a: any, b: any) => {
+                const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+                return t(b.created_at) - t(a.created_at);
+              });
               setTasks(tasksData);
               setLoading(false);
             }, (error) => {

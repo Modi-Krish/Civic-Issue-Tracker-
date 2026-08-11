@@ -399,7 +399,10 @@ export default function GrievanceChatbot({
              if (snaps.empty) {
                 appendAiMsg(t.no_previous);
              } else {
-                const issues = snaps.docs.map(d => ({id: d.id, ...d.data()})).sort((a:any, b:any) => b.created_at?.toMillis() - a.created_at?.toMillis());
+                const issues = snaps.docs.map(d => ({id: d.id, ...d.data()})).sort((a:any, b:any) => {
+                  const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+                  return t(b.created_at) - t(a.created_at);
+                });
                 const latest = issues[0] as any;
                 let statusMsg = t.most_recent.replace('{title}', latest.title).replace('{status}', latest.status);
                 appendAiMsg(statusMsg);

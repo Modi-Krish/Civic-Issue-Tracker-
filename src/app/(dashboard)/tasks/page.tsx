@@ -57,7 +57,10 @@ export default function TasksPage() {
         const q = query(collection(db, 'issues'), where('assigned_employee_id', '==', user!.id));
         unsubscribe = onSnapshot(q, snapshot => {
           const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-          docs.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+          docs.sort((a, b) => {
+            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+            return t(b.created_at) - t(a.created_at);
+          });
           setAllTasks(docs as unknown as Issue[]);
           setLoading(false);
         }, err => {

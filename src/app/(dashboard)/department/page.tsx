@@ -84,7 +84,10 @@ export default function DepartmentPage() {
         );
         unsubscribeIssues = onSnapshot(qIssues, (snapshot) => {
           const issuesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          issuesData.sort((a: any, b: any) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+          issuesData.sort((a: any, b: any) => {
+            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+            return t(b.created_at) - t(a.created_at);
+          });
           setAllIssues(issuesData as Issue[]);
           
           setLoading((prev) => {

@@ -69,7 +69,10 @@ export default function DashboardPage() {
         const qMyIssues = query(collection(db, 'issues'), where('reporter_id', '==', user.uid));
         unsubMyIssues = onSnapshot(qMyIssues, (snap) => {
           myIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          myIssues.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+          myIssues.sort((a, b) => {
+            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+            return t(b.created_at) - t(a.created_at);
+          });
           updateState();
         });
 
@@ -77,7 +80,10 @@ export default function DashboardPage() {
         const qNearby = query(collection(db, 'issues'), where('reporter_id', '!=', user.uid));
         unsubNearby = onSnapshot(qNearby, (snap) => {
           nearbyIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          nearbyIssues.sort((a, b) => (b.created_at?.toMillis() || 0) - (a.created_at?.toMillis() || 0));
+          nearbyIssues.sort((a, b) => {
+            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+            return t(b.created_at) - t(a.created_at);
+          });
           updateState();
         });
 

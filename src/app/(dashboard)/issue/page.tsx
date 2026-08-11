@@ -350,7 +350,8 @@ function IssueDetailContent() {
         ? `Citizen gave rating ${citizenRating}/5.0 (< 2.5 threshold). Sent back to Company for repair again!`
         : `Citizen approved repair quality with rating ${citizenRating}/5.0. Issue resolved and closed.`;
       await updateDoc(doc(db, "issues", id), { status: nextStatus, rating: citizenRating, citizen_feedback: citizenComment || null, updated_at: serverTimestamp() });
-      await addDoc(collection(db, "issue_status_logs"), { issue_id: id, to_status: nextStatus, changed_by: issue.reporter_id || "CITIZEN", comment: commentText, created_at: serverTimestamp() });
+      const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+      await logStatusAndNotify(db, id, issue.reporter_id, issue.status, nextStatus, issue.reporter_id || "CITIZEN", commentText);
       setIssue((prev: any) => ({ ...prev, status: nextStatus, rating: citizenRating, citizen_feedback: citizenComment }));
       setRatingSubmitted(true);
     } catch (err: any) {

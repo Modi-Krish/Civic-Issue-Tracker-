@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, MapPin, AlertTriangle, ArrowRight, Heart, Camera, Check } from 'lucide-react';
 
 const T = {
@@ -50,6 +50,9 @@ export default function SmartReportModal({
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -59,6 +62,9 @@ export default function SmartReportModal({
       setDuplicates([]);
       setTitle('');
       setDesc('');
+      setSubmitting(false);
+      setSelectedFile(null);
+      setFilePreview(null);
     }
   }, [isOpen]);
 
@@ -187,6 +193,17 @@ export default function SmartReportModal({
         deptId = deptSnap.docs[0].id;
       }
       
+      let beforeImagePath = '';
+      if (selectedFile) {
+        try {
+          const { imageStorageService } = await import('@/services/imageStorageService');
+          const meta = await imageStorageService.uploadIssueImage(selectedFile, 'anonymous-token', 'vadodara', 'before');
+          if (meta && meta.url) beforeImagePath = meta.url;
+        } catch (e) {
+          console.error("Image upload failed", e);
+        }
+      }
+
       await addDoc(collection(db, 'issues'), {
         title,
         description: desc,
@@ -197,6 +214,7 @@ export default function SmartReportModal({
         location_lat: lat,
         location_lng: lng,
         location_label: '',
+        before_image_path: beforeImagePath,
         created_at: serverTimestamp(),
         support_count: 1,
       });
@@ -326,13 +344,32 @@ export default function SmartReportModal({
 
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: T.text2, marginBottom: 6 }}>Photo</label>
-              <button style={{
-                width: '100%', padding: '20px', borderRadius: 12, background: T.base, border: `2px dashed ${T.border}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', color: T.text2
-              }}>
-                <Camera size={24} />
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Tap to upload or take photo</span>
-              </button>
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    setSelectedFile(e.target.files[0]);
+                    setFilePreview(URL.createObjectURL(e.target.files[0]));
+                  }
+                }}
+              />
+              {filePreview ? (
+                <div style={{ position: 'relative', width: '100%', height: 160, borderRadius: 12, overflow: 'hidden' }}>
+                  <img src={filePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button onClick={() => { setSelectedFile(null); setFilePreview(null); }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer' }}>✕</button>
+                </div>
+              ) : (
+                <button onClick={() => fileInputRef.current?.click()} style={{
+                  width: '100%', padding: '20px', borderRadius: 12, background: T.base, border: `2px dashed ${T.border}`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', color: T.text2
+                }}>
+                  <Camera size={24} />
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>Tap to upload or take photo</span>
+                </button>
+              )}
             </div>
 
             <div>

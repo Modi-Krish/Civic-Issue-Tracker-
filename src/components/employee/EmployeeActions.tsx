@@ -31,14 +31,8 @@ export default function EmployeeActions({ issue }: Props) {
       const issueRef = doc(db, 'issues', issue.id);
       await updateDoc(issueRef, { status: newStatus });
 
-      await addDoc(collection(db, 'issue_status_logs'), {
-        issue_id: issue.id,
-        from_status: issue.status,
-        to_status: newStatus,
-        changed_by: user.uid,
-        comment: newStatus === 'IN_PROGRESS' ? 'Work started by employee' : null,
-        created_at: new Date().toISOString()
-      });
+      const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+      await logStatusAndNotify(db, issue.id, issue.reporter_id, issue.status, newStatus, user.uid, newStatus === 'IN_PROGRESS' ? 'Work started by employee' : null);
       
       router.refresh();
     } catch (error) {
@@ -67,14 +61,8 @@ export default function EmployeeActions({ issue }: Props) {
       const issueRef = doc(db, 'issues', issue.id);
       await updateDoc(issueRef, { status: 'SUBMITTED_FOR_APPROVAL', after_image: imageMetadata });
 
-      await addDoc(collection(db, 'issue_status_logs'), {
-        issue_id: issue.id,
-        from_status: issue.status,
-        to_status: 'SUBMITTED_FOR_APPROVAL',
-        changed_by: user.uid,
-        comment: 'Repair completed, submitted for approval',
-        created_at: new Date().toISOString()
-      });
+      const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+      await logStatusAndNotify(db, issue.id, issue.reporter_id, issue.status, 'SUBMITTED_FOR_APPROVAL', user.uid, 'Repair completed, submitted for approval');
 
       // Notify department admins
       const qAdmins = query(collection(db, 'profiles'), where('role', '==', 'department_admin'), where('department_id', '==', issue.department_id));

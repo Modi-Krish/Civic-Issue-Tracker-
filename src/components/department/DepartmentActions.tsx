@@ -34,15 +34,8 @@ export default function DepartmentActions({ issue, employees }: Props) {
         status: 'EMPLOYEE_ASSIGNED',
       });
 
-      // Log status change
-      await addDoc(collection(db, 'issue_status_logs'), {
-        issue_id: issue.id,
-        from_status: issue.status,
-        to_status: 'EMPLOYEE_ASSIGNED',
-        changed_by: user.uid,
-        comment: 'Employee assigned by department admin',
-        created_at: new Date().toISOString()
-      });
+      const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+      await logStatusAndNotify(db, issue.id, issue.reporter_id, issue.status, 'EMPLOYEE_ASSIGNED', user.uid, 'Employee assigned by department admin');
 
       // Create assignment record
       await addDoc(collection(db, 'issue_assignments'), {
@@ -84,58 +77,19 @@ export default function DepartmentActions({ issue, employees }: Props) {
       const issueRef = doc(db, 'issues', issue.id);
       
       if (decision === 'APPROVED') {
-        const batch = writeBatch(db);
+        const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+        await updateDoc(issueRef, { status: 'CLOSED', closed_at: new Date().toISOString(), is_genuine: true });
         
-        batch.update(issueRef, { status: 'CLOSED', closed_at: new Date().toISOString(), is_genuine: true });
-
-        const logRef1 = doc(collection(db, 'issue_status_logs'));
-        batch.set(logRef1, {
-          issue_id: issue.id, from_status: 'SUBMITTED_FOR_APPROVAL', to_status: 'APPROVED', changed_by: user.uid, comment: 'Repair approved', created_at: new Date().toISOString()
-        });
-
-        const logRef2 = doc(collection(db, 'issue_status_logs'));
-        batch.set(logRef2, {
-          issue_id: issue.id, from_status: 'APPROVED', to_status: 'CLOSED', changed_by: user.uid, comment: 'Issue closed', created_at: new Date(Date.now() + 1000).toISOString()
-        });
-        
-        if (issue.reporter_id) {
-          const rewardRef = doc(collection(db, 'rewards'));
-          batch.set(rewardRef, {
-            user_id: issue.reporter_id,
-            issue_id: issue.id,
-            points: 10,
-            reason: 'Issue resolved successfully',
-            created_at: new Date().toISOString()
-          });
-          
-          const notifRef = doc(collection(db, 'notifications'));
-          batch.set(notifRef, {
-            user_id: issue.reporter_id,
-            issue_id: issue.id,
-            type: 'repair_approved',
-            title: 'Issue Resolved! 🎉',
-            body: `Your issue "${issue.title}" has been resolved. You earned 10 reward points!`,
-            is_read: false,
-            created_at: new Date().toISOString()
-          });
-        }
-
-        await batch.commit();
+        await logStatusAndNotify(db, issue.id, issue.reporter_id, 'SUBMITTED_FOR_APPROVAL', 'APPROVED', user.uid, 'Repair approved');
+        await logStatusAndNotify(db, issue.id, issue.reporter_id, 'APPROVED', 'CLOSED', user.uid, 'Issue closed');
 
       } else {
         const batch = writeBatch(db);
         
         batch.update(issueRef, { status: 'REJECTED' });
 
-        const logRef = doc(collection(db, 'issue_status_logs'));
-        batch.set(logRef, {
-          issue_id: issue.id,
-          from_status: 'SUBMITTED_FOR_APPROVAL',
-          to_status: 'REJECTED',
-          changed_by: user.uid,
-          comment: 'Repair rejected — rework required',
-          created_at: new Date().toISOString()
-        });
+        const { logStatusAndNotify } = await import('@/lib/client-actions/issue');
+        await logStatusAndNotify(db, issue.id, issue.reporter_id, 'SUBMITTED_FOR_APPROVAL', 'REJECTED', user.uid, 'Repair rejected — rework required');
         
         if (issue.assigned_employee_id) {
           const notifRef = doc(collection(db, 'notifications'));

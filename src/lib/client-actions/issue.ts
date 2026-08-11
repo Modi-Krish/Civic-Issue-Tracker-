@@ -31,6 +31,57 @@ function generateComplaintNumber(): string {
   return `GRV-${year}-VAD-${rand}`;
 }
 
+export async function logStatusAndNotify(
+  db: any,
+  issueId: string,
+  reporterId: string | null | undefined,
+  fromStatus: string,
+  toStatus: string,
+  changedBy: string,
+  comment: string | null
+) {
+  const { doc, collection, writeBatch } = await import('firebase/firestore');
+  const batch = writeBatch(db);
+
+  const logRef = doc(collection(db, 'issue_status_logs'));
+  batch.set(logRef, {
+    issue_id: issueId,
+    from_status: fromStatus,
+    to_status: toStatus,
+    changed_by: changedBy,
+    comment: comment,
+    created_at: new Date().toISOString()
+  });
+
+  if (reporterId) {
+    const notifRef = doc(collection(db, 'notifications'));
+    batch.set(notifRef, {
+      user_id: reporterId,
+      issue_id: issueId,
+      type: 'status_update',
+      title: 'Report Update',
+      message: toStatus === 'CLOSED' ? 'Your report has been resolved! You earned 2 reward points.' : `Your report status changed to ${toStatus.replace(/_/g, ' ')}.`,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+  }
+
+  if (toStatus === 'CLOSED' || toStatus === 'VERIFIED') {
+    if (reporterId) {
+       const rewardRef = doc(collection(db, 'rewards'));
+       batch.set(rewardRef, {
+         user_id: reporterId,
+         issue_id: issueId,
+         points: 2,
+         reason: 'Report resolved successfully',
+         created_at: new Date().toISOString()
+       });
+    }
+  }
+
+  await batch.commit();
+}
+
 export async function submitIssue(input: FormData | SubmitIssuePayload) {
   const user = auth.currentUser;
   if (!user) return { error: 'Not authenticated' };

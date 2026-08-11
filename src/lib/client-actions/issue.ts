@@ -55,12 +55,18 @@ export async function logStatusAndNotify(
 
   if (reporterId) {
     const notifRef = doc(collection(db, 'notifications'));
+    const notifBody = toStatus === 'CLOSED' 
+      ? 'Your report has been resolved! You earned 2 reward points.' 
+      : `Your report status changed to ${toStatus.replace(/_/g, ' ')}.`;
+    
     batch.set(notifRef, {
+      userId: reporterId,
       user_id: reporterId,
       issue_id: issueId,
-      type: 'status_update',
+      type: 'status_updated',
       title: 'Report Update',
-      message: toStatus === 'CLOSED' ? 'Your report has been resolved! You earned 2 reward points.' : `Your report status changed to ${toStatus.replace(/_/g, ' ')}.`,
+      body: notifBody,
+      message: notifBody,
       is_read: false,
       created_at: new Date().toISOString()
     });

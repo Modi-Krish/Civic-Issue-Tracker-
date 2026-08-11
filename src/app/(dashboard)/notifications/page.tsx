@@ -30,6 +30,7 @@ const SH = {
 // ── Type config (dept-color palette) ─────────────────────────────────────────
 const TYPE_CONFIG = {
   status_updated:  { emoji: "🔄", bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
+  status_update:   { emoji: "🔄", bg: "#E6F1FB", fg: "#0C447C", dot: "#0C447C" },
   issue_assigned:  { emoji: "👤", bg: "#EEEDFE", fg: "#3C3489", dot: "#3C3489" },
   reward_credited: { emoji: "🎉", bg: "#FAEEDA", fg: "#854F0B", dot: "#854F0B" },
   repair_approved: { emoji: "✅", bg: "#E1F5EE", fg: "#085041", dot: "#1D9E75" },
@@ -93,7 +94,7 @@ function NotifCard({ notif, onMarkRead }: any) {
             </span>
           </div>
 
-          <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, margin: "0 0 8px 0" }}>{notif.body}</p>
+          <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, margin: "0 0 8px 0" }}>{notif.body || notif.message || 'Notification update.'}</p>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             {notif.issue_id ? (

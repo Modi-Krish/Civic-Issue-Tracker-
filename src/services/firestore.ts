@@ -2,22 +2,41 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, writeBatch, getDocs } from 'firebase/firestore';
 
 export function subscribeToNotifications(userId: string, callback: (notifs: any[]) => void) {
-  const q = query(
-    collection(db, 'notifications'),
-    where('userId', '==', userId),
-    orderBy('created_at', 'desc')
-  );
+  const q1 = query(collection(db, 'notifications'), where('userId', '==', userId));
+  const q2 = query(collection(db, 'notifications'), where('user_id', '==', userId));
 
-  return onSnapshot(q, (snapshot) => {
-    const notifs = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    callback(notifs);
+  let notifs1: any[] = [];
+  let notifs2: any[] = [];
+
+  const update = () => {
+    const map = new Map<string, any>();
+    [...notifs1, ...notifs2].forEach(item => map.set(item.id, item));
+    const combined = Array.from(map.values());
+    combined.sort((a, b) => {
+      const getMillis = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : (x ? new Date(x).getTime() : 0));
+      return getMillis(b.created_at) - getMillis(a.created_at);
+    });
+    callback(combined);
+  };
+
+  const unsub1 = onSnapshot(q1, (snapshot) => {
+    notifs1 = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    update();
   }, (error) => {
-    console.error("Error subscribing to notifications:", error);
-    callback([]);
+    console.error("Error subscribing to notifications (q1):", error);
   });
+
+  const unsub2 = onSnapshot(q2, (snapshot) => {
+    notifs2 = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    update();
+  }, (error) => {
+    console.error("Error subscribing to notifications (q2):", error);
+  });
+
+  return () => {
+    unsub1();
+    unsub2();
+  };
 }
 
 export async function markNotificationRead(notifId: string) {

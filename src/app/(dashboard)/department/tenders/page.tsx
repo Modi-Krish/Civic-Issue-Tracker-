@@ -35,15 +35,47 @@ export default function ManageTendersPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
+  const [departmentMode, setDepartmentMode] = useState<string | null>(null);
+  const [deptInfo, setDeptInfo] = useState<any>(null);
+
   useEffect(() => {
     async function fetchTenders() {
       try {
-        const { data, error } = await supabase
-          .from('tenders')
-          .select('*')
-          .order('created_at', { ascending: false });
+        const userDeptSlug = profile?.department_id || profile?.department;
+        let mode = 'DEPARTMENT';
+        let deptDocData: any = null;
 
-        if (data) setTenders(data as Tender[]);
+        if (userDeptSlug) {
+          const { collection, query, where, getDocs } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          const q = query(collection(db, 'departments'), where('slug', '==', String(userDeptSlug).toLowerCase()));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            deptDocData = snap.docs[0].data();
+            mode = deptDocData.management_mode || 'DEPARTMENT';
+          }
+        }
+
+        if (profile?.role === 'superadmin' || profile?.role === 'admin' || profile?.role === 'government_official') {
+          mode = 'TENDER';
+        }
+
+        setDepartmentMode(mode);
+        setDeptInfo(deptDocData);
+
+        if (mode === 'TENDER') {
+          const { data, error } = await supabase
+            .from('tenders')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (data) {
+            const filtered = userDeptSlug
+              ? data.filter(t => t.department_id === deptDocData?.id || t.department_id === userDeptSlug || t.title?.toLowerCase().includes(String(userDeptSlug).toLowerCase()))
+              : data;
+            setTenders((filtered.length > 0 ? filtered : data) as Tender[]);
+          }
+        }
       } catch (err) {
         console.error("Failed to fetch tenders:", err);
       } finally {
@@ -52,7 +84,7 @@ export default function ManageTendersPage() {
     }
 
     if (!authLoading) fetchTenders();
-  }, [authLoading]);
+  }, [authLoading, profile]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,14 +166,26 @@ export default function ManageTendersPage() {
           </div>
         )}
 
-        {/* Tenders List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {tenders.length === 0 ? (
-            <div style={{ padding: 48, textAlign: "center", borderRadius: 24, background: T.base, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
-              <FileText size={48} color={T.text3} style={{ margin: "0 auto 12px" }} />
-              <p style={{ color: T.text3, fontSize: 14, fontWeight: 700, margin: 0 }}>No tenders have been published yet.</p>
-            </div>
-          ) : (
+        {/* Tenders List / Access Restriction */}
+        {departmentMode !== 'TENDER' ? (
+          <div style={{ padding: 48, textAlign: "center", borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised }}>
+            <AlertTriangle size={48} color="#854F0B" style={{ margin: "0 auto 16px" }} />
+            <h2 style={{ fontSize: 22, fontWeight: 900, color: T.text1, margin: "0 0 8px" }}>Tender Mode Disabled</h2>
+            <p style={{ color: T.text2, fontSize: 14, fontWeight: 600, maxWidth: 540, margin: "0 auto 24px", lineHeight: 1.6 }}>
+              The Tender Management Portal is only accessible to departments currently configured in <strong>TENDER Mode</strong>. Your department (<strong>{deptInfo?.name || profile?.department_id || 'Department'}</strong>) is currently in <strong>Internal / Department Assignment Mode</strong>.
+            </p>
+            <Link href="/department" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 24px", borderRadius: 14, background: T.accent, color: "white", fontWeight: 800, textDecoration: "none", fontSize: 13, boxShadow: SH.raisedSm }}>
+              <ArrowLeft size={16} /> Return to Operational Queue
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {tenders.length === 0 ? (
+              <div style={{ padding: 48, textAlign: "center", borderRadius: 24, background: T.base, border: `2px dashed ${T.border}`, boxShadow: SH.insetSoft }}>
+                <FileText size={48} color={T.text3} style={{ margin: "0 auto 12px" }} />
+                <p style={{ color: T.text3, fontSize: 14, fontWeight: 700, margin: 0 }}>No tenders have been published for your department yet.</p>
+              </div>
+            ) : (
             tenders.map((t) => (
               <div key={t.id} style={{ padding: 24, borderRadius: 24, background: T.raised, border: `1px solid ${T.border}`, boxShadow: SH.raised, display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
@@ -203,8 +247,9 @@ export default function ManageTendersPage() {
                 </div>
               </div>
             ))
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Edit Modal */}

@@ -41,7 +41,7 @@ export default function ManageTendersPage() {
   useEffect(() => {
     async function fetchTenders() {
       try {
-        const userDeptSlug = profile?.department_id || profile?.department;
+        const userDeptSlug = profile?.department_id;
         let mode = 'DEPARTMENT';
         let deptDocData: any = null;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/lib/supabase/auth-context';
@@ -15,6 +15,7 @@ export default function CreateTenderPage() {
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
+    department_id: profile?.department_id || 'electricity',
     title: '',
     description: '',
     scope_of_work: '',
@@ -26,14 +27,82 @@ export default function CreateTenderPage() {
     bid_submission_deadline: ''
   });
 
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string; slug: string }>>([
+    { id: 'electricity', slug: 'electricity', name: 'Electricity Department' }
+  ]);
+
+  useEffect(() => {
+    async function loadTenderDepartments() {
+      try {
+        const tenderDepts: Array<{ id: string; name: string; slug: string }> = [];
+
+        // 1. Fetch from Firestore (filtering for management_mode === 'TENDER')
+        try {
+          const { collection, getDocs } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          const snap = await getDocs(collection(db, 'departments'));
+          if (!snap.empty) {
+            snap.docs.forEach(doc => {
+              const data = doc.data();
+              if (data.management_mode === 'TENDER') {
+                const slug = data.slug || doc.id;
+                tenderDepts.push({
+                  id: doc.id,
+                  slug: slug,
+                  name: data.name || slug
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Firestore depts fetch error:", e);
+        }
+
+        // 2. Fetch from Supabase (filtering for management_mode === 'TENDER')
+        try {
+          const { data: supabaseDepts } = await supabase
+            .from('departments')
+            .select('id, name, slug, management_mode')
+            .eq('management_mode', 'TENDER');
+
+          if (supabaseDepts && supabaseDepts.length > 0) {
+            supabaseDepts.forEach(d => {
+              const slug = d.slug || d.id;
+              if (!tenderDepts.some(existing => existing.slug.toLowerCase() === slug.toLowerCase())) {
+                tenderDepts.push({
+                  id: d.id || slug,
+                  slug: slug,
+                  name: d.name || slug
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Supabase depts fetch error:", e);
+        }
+
+        if (tenderDepts.length > 0) {
+          setDepartments(tenderDepts);
+          if (!tenderDepts.some(d => d.slug.toLowerCase() === (formData.department_id || '').toLowerCase())) {
+            setFormData(prev => ({ ...prev, department_id: tenderDepts[0].slug }));
+          }
+        }
+      } catch (err) {
+        console.error("Error loading tender departments:", err);
+      }
+    }
+    loadTenderDepartments();
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile?.department_id) {
-      setErrorToast("You are not assigned to a department.");
+    const deptId = formData.department_id || profile?.department_id;
+    if (!deptId) {
+      setErrorToast("Please select a releasing department.");
       return;
     }
     
@@ -46,7 +115,7 @@ export default function CreateTenderPage() {
       const { error } = await supabase.from('tenders').insert({
         id: uuidv4(),
         tender_number,
-        department_id: profile.department_id,
+        department_id: deptId,
         title: formData.title,
         description: formData.description,
         scope_of_work: formData.scope_of_work,
@@ -103,7 +172,19 @@ export default function CreateTenderPage() {
             
             <div className="space-y-4">
               <h2 className="text-[10px] uppercase tracking-widest text-white/40 font-bold">General Information</h2>
-              
+
+              <div>
+                <label className="block text-xs font-bold text-white/70 mb-2">Releasing Department</label>
+                <select name="department_id" value={formData.department_id} onChange={handleChange}
+                  className="w-full bg-[#151518] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#0ea5e9]/50 transition-colors">
+                  {departments.map((dept) => (
+                    <option key={dept.id || dept.slug} value={dept.slug || dept.id}>
+                      {dept.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-white/70 mb-2">Tender Title</label>
                 <input required name="title" value={formData.title} onChange={handleChange}

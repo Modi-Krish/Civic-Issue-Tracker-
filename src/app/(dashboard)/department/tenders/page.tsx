@@ -76,24 +76,43 @@ export default function ManageTendersPage() {
         if (mode === 'TENDER') {
           const { data, error } = await supabase
             .from('tenders')
-            .select('*')
+            .select('*, departments(id, name, slug)')
             .order('created_at', { ascending: false });
 
           if (data) {
             if (isCommandCentre) {
               setTenders(data as Tender[]);
             } else {
+              let supabaseDeptUuid = '';
+              if (userDeptSlug) {
+                const { data: sDept } = await supabase
+                  .from('departments')
+                  .select('id')
+                  .eq('slug', String(userDeptSlug).toLowerCase())
+                  .maybeSingle();
+                if (sDept?.id) supabaseDeptUuid = sDept.id.toLowerCase();
+              }
+
               const deptIdLower = String(userDeptSlug || '').toLowerCase();
               const deptIdRaw = String(deptDocData?.id || '').toLowerCase();
               const deptSlugRaw = String(deptDocData?.slug || '').toLowerCase();
 
-              const filtered = data.filter(t => {
+              const filtered = data.filter((t: any) => {
                 const targetDept = String(t.department_id || '').toLowerCase();
+                const deptRelSlug = String(t.departments?.slug || '').toLowerCase();
+                const deptRelId = String(t.departments?.id || '').toLowerCase();
+                const deptRelName = String(t.departments?.name || '').toLowerCase();
                 const titleLower = String(t.title || '').toLowerCase();
+
                 return (
                   (deptIdLower && targetDept === deptIdLower) ||
                   (deptIdRaw && targetDept === deptIdRaw) ||
                   (deptSlugRaw && targetDept === deptSlugRaw) ||
+                  (supabaseDeptUuid && targetDept === supabaseDeptUuid) ||
+                  (deptIdLower && deptRelSlug === deptIdLower) ||
+                  (deptIdRaw && deptRelId === deptIdRaw) ||
+                  (deptSlugRaw && deptRelSlug === deptSlugRaw) ||
+                  (deptIdLower && deptRelName.includes(deptIdLower)) ||
                   (deptIdLower && titleLower.includes(deptIdLower))
                 );
               });

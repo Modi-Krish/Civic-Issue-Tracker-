@@ -168,6 +168,43 @@ export async function awardContract(tenderId: string, bidId: string, companyId: 
       created_at: serverTimestamp()
     });
 
+    // Auto-assign all pending department issues to winning contractor
+    try {
+      const deptId = String(tender.department_id || '').toLowerCase();
+      const issuesQuery = query(collection(db, 'issues'));
+      const issuesSnap = await getDocs(issuesQuery);
+      
+      issuesSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        const issueDept = String(data.department_id || '').toLowerCase();
+        const issueStatus = data.status;
+
+        const isMatchDept = (deptId && (issueDept === deptId || issueDept.includes(deptId) || deptId.includes(issueDept)));
+        const isPendingStatus = issueStatus === 'REPORTED' || issueStatus === 'DEPARTMENT_ASSIGNED' || !data.company_id;
+        const isFinished = issueStatus === 'CLOSED' || issueStatus === 'APPROVED' || issueStatus === 'REJECTED';
+
+        if (isMatchDept && isPendingStatus && !isFinished) {
+          const issueRef = doc(db, 'issues', docSnap.id);
+          batch.update(issueRef, {
+            company_id: companyId,
+            status: 'COMPANY_ASSIGNED',
+            updated_at: new Date().toISOString()
+          });
+
+          const logRef = doc(collection(db, 'issue_status_logs'));
+          batch.set(logRef, {
+            issue_id: docSnap.id,
+            to_status: 'COMPANY_ASSIGNED',
+            changed_by: 'SYSTEM_TENDER_AWARD',
+            comment: `Auto-assigned to winning Contractor (Contract #${contractRef.id.slice(0, 8)})`,
+            created_at: new Date().toISOString()
+          });
+        }
+      });
+    } catch (routeErr) {
+      console.warn("Client award auto-routing warning:", routeErr);
+    }
+
     await batch.commit();
 
     return { success: true };

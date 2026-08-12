@@ -109,37 +109,71 @@ export async function POST(request: Request) {
     }
 
 
-    // 6. Auto-route pending issues for this department to the awarded company
+    // 6. Auto-route ALL pending issues for this department to the awarded winning company
     try {
       const { getAdminDb } = await import('@/lib/firebase/admin');
       const db = getAdminDb();
-      if (db && targetDeptId) {
-        // Search issues by department_id
-        const pendingSnap = await db.collection('issues')
-          .where('department_id', '==', targetDeptId)
-          .where('status', '==', 'DEPARTMENT_ASSIGNED')
-          .get();
+      if (db) {
+        let deptSlug = '';
+        if (targetDeptId) {
+          const { data: deptData } = await supabaseAdmin
+            .from('departments')
+            .select('slug, name')
+            .eq('id', targetDeptId)
+            .maybeSingle();
+          if (deptData?.slug) deptSlug = deptData.slug.toLowerCase();
+        }
 
-        if (!pendingSnap.empty) {
+        const deptIdentifiers = Array.from(new Set([
+          targetDeptId?.toLowerCase(),
+          departmentId?.toLowerCase(),
+          deptSlug
+        ].filter(Boolean)));
+
+        const issuesSnap = await db.collection('issues').get();
+        if (!issuesSnap.empty) {
           const batch = db.batch();
-          pendingSnap.docs.forEach(doc => {
-            batch.update(doc.ref, {
-              company_id: companyId || validCompanyId,
-              status: 'COMPANY_ASSIGNED',
-              updated_at: new Date().toISOString()
-            });
+          let assignedCount = 0;
 
-            // Log status update
-            const logRef = db.collection('issue_status_logs').doc();
-            batch.set(logRef, {
-              issue_id: doc.id,
-              to_status: 'COMPANY_ASSIGNED',
-              changed_by: 'SYSTEM_TENDER_AWARD',
-              comment: `Auto-routed to newly awarded Contractor (Contract #${contract.id.slice(0, 8)})`,
-              created_at: new Date().toISOString()
-            });
+          issuesSnap.docs.forEach(docSnap => {
+            const data = docSnap.data();
+            const issueDept = String(data.department_id || '').toLowerCase();
+            const issueStatus = data.status;
+
+            const isMatchDept = deptIdentifiers.includes(issueDept) || 
+              (deptSlug && issueDept.includes(deptSlug));
+
+            const isPendingStatus = issueStatus === 'REPORTED' || 
+              issueStatus === 'DEPARTMENT_ASSIGNED' || 
+              !data.company_id;
+
+            const isFinished = issueStatus === 'CLOSED' || issueStatus === 'APPROVED' || issueStatus === 'REJECTED';
+
+            if (isMatchDept && isPendingStatus && !isFinished) {
+              batch.update(docSnap.ref, {
+                company_id: companyId || validCompanyId,
+                status: 'COMPANY_ASSIGNED',
+                updated_at: new Date().toISOString()
+              });
+
+              // Log status update
+              const logRef = db.collection('issue_status_logs').doc();
+              batch.set(logRef, {
+                issue_id: docSnap.id,
+                to_status: 'COMPANY_ASSIGNED',
+                changed_by: 'SYSTEM_TENDER_AWARD',
+                comment: `Auto-assigned to winning Contractor (Contract #${contract.id.slice(0, 8)})`,
+                created_at: new Date().toISOString()
+              });
+
+              assignedCount++;
+            }
           });
-          await batch.commit();
+
+          if (assignedCount > 0) {
+            await batch.commit();
+            console.log(`Auto-assigned ${assignedCount} pending reports to contractor ${validCompanyId}`);
+          }
         }
       }
     } catch (routeErr) {

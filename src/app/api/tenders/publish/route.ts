@@ -15,12 +15,27 @@ export async function POST(request: Request) {
 
     let targetDeptId: string | null = null;
 
+    const formatDeptName = (slug: string) => {
+      const names: Record<string, string> = {
+        electricity: 'Electricity & Power Supply Department',
+        water: 'Water Supply & Sewerage Board',
+        roads: 'Roads & Transport Infrastructure',
+        sanitation: 'Public Sanitation & Waste Management',
+        drainage: 'Stormwater & Drainage Department',
+        health: 'Public Health & Safety Department',
+        city_command_centre: 'City Command Centre',
+      };
+      const clean = slug.toLowerCase();
+      if (names[clean]) return names[clean];
+      return slug.charAt(0).toUpperCase() + slug.slice(1).replace(/_/g, ' ') + ' Department';
+    };
+
     // 1. Resolve department by slug
     if (departmentId) {
       const { data: bySlug } = await supabaseAdmin
         .from('departments')
         .select('id')
-        .eq('slug', departmentId)
+        .eq('slug', String(departmentId).toLowerCase())
         .maybeSingle();
       if (bySlug?.id) targetDeptId = bySlug.id;
     }
@@ -35,7 +50,25 @@ export async function POST(request: Request) {
       if (byId?.id) targetDeptId = byId.id;
     }
 
-    // 3. Fallback: query any department
+    // 3. Auto-create department record for specified departmentId slug if not exists
+    if (!targetDeptId && departmentId) {
+      const newDeptId = uuidv4();
+      const slugClean = String(departmentId).toLowerCase();
+      const { data: createdDept } = await supabaseAdmin
+        .from('departments')
+        .upsert({
+          id: newDeptId,
+          name: formatDeptName(slugClean),
+          slug: slugClean,
+          management_mode: 'TENDER'
+        }, { onConflict: 'slug' })
+        .select('id')
+        .single();
+
+      if (createdDept?.id) targetDeptId = createdDept.id;
+    }
+
+    // 4. Fallback: query any department
     if (!targetDeptId) {
       const { data: anyDept } = await supabaseAdmin
         .from('departments')
@@ -45,10 +78,10 @@ export async function POST(request: Request) {
       if (anyDept?.id) targetDeptId = anyDept.id;
     }
 
-    // 4. Fallback: auto-create department record
+    // 5. Ultimate Fallback: auto-create default department record
     if (!targetDeptId) {
       const newDeptId = uuidv4();
-      const { data: createdDept, error: createError } = await supabaseAdmin
+      const { data: createdDept } = await supabaseAdmin
         .from('departments')
         .upsert({
           id: newDeptId,

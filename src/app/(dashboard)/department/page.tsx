@@ -115,17 +115,29 @@ export default function DepartmentPage() {
 
         // 4. Supabase Tender Stats & Contracts & Company Performance
         try {
+          let sDeptUuid = '';
+          if (profile?.department_id) {
+            const { data: sDept } = await supabase
+              .from('departments')
+              .select('id')
+              .or(`slug.eq.${profile.department_id},id.eq.${profile.department_id}`)
+              .maybeSingle();
+            if (sDept?.id) sDeptUuid = sDept.id;
+          }
+
+          const targetDepts = Array.from(new Set([profile?.department_id, sDeptUuid].filter(Boolean))) as string[];
+
           const { count: contractsCount } = await supabase
             .from('contracts')
             .select('*', { count: 'exact', head: true })
-            .eq('department_id', profile!.department_id)
+            .in('department_id', targetDepts)
             .in('status', ['Active', 'ACTIVE']);
           
           const { count: tendersCount } = await supabase
             .from('tenders')
             .select('*', { count: 'exact', head: true })
-            .eq('department_id', profile!.department_id)
-            .in('status', ['Published', 'OPEN']);
+            .in('department_id', targetDepts)
+            .in('status', ['Published', 'OPEN', 'Published']);
 
           setTenderStats({
             activeContracts: contractsCount || 0,
@@ -136,7 +148,7 @@ export default function DepartmentPage() {
           const { data: activeContracts } = await supabase
             .from('contracts')
             .select('*, tenders(title, tender_number)')
-            .eq('department_id', profile!.department_id)
+            .in('department_id', targetDepts)
             .in('status', ['Active', 'ACTIVE']);
 
 

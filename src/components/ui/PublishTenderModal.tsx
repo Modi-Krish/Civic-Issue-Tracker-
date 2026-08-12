@@ -115,7 +115,11 @@ const TENDER_TYPES = [
   { id: "typeAMC",       value: "Annual Maintenance Contract",       label: "Annual Maintenance Contract" },
 ];
 
-export default function PublishTenderModal({ isOpen, onClose, departmentId }: { isOpen: boolean, onClose: () => void, departmentId: string }) {
+const DEFAULT_TENDER_DEPARTMENTS = [
+  { id: "electricity", slug: "electricity", name: "Electricity Department" },
+];
+
+export default function PublishTenderModal({ isOpen, onClose, departmentId }: { isOpen: boolean; onClose: () => void; departmentId?: string }) {
   const router = useRouter();
   const sheetRef = useRef<HTMLDivElement>(null);
   const [form, setForm] = useState({
@@ -123,9 +127,86 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
     budget: "", emd: "", startDate: "", endDate: "",
     description: "", scopeOfWork: "",
   });
+  const [departments, setDepartments] = useState<Array<{ id: string; name: string; slug: string }>>(DEFAULT_TENDER_DEPARTMENTS);
+  const [selectedDept, setSelectedDept] = useState<string>(departmentId || "electricity");
   const [titleError, setTitleError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update selected department when prop changes
+  useEffect(() => {
+    if (departmentId) {
+      setSelectedDept(departmentId);
+    }
+  }, [departmentId]);
+
+  // Fetch ONLY departments configured in TENDER mode from database
+  useEffect(() => {
+    async function loadDepartments() {
+      try {
+        const tenderDepts: Array<{ id: string; name: string; slug: string }> = [];
+
+        // 1. Fetch from Firestore (filtering for management_mode === 'TENDER')
+        try {
+          const { collection, getDocs } = await import('firebase/firestore');
+          const { db } = await import('@/lib/firebase');
+          const snap = await getDocs(collection(db, 'departments'));
+          if (!snap.empty) {
+            snap.docs.forEach(doc => {
+              const data = doc.data();
+              if (data.management_mode === 'TENDER') {
+                const slug = data.slug || doc.id;
+                tenderDepts.push({
+                  id: doc.id,
+                  slug: slug,
+                  name: data.name || slug
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Firestore depts fetch error:", e);
+        }
+
+        // 2. Fetch from Supabase (filtering for management_mode === 'TENDER')
+        try {
+          const { data: supabaseDepts } = await supabase
+            .from('departments')
+            .select('id, name, slug, management_mode')
+            .eq('management_mode', 'TENDER');
+
+          if (supabaseDepts && supabaseDepts.length > 0) {
+            supabaseDepts.forEach(d => {
+              const slug = d.slug || d.id;
+              if (!tenderDepts.some(existing => existing.slug.toLowerCase() === slug.toLowerCase())) {
+                tenderDepts.push({
+                  id: d.id || slug,
+                  slug: slug,
+                  name: d.name || slug
+                });
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Supabase depts fetch error:", e);
+        }
+
+        if (tenderDepts.length > 0) {
+          setDepartments(tenderDepts);
+          // If current selected department is not in the tender-mode list, pick the first tender-mode department
+          if (!tenderDepts.some(d => d.slug.toLowerCase() === selectedDept.toLowerCase())) {
+            setSelectedDept(tenderDepts[0].slug);
+          }
+        } else {
+          setDepartments(DEFAULT_TENDER_DEPARTMENTS);
+          setSelectedDept("electricity");
+        }
+      } catch (err) {
+        console.error("Error loading tender departments:", err);
+      }
+    }
+    loadDepartments();
+  }, []);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -153,7 +234,7 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          departmentId,
+          departmentId: selectedDept || departmentId || "electricity",
           title: form.tenderTitle,
           description: form.description,
           scopeOfWork: form.scopeOfWork,
@@ -276,6 +357,30 @@ export default function PublishTenderModal({ isOpen, onClose, departmentId }: { 
 
           {/* ── General Information ── */}
           <SectionTitle>General Information</SectionTitle>
+
+          <FormGroup>
+            <FormLabel>Releasing Department</FormLabel>
+            <select
+              style={{
+                ...inputStyle(),
+                cursor: "pointer",
+                appearance: "none",
+                backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235F5E5A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 16px center",
+                backgroundSize: "18px",
+                paddingRight: "44px"
+              } as any}
+              value={selectedDept}
+              onChange={(e) => setSelectedDept(e.target.value)}
+            >
+              {departments.map((dept) => (
+                <option key={dept.id || dept.slug} value={dept.slug || dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </FormGroup>
 
           <FormGroup>
             <FormLabel>Tender Title</FormLabel>

@@ -67,33 +67,54 @@ export default function DashboardPage() {
 
         // 1. My Issues
         const qMyIssues = query(collection(db, 'issues'), where('reporter_id', '==', user.uid));
-        unsubMyIssues = onSnapshot(qMyIssues, (snap) => {
-          myIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          myIssues.sort((a, b) => {
-            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
-            return t(b.created_at) - t(a.created_at);
-          });
-          updateState();
-        });
+        unsubMyIssues = onSnapshot(
+          qMyIssues, 
+          (snap) => {
+            myIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            myIssues.sort((a, b) => {
+              const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+              return t(b.created_at) - t(a.created_at);
+            });
+            updateState();
+          },
+          (err) => {
+            console.warn("Error listening to my issues:", err);
+            updateState();
+          }
+        );
 
         // 2. Nearby Issues
         const qNearby = query(collection(db, 'issues'), where('reporter_id', '!=', user.uid));
-        unsubNearby = onSnapshot(qNearby, (snap) => {
-          nearbyIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          nearbyIssues.sort((a, b) => {
-            const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
-            return t(b.created_at) - t(a.created_at);
-          });
-          updateState();
-        });
+        unsubNearby = onSnapshot(
+          qNearby, 
+          (snap) => {
+            nearbyIssues = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            nearbyIssues.sort((a, b) => {
+              const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
+              return t(b.created_at) - t(a.created_at);
+            });
+            updateState();
+          },
+          (err) => {
+            console.warn("Error listening to nearby issues:", err);
+            updateState();
+          }
+        );
 
         // 3. Rewards
         const qRewards = query(collection(db, 'rewards'), where('user_id', '==', user.uid));
-        unsubRewards = onSnapshot(qRewards, (snap) => {
-          totalPoints = 0;
-          snap.forEach(doc => { totalPoints += doc.data().points || 0; });
-          updateState();
-        });
+        unsubRewards = onSnapshot(
+          qRewards, 
+          (snap) => {
+            totalPoints = 0;
+            snap.forEach(doc => { totalPoints += doc.data().points || 0; });
+            updateState();
+          },
+          (err) => {
+            console.warn("Error listening to rewards:", err);
+            updateState();
+          }
+        );
 
       } catch (error) {
         console.error("Error setting up dashboard listeners:", error);

@@ -213,11 +213,18 @@ export default function NearbyReportsTab({ user, profile }: { user: any; profile
         const { collection, query, onSnapshot, orderBy } = await import('firebase/firestore');
         const { db } = await import('@/lib/firebase');
         const q = query(collection(db, 'issues'), orderBy('created_at', 'desc'));
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setAllIssues(data);
-          setLoading(false);
-        });
+        unsubscribe = onSnapshot(
+          q, 
+          (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAllIssues(data);
+            setLoading(false);
+          },
+          (error) => {
+            console.warn("Error listening to nearby issues:", error);
+            setLoading(false);
+          }
+        );
       } catch (error) {
         console.error("Error fetching issues:", error);
         setLoading(false);

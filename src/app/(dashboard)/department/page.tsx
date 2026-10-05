@@ -108,10 +108,16 @@ export default function DepartmentPage() {
           where('department_id', '==', profile!.department_id!), 
           where('role', '==', 'employee')
         );
-        unsubscribeEmployees = onSnapshot(qEmp, (snapshot) => {
-          const empData = snapshot.docs.map(d => ({ id: d.id, full_name: d.data().full_name }));
-          setEmployees(empData);
-        });
+        unsubscribeEmployees = onSnapshot(
+          qEmp, 
+          (snapshot) => {
+            const empData = snapshot.docs.map(d => ({ id: d.id, full_name: d.data().full_name }));
+            setEmployees(empData);
+          },
+          (err) => {
+            console.warn("Error listening to department employees:", err);
+          }
+        );
 
         // 4. Supabase Tender Stats & Contracts & Company Performance
         try {

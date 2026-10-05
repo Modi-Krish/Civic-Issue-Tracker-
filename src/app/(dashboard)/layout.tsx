@@ -3,6 +3,8 @@
 import { useAuth } from "@/lib/supabase/auth-context";
 import BottomNav from "@/components/ui/BottomNav";
 import PendingApprovalUI from "@/components/ui/PendingApprovalUI";
+import { useEffect } from "react";
+import { initPushNotifications } from "@/lib/capacitor/push";
 
 export default function DashboardLayout({
   children,
@@ -10,6 +12,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { profile, loading } = useAuth();
+
+  useEffect(() => {
+    if (profile && profile.account_status !== "PENDING") {
+      // Temporarily disabled: requires google-services.json in android/app
+      // Otherwise, the Capacitor Push Notifications plugin crashes the app.
+      // initPushNotifications().catch(console.error);
+    }
+  }, [profile]);
 
   if (loading) {
     return (

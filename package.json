@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "build:android": "set BUILD_TARGET=capacitor&& next build && npx cap sync android",
+    "deploy:rules": "node --env-file=.env.local scripts/deploy_firestore_rules.js",
+    "build:android": "node scripts/build_android.js",
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
     "cap:run": "npx cap run android"

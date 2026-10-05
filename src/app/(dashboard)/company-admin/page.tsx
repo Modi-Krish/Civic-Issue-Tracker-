@@ -55,6 +55,7 @@ export default function CompanyAdminDashboard() {
   const [empSubmitting, setEmpSubmitting] = useState(false);
 
   useEffect(() => {
+    let unsubscribe: (() => void) | null = null;
     async function loadData() {
       if (authLoading) return;
       if (!user) {
@@ -137,33 +138,39 @@ export default function CompanyAdminDashboard() {
         const { db } = await import('@/lib/firebase');
 
         const issuesQ = query(collection(db, 'issues'));
-        onSnapshot(issuesQ, (snapshot) => {
-          const issuesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        unsubscribe = onSnapshot(
+          issuesQ, 
+          (snapshot) => {
+            const issuesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-          // Filter for active work orders matching company_id or active contract departments
-          const filteredIssues = issuesData.filter((issue: any) => {
-            if (issue.status === 'CLOSED') return false;
+            // Filter for active work orders matching company_id or active contract departments
+            const filteredIssues = issuesData.filter((issue: any) => {
+              if (issue.status === 'CLOSED') return false;
 
-            const issueDept = String(issue.department_id || '').toLowerCase();
-            const issueCompany = String(issue.company_id || '');
+              const issueDept = String(issue.department_id || '').toLowerCase();
+              const issueCompany = String(issue.company_id || '');
 
-            // 1. Direct company assignment match
-            if (issueCompany && idList.includes(issueCompany)) return true;
+              // 1. Direct company assignment match
+              if (issueCompany && idList.includes(issueCompany)) return true;
 
-            // 2. Department match for active company contracts
-            if (activeDeptIds.size > 0) {
-              const matchesDept = Array.from(activeDeptIds).some(id => {
-                const cleanId = String(id).toLowerCase();
-                return cleanId && (issueDept === cleanId || issueDept.includes(cleanId) || cleanId.includes(issueDept));
-              });
-              if (matchesDept) return true;
-            }
+              // 2. Department match for active company contracts
+              if (activeDeptIds.size > 0) {
+                const matchesDept = Array.from(activeDeptIds).some(id => {
+                  const cleanId = String(id).toLowerCase();
+                  return cleanId && (issueDept === cleanId || issueDept.includes(cleanId) || cleanId.includes(issueDept));
+                });
+                if (matchesDept) return true;
+              }
 
-            return false;
-          });
+              return false;
+            });
 
-          setCompanyIssues(filteredIssues);
-        });
+            setCompanyIssues(filteredIssues);
+          },
+          (error) => {
+            console.warn("Error listening to company issues:", error);
+          }
+        );
 
       } catch (err) {
         console.error("Error loading company dashboard data:", err);
@@ -173,6 +180,10 @@ export default function CompanyAdminDashboard() {
     }
 
     loadData();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [user, authLoading]);
 
   const handleOpenBidModal = (t: Tender) => {

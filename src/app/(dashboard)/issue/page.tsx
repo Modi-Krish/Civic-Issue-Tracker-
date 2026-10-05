@@ -275,9 +275,15 @@ function IssueDetailContent() {
           where("issue_id", "==", id),
           orderBy("created_at", "asc")
         );
-        unsub = onSnapshot(q, (snap) => {
-          setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        });
+        unsub = onSnapshot(
+          q, 
+          (snap) => {
+            setMessages(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          },
+          (err) => {
+            console.warn("Error listening to issue messages:", err);
+          }
+        );
       } catch (err) {
         console.error("Error setting up messaging listener:", err);
       }

@@ -183,7 +183,25 @@ function IssueCard({ issue }: { issue: any }) {
           >
             View Details
           </button>
-          <button style={{ padding: '8px 12px', borderRadius: 10, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button 
+            onClick={async () => {
+              try {
+                if (navigator.share) {
+                  await navigator.share({
+                    title: `Civic Issue: ${issue.title}`,
+                    text: `Check out this civic issue: ${issue.title}`,
+                    url: `${window.location.origin}/issue?id=${issue.id}`
+                  });
+                } else {
+                  await navigator.clipboard.writeText(`${window.location.origin}/issue?id=${issue.id}`);
+                  alert("Link copied to clipboard!");
+                }
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            style={{ padding: '8px 12px', borderRadius: 10, background: 'transparent', color: T.text2, border: `1px solid ${T.border}`, fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
             <Share2 size={14} /> Share
           </button>
           {(issue.status === 'CLOSED' || issue.status === 'COMMUNITY_REVIEW' || issue.status === 'COMPLETED' || issue.status === 'APPROVED') && (
@@ -195,7 +213,20 @@ function IssueCard({ issue }: { issue: any }) {
             </button>
           )}
           {issue.status === 'REPORTED' && (
-            <button style={{ padding: '8px 12px', borderRadius: 10, background: '#FEE2E2', color: '#B91C1C', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button 
+              onClick={async () => {
+                if (!window.confirm("Are you sure you want to delete this report?")) return;
+                try {
+                  const { deleteDoc, doc } = await import('firebase/firestore');
+                  const { db } = await import('@/lib/firebase');
+                  await deleteDoc(doc(db, 'issues', issue.id));
+                } catch (error) {
+                  console.error(error);
+                  alert("Failed to delete issue.");
+                }
+              }}
+              style={{ padding: '8px 12px', borderRadius: 10, background: '#FEE2E2', color: '#B91C1C', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
               <Trash2 size={14} /> Delete
             </button>
           )}
@@ -222,16 +253,23 @@ export default function MyReportsTab({ user, profile }: { user: any, profile: an
           collection(db, 'issues'), 
           where('reporter_id', '==', user.uid)
         );
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          data.sort((a: any, b: any) => {
-            const timeA = a.created_at?.toMillis ? a.created_at.toMillis() : 0;
-            const timeB = b.created_at?.toMillis ? b.created_at.toMillis() : 0;
-            return timeB - timeA;
-          });
-          setIssues(data);
-          setLoading(false);
-        });
+        unsubscribe = onSnapshot(
+          q, 
+          (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            data.sort((a: any, b: any) => {
+              const timeA = a.created_at?.toMillis ? a.created_at.toMillis() : 0;
+              const timeB = b.created_at?.toMillis ? b.created_at.toMillis() : 0;
+              return timeB - timeA;
+            });
+            setIssues(data);
+            setLoading(false);
+          },
+          (error) => {
+            console.warn("Error listening to my reports:", error);
+            setLoading(false);
+          }
+        );
       } catch (error) {
         console.error("Error setting up reports listener:", error);
         setLoading(false);

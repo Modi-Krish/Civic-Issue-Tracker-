@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Civic Issues: Publicly viewable by all citizens, creation and edits by authenticated users
+    match /issues/{issueId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Departments: Publicly viewable
+    match /departments/{deptId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Profiles: Viewable by anyone (needed for landing page counts and public civic transparency), edits by authenticated users
+    match /profiles/{profileId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Issue status audit logs: Viewable by all, written by authenticated users
+    match /issue_status_logs/{logId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Notifications: Accessible by authenticated users
+    match /notifications/{notifId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Rewards & Gamification: Accessible by authenticated users
+    match /rewards/{rewardId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Issue chat/discussion messages: Accessible by authenticated users
+    match /issue_messages/{messageId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Assignments
+    match /issue_assignments/{assignmentId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Tenders, Bids, and Contracts
+    match /tenders/{tenderId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /tender_bids/{bidId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /contracts/{contractId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Company Profiles, Reviews, and Employees
+    match /company_reviews/{reviewId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /companies/{companyId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /company_employees/{empId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Device push tokens
+    match /device_tokens/{tokenId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // AI Chatbot conversations & subcollection messages
+    match /ai_conversations/{convId} {
+      allow read, write: if isAuthenticated();
+      match /messages/{msgId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // Recurring patterns and alerts
+    match /recurring_patterns/{patternId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /recurring_alerts/{alertId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Default fallback rule for any other collection
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

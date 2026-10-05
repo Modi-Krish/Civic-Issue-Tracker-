@@ -94,17 +94,17 @@ export default function SmartReportModal({
     let currentLng: number | null = null;
 
     try {
-      if ('geolocation' in navigator) {
-        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
-        });
-        currentLat = pos.coords.latitude;
-        currentLng = pos.coords.longitude;
+      const { requestLocationPermissions, getCurrentPosition } = await import('@/lib/capacitor/geolocation');
+      const hasPerm = await requestLocationPermissions();
+      if (hasPerm) {
+        const pos = await getCurrentPosition();
+        currentLat = pos.latitude;
+        currentLng = pos.longitude;
         setLat(currentLat);
         setLng(currentLng);
       }
     } catch (e) {
-      console.warn("Location permission denied or timeout.");
+      console.warn("Location permission denied or timeout.", e);
     }
 
     // If no location, skip duplicate check and go straight to form
@@ -184,7 +184,16 @@ export default function SmartReportModal({
       
       // Get department based on category
       const { query, where, getDocs } = await import('firebase/firestore');
-      const deptSlug = (category || 'other').toLowerCase().replace(/\s+/g, '-');
+      
+      const categoryToDeptSlug: Record<string, string> = {
+        "Road Damage": "roads",
+        "Water Leakage": "water",
+        "Electricity Fault": "electricity",
+        "Sanitation": "sanitation",
+        "Drainage": "drainage",
+      };
+      
+      const deptSlug = categoryToDeptSlug[category || ''] || 'other';
       const deptQuery = query(collection(db, 'departments'), where('slug', '==', deptSlug));
       const deptSnap = await getDocs(deptQuery);
       
@@ -362,7 +371,23 @@ export default function SmartReportModal({
                   <button onClick={() => { setSelectedFile(null); setFilePreview(null); }} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer' }}>✕</button>
                 </div>
               ) : (
-                <button onClick={() => fileInputRef.current?.click()} style={{
+                <button onClick={async () => {
+                  const { takePhoto, requestCameraPermissions } = await import('@/lib/capacitor/camera');
+                  const { isNativePlatform } = await import('@/lib/capacitor/platform');
+                  
+                  if (isNativePlatform()) {
+                    const hasPerm = await requestCameraPermissions();
+                    if (hasPerm) {
+                      const photo = await takePhoto();
+                      if (photo) {
+                        setSelectedFile(photo.file);
+                        setFilePreview(photo.dataUrl);
+                      }
+                    }
+                  } else {
+                    fileInputRef.current?.click();
+                  }
+                }} style={{
                   width: '100%', padding: '20px', borderRadius: 12, background: T.base, border: `2px dashed ${T.border}`,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', color: T.text2
                 }}>

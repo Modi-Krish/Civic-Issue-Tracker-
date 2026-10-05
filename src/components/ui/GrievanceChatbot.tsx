@@ -214,10 +214,45 @@ export default function GrievanceChatbot({
     setLocationLabel(t.obtaining_loc);
   }, [preferredLang]);
 
-  const appendAiMsg = (text: string) => {
+  const playAudioSequence = (keys: string[]) => {
+    if (!keys || keys.length === 0) return;
+    
+    let currentIndex = 0;
+    
+    const playNext = () => {
+      if (currentIndex >= keys.length) return;
+      
+      const key = keys[currentIndex];
+      const audio = new Audio(`/audio/${preferredLang}/${key}.mp3`);
+      
+      audio.onended = () => {
+        currentIndex++;
+        playNext();
+      };
+      
+      audio.onerror = () => {
+        currentIndex++;
+        playNext();
+      };
+      
+      audio.play().catch(e => {
+        console.warn('Audio play failed', e);
+        currentIndex++;
+        playNext();
+      });
+    };
+    
+    playNext();
+  };
+
+  const appendAiMsg = (text: string, audioSequence?: string[]) => {
     const msg: Message = { sender: 'ai', text, timestamp: new Date() };
     setMessages(prev => [...prev, msg]);
     if (user?.uid) saveMessageToHistory(`conv_${user.uid}`, user.uid, msg);
+    
+    if (audioSequence && audioSequence.length > 0) {
+      playAudioSequence(audioSequence);
+    }
   };
 
   const appendUserMsg = (text: string) => {
@@ -227,7 +262,7 @@ export default function GrievanceChatbot({
   };
 
   const sendWelcomeMessage = (lang: 'en' | 'hi' | 'gu') => {
-    appendAiMsg(TRANSLATIONS[lang].welcome);
+    appendAiMsg(TRANSLATIONS[lang].welcome, ['welcome', 'report_problem', 'status_previous', 'problems_nearby']);
     setFlowState('IDLE');
   };
 
@@ -238,7 +273,7 @@ export default function GrievanceChatbot({
           if (history.length > 0) {
             setMessages(history);
             setFlowState('IDLE'); 
-            appendAiMsg(t.welcome_back);
+            appendAiMsg(t.welcome_back, ['welcome_back', 'report_problem', 'status_previous', 'problems_nearby']);
           } else {
             sendWelcomeMessage(preferredLang);
           }
@@ -259,7 +294,7 @@ export default function GrievanceChatbot({
           setLng(pos.coords.longitude);
           setLocationLabel(`Location captured: (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
           if (retry) {
-             appendAiMsg(t.gps_secured);
+             appendAiMsg(t.gps_secured, ['gps_secured']);
              submitFlow(draftDetails, pos.coords.latitude, pos.coords.longitude);
           }
         },
@@ -270,19 +305,19 @@ export default function GrievanceChatbot({
              setLat(22.3072);
              setLng(73.1812);
           } else {
-             appendAiMsg(t.gps_failed);
+             appendAiMsg(t.gps_failed, ['gps_failed']);
           }
         },
         { timeout: 10000 }
       );
     } else if (retry) {
-        appendAiMsg(t.gps_unsupported);
+        appendAiMsg(t.gps_unsupported, ['gps_unsupported']);
     }
   };
 
   const handleLanguageChange = (lang: 'en' | 'hi' | 'gu') => {
     setPreferredLang(lang);
-    appendAiMsg(TRANSLATIONS[lang].welcome);
+    appendAiMsg(TRANSLATIONS[lang].welcome, ['welcome', 'report_problem', 'status_previous', 'problems_nearby']);
     setFlowState('IDLE');
   };
 
@@ -347,7 +382,7 @@ export default function GrievanceChatbot({
         if (flowState === 'ASK_PHOTO') {
             appendUserMsg(t.photo_uploaded);
             setFlowState('ASK_LEVEL');
-            appendAiMsg(t.ask_level);
+            appendAiMsg(t.ask_level, ['ask_level', 'level_high', 'level_medium', 'level_low']);
         }
       };
       reader.readAsDataURL(file);
@@ -366,15 +401,15 @@ export default function GrievanceChatbot({
     if (flowState === 'IDLE' || flowState === 'ASK_PROBLEM') {
         setDraftDetails((prev: any) => ({ ...prev, description: textToSend, title: textToSend.substring(0, 30) + '...' }));
         setFlowState('ASK_DEPT');
-        appendAiMsg(t.ask_dept);
+        appendAiMsg(t.ask_dept, ['ask_dept', 'dept_sanitation', 'dept_roads', 'dept_water', 'dept_electricity', 'dept_other']);
     } else if (flowState === 'ASK_DEPT') {
         setDraftDetails((prev: any) => ({ ...prev, category: 'Other', department_slug: 'other' }));
         setFlowState('ASK_PHOTO');
-        appendAiMsg(t.ask_photo);
+        appendAiMsg(t.ask_photo, ['ask_photo', 'upload_photo', 'skip_photo']);
     } else if (flowState === 'ASK_PHOTO') {
         if (textToSend.toLowerCase().includes('skip') || textToSend.includes('છોડો') || textToSend.includes('छोड़ें')) {
             setFlowState('ASK_LEVEL');
-            appendAiMsg(t.ask_level);
+            appendAiMsg(t.ask_level, ['ask_level', 'level_high', 'level_medium', 'level_low']);
         }
     } else if (flowState === 'ASK_LEVEL') {
         let p = 'MEDIUM';
@@ -390,14 +425,14 @@ export default function GrievanceChatbot({
       
       if (actionId === 'report_problem') {
           setFlowState('ASK_PROBLEM');
-          appendAiMsg(t.ask_problem);
+          appendAiMsg(t.ask_problem, ['ask_problem']);
       } else if (actionId === 'status_previous') {
           setLoading(true);
           try {
              const q = query(collection(db, 'issues'), where('reporter_id', '==', user.uid));
              const snaps = await getDocs(q);
              if (snaps.empty) {
-                appendAiMsg(t.no_previous);
+                appendAiMsg(t.no_previous, ['no_previous']);
              } else {
                 const issues = snaps.docs.map(d => ({id: d.id, ...d.data()})).sort((a:any, b:any) => {
                   const t = (x: any) => typeof x?.toMillis === 'function' ? x.toMillis() : (x?.seconds ? x.seconds * 1000 : 0);
@@ -405,15 +440,15 @@ export default function GrievanceChatbot({
                 });
                 const latest = issues[0] as any;
                 let statusMsg = t.most_recent.replace('{title}', latest.title).replace('{status}', latest.status);
-                appendAiMsg(statusMsg);
+                appendAiMsg(statusMsg, ['most_recent']);
              }
           } catch(e) {
-             appendAiMsg(t.fetch_error);
+             appendAiMsg(t.fetch_error, ['fetch_error']);
           }
           setLoading(false);
           setFlowState('IDLE');
       } else if (actionId === 'problems_nearby') {
-          appendAiMsg(t.view_nearby);
+          appendAiMsg(t.view_nearby, ['view_nearby']);
           setFlowState('IDLE');
       }
   };
@@ -422,7 +457,7 @@ export default function GrievanceChatbot({
       appendUserMsg(categoryName);
       setDraftDetails((prev: any) => ({ ...prev, category: categoryName, department_slug: slug }));
       setFlowState('ASK_PHOTO');
-      appendAiMsg(t.ask_photo);
+      appendAiMsg(t.ask_photo, ['ask_photo', 'upload_photo', 'skip_photo']);
   };
 
   const handleLevelSelect = (levelCode: string, levelName: string) => {
@@ -431,9 +466,9 @@ export default function GrievanceChatbot({
       
       setFlowState('SUBMITTING');
       if (!lat || !lng) {
-          appendAiMsg(t.need_gps);
+          appendAiMsg(t.need_gps, ['need_gps']);
       } else {
-          appendAiMsg(t.submitting);
+          appendAiMsg(t.submitting, ['submitting']);
           submitFlow({ ...draftDetails, priority: levelCode }, lat, lng);
       }
   };
@@ -478,7 +513,7 @@ export default function GrievanceChatbot({
         setSelectedFile(null);
         setFilePreview(null);
         
-        appendAiMsg(`${t.success}\n\n📋 **Grievance Number:** ${result.complaintNumber}\n🏢 **Department:** ${finalDetails.category}\n⚠️ **Priority:** ${finalDetails.priority}`);
+        appendAiMsg(`${t.success}\n\n📋 **Grievance Number:** ${result.complaintNumber}\n🏢 **Department:** ${finalDetails.category}\n⚠️ **Priority:** ${finalDetails.priority}`, ['success', 'start_new']);
         setFlowState('DONE');
       } catch (err: any) {
         console.error(err);

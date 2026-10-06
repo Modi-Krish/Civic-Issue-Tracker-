@@ -88,16 +88,26 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Progress Timeline ─────────────────────────────────────────────────────────
 function ProgressTimeline({ currentStatus, logs }: { currentStatus: string; logs: any[] }) {
-  const currentIdx = STATUS_STEPS.findIndex(s => s.key === currentStatus);
+  const mapStatus = (s: string) => {
+    if (s === 'DEPARTMENT_ASSIGNED' || s === 'EMPLOYEE_ASSIGNED') return 'ASSIGNED';
+    if (s === 'SUBMITTED_FOR_APPROVAL') return 'COMMUNITY_REVIEW';
+    if (s === 'APPROVED') return 'COMPLETED';
+    return s;
+  };
+
+  const mappedCurrentStatus = mapStatus(currentStatus);
+  const currentIdx = STATUS_STEPS.findIndex(s => s.key === mappedCurrentStatus);
 
   return (
     <div style={{ overflowX: "auto", paddingBottom: 4 }}>
       <div style={{ display: "flex", alignItems: "flex-start", minWidth: 520, padding: "4px 0 8px" }}>
         {STATUS_STEPS.map((step, i) => {
           const done   = i <= currentIdx;
-          const active = step.key === currentStatus;
-          const log    = logs.find(l => l.to_status === step.key);
-          const c      = STATUS_CONFIG[step.key as keyof typeof STATUS_CONFIG];
+          const active = step.key === mappedCurrentStatus;
+          
+          // Find the first log that maps to this step
+          const log = logs.find(l => mapStatus(l.to_status) === step.key);
+          const c   = STATUS_CONFIG[step.key as keyof typeof STATUS_CONFIG];
 
           return (
             <div key={step.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
